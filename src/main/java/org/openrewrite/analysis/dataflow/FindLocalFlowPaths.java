@@ -18,9 +18,12 @@ package org.openrewrite.analysis.dataflow;
 import lombok.RequiredArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.Tree;
 import org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary;
+import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
+import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.marker.SearchResult;
 
@@ -35,34 +38,37 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
     private final org.openrewrite.analysis.dataflow.LocalFlowSpec<?, ?> spec;
 
     @Override
-    public JavaSourceFile visitJavaSourceFile(JavaSourceFile cu, P p) {
-        getCursor().putMessage(FLOW_GRAPHS, new ArrayList<>());
-        JavaSourceFile c = super.visitJavaSourceFile(cu, p);
+    public @Nullable J visit(@Nullable Tree tree, P p) {
+        if (tree instanceof JavaSourceFile) {
+            getCursor().putMessage(FLOW_GRAPHS, new ArrayList<>());
+            JavaSourceFile c = (JavaSourceFile) super.visit(tree, p);
 
-        Set<Expression> flowSteps = Collections.newSetFromMap(new IdentityHashMap<>());
-        List<org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<?, ?>> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
-        for (org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<?, ?> flowGraphSummary : requireNonNull(sinkFlows)) {
-            flowSteps.addAll(flowGraphSummary.getFlowParticipants());
-        }
+            Set<Expression> flowSteps = Collections.newSetFromMap(new IdentityHashMap<>());
+            List<org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<?, ?>> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
+            for (org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<?, ?> flowGraphSummary : requireNonNull(sinkFlows)) {
+                flowSteps.addAll(flowGraphSummary.getFlowParticipants());
+            }
 
-        if (!flowSteps.isEmpty()) {
-            doAfterVisit(new JavaIsoVisitor<P>() {
-                @Override
-                public Expression visitExpression(Expression expression, P p) {
-                    return flowSteps.contains(expression) ?
-                            SearchResult.found(expression) :
-                            expression;
-                }
-            });
+            if (!flowSteps.isEmpty()) {
+                return new JavaIsoVisitor<P>() {
+                    @Override
+                    public Expression visitExpression(Expression expression, P p) {
+                        return flowSteps.contains(expression) ?
+                                SearchResult.found(expression) :
+                                expression;
+                    }
+                }.visit(c, p);
+            }
+            return c;
         }
-        return c;
+        return super.visit(tree, p);
     }
 
     @Override
     public Expression visitExpression(Expression expression, P p) {
         Dataflow.startingAt(getCursor()).findSinks(spec).ifPresent(flow -> {
             if (flow.isNotEmpty()) {
-                List<SinkFlowSummary> flowGraphs = getCursor().getNearestMessage(FLOW_GRAPHS);
+                List<SinkFlowSummary<?, ?>> flowGraphs = getCursor().getNearestMessage(FLOW_GRAPHS);
                 assert flowGraphs != null;
                 flowGraphs.add(flow);
             }

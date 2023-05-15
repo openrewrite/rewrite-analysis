@@ -15,12 +15,8 @@
  */
 package org.openrewrite.analysis.search;
 
-import org.openrewrite.Cursor;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Recipe;
-import org.openrewrite.TreeVisitor;
+import org.openrewrite.*;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.analysis.dataflow.Dataflow;
 import org.openrewrite.analysis.dataflow.LocalFlowSpec;
@@ -75,13 +71,8 @@ public class UriCreatedWithHttpScheme extends Recipe {
     }
 
     @Override
-    protected TreeVisitor<?, ExecutionContext> getSingleSourceApplicableTest() {
-        return new UsesMethod<>(URI_CREATE);
-    }
-
-    @Override
-    public JavaVisitor<ExecutionContext> getVisitor() {
-        return new JavaIsoVisitor<ExecutionContext>() {
+    public TreeVisitor<?, ExecutionContext> getVisitor() {
+        return Preconditions.check(new UsesMethod<>(URI_CREATE), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                 J.Literal l = super.visitLiteral(literal, ctx);
@@ -92,6 +83,6 @@ public class UriCreatedWithHttpScheme extends Recipe {
                 }
                 return l;
             }
-        };
+        });
     }
 }

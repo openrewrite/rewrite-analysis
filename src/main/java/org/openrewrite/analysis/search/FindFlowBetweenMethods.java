@@ -70,16 +70,11 @@ public class FindFlowBetweenMethods extends Recipe {
     }
 
     @Override
-    protected JavaVisitor<ExecutionContext> getSingleSourceApplicableTest() {
-        return new UsesAllMethods<>(new MethodMatcher(startMethodPattern, startMatchOverrides), new MethodMatcher(endMethodPattern, endMatchOverrides));
-    }
-
-    @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         MethodMatcher startMethodMatcher = new MethodMatcher(startMethodPattern, startMatchOverrides);
         MethodMatcher endMethodMatcher = new MethodMatcher(endMethodPattern, endMatchOverrides);
 
-        return new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesAllMethods<>(new MethodMatcher(startMethodPattern, startMatchOverrides), new MethodMatcher(endMethodPattern, endMatchOverrides)), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
@@ -153,6 +148,6 @@ public class FindFlowBetweenMethods extends Recipe {
                         throw new IllegalStateException("Unknown flow: " + flow);
                 }
             }
-        };
+        });
     }
 }
