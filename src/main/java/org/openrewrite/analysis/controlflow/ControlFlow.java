@@ -772,10 +772,9 @@ public final class ControlFlow {
         private J.VariableDeclarations createFakeIteratorVariableDeclarations(String variableName, JavaType iteratorType, J.ForEachLoop forLoop) {
             Expression iterable = forLoop.getControl().getIterable();
             String type = iteratorType instanceof JavaType.Primitive ? ((JavaType.Primitive) iteratorType).getClassName() : iteratorType.toString();
-            Supplier<Cursor> cursorSupplier = () -> getCursor().dropParentUntil(J.Block.class::isInstance);
             JavaTemplate fakeIterableVariableTemplate = iterable.getType() instanceof JavaType.Array ?
-                    JavaTemplate.builder(cursorSupplier, "final Iterator<" + type + "> " + variableName + " = Arrays.stream(#{anyArray()}).iterator();").imports("java.util.Arrays").build() :
-                    JavaTemplate.builder(cursorSupplier, "final Iterator<" + type + "> " + variableName + " = #{any(java.lang.Iterable)}.iterator();").build();
+                    JavaTemplate.builder("final Iterator<" + type + "> " + variableName + " = Arrays.stream(#{anyArray()}).iterator();").imports("java.util.Arrays").build() :
+                    JavaTemplate.builder("final Iterator<" + type + "> " + variableName + " = #{any(java.lang.Iterable)}.iterator();").build();
             // Unfortunately, because J.NewArray isn't a statement, we have to find a place in the AST where a statement could be placed. This way a statement will always be generated.
             // Find the closes outer block to place our statement.
             J.Block block = getCursor().firstEnclosing(J.Block.class);
@@ -795,7 +794,8 @@ public final class ControlFlow {
                 coordinates = forLoop.getCoordinates().before();
             }
             // Use the template within the scope of the parent block
-            J.Block newFakeBlock = block.withTemplate(fakeIterableVariableTemplate, coordinates, iterable);
+            Cursor blockCursor = getCursor().dropParentUntil(J.Block.class::isInstance);
+            J.Block newFakeBlock = block.withTemplate(fakeIterableVariableTemplate, blockCursor, coordinates, iterable);
             // Find the newly generated statement within the block
             for (Statement statement : newFakeBlock.getStatements()) {
                 if (!(statement instanceof J.VariableDeclarations)) {
@@ -814,9 +814,9 @@ public final class ControlFlow {
 
         @SelfLoathing(name = "Jonathan Leitschuh")
         protected J.MethodInvocation createFakeConditionalMethod(J.Identifier iteratorIdentifier, Expression iterable) {
-            JavaTemplate fakeConditionalTemplate = JavaTemplate.builder(this::getCursor, "#{any(java.util.Iterator)}.hasNext()").build();
+            JavaTemplate fakeConditionalTemplate = JavaTemplate.builder("#{any(java.util.Iterator)}.hasNext()").build();
             JavaCoordinates coordinates = iterable.getCoordinates().replace();
-            J.MethodInvocation fakeConditional = iterable.withTemplate(fakeConditionalTemplate, coordinates, iteratorIdentifier);
+            J.MethodInvocation fakeConditional = iterable.withTemplate(fakeConditionalTemplate, getCursor(), coordinates, iteratorIdentifier);
             if (iterable == fakeConditional) {
                 throw new IllegalStateException("Failed to create a fake conditional!");
             }
