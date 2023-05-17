@@ -85,9 +85,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitCatch(J.Try.Catch catzh, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(catzh, p);
-        return super.visitCatch(catzh, p);
+    public J visitCatch(J.Try.Catch catch_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(catch_, p);
+        return super.visitCatch(catch_, p);
     }
 
     @Override
