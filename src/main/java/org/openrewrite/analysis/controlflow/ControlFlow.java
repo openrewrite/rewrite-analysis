@@ -521,10 +521,10 @@ public final class ControlFlow {
 
         @SuppressWarnings("SpellCheckingInspection")
         @Override
-        public J.If.Else visitElse(J.If.Else elze, P p) {
+        public J.If.Else visitElse(J.If.Else else_, P p) {
             addCursorToBasicBlock();
-            visit(elze.getBody(), p);
-            return elze;
+            visit(else_.getBody(), p);
+            return else_;
         }
 
         @Override

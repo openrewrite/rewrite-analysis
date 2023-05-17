@@ -146,14 +146,14 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
         }
 
         @Override
-        public J.If.Else visitElse(J.If.Else elze, P p) {
-            if (nodeToBlock.containsKey(elze)) {
-                ControlFlowNode b = nodeToBlock.get(elze);
+        public J.If.Else visitElse(J.If.Else else_, P p) {
+            if (nodeToBlock.containsKey(else_)) {
+                ControlFlowNode b = nodeToBlock.get(else_);
                 assert b != null;
                 int number = nodeNumbers.computeIfAbsent(b, __ -> ++nodeNumber);
-                return SearchResult.found(elze, number + labelDescription(elze));
+                return SearchResult.found(else_, number + labelDescription(else_));
             } else {
-                return elze;
+                return else_;
             }
         }
 

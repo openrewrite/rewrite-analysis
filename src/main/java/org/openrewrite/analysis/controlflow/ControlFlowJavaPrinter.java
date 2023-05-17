@@ -193,9 +193,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitElse(J.If.Else elze, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(elze, p);
-        return super.visitElse(elze, p);
+    public J visitElse(J.If.Else else_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(else_, p);
+        return super.visitElse(else_, p);
     }
 
     @Override
