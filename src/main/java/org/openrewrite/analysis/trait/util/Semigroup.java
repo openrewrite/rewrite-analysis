@@ -129,7 +129,7 @@ public final class Semigroup<A> {
      * {@link #sum(Object, Object)}.
      *
      * @param n multiplier
-     * @param a the value to be reapeatly summed n + 1 times
+     * @param a the value to be repeatedly summed n + 1 times
      * @return {@code a} summed {@code n} times. If {@code n <= 0}, returns
      * {@code zero()}
      */
