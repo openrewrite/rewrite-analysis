@@ -198,7 +198,7 @@ public class VarAccessCreationTest implements RewriteTest {
     }
 
     @Test
-    void searchResultsForTeraryExpression() {
+    void searchResultsForTertiaryExpression() {
         rewriteRun(
           java("""
               class Test {
