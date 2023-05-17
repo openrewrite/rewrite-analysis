@@ -127,9 +127,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitEnumValue(J.EnumValue enoom, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(enoom, p);
-        return super.visitEnumValue(enoom, p);
+    public J visitEnumValue(J.EnumValue enum_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(enum_, p);
+        return super.visitEnumValue(enum_, p);
     }
 
     @Override
