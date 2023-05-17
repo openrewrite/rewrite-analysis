@@ -259,9 +259,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitSwitch(J.Switch switzh, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(switzh, p);
-        return super.visitSwitch(switzh, p);
+    public J visitSwitch(J.Switch switch_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(switch_, p);
+        return super.visitSwitch(switch_, p);
     }
 
     @Override
