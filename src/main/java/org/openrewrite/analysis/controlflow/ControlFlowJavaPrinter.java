@@ -79,9 +79,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitCase(J.Case caze, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(caze, p);
-        return super.visitCase(caze, p);
+    public J visitCase(J.Case case_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(case_, p);
+        return super.visitCase(case_, p);
     }
 
     @Override
