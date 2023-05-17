@@ -428,7 +428,7 @@ public class VarAccessCreationTest implements RewriteTest {
     }
 
     @Test
-    void searchResultsForAnnotationsExlicitArgument() {
+    void searchResultsForAnnotationsExplicitArgument() {
         rewriteRun(
           java("""
               class Test {
