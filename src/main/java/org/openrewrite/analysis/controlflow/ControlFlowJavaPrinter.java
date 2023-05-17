@@ -31,9 +31,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     final List<J> nodesToPrint;
 
     @Override
-    public J visitAssert(J.Assert azzert, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(azzert, p);
-        return super.visitAssert(azzert, p);
+    public J visitAssert(J.Assert assert_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(assert_, p);
+        return super.visitAssert(assert_, p);
     }
 
     @Override
