@@ -695,7 +695,7 @@ public final class ControlFlow {
             JavaType controlLoopType = forLoop.getControl().getVariable().getVariables().get(0).getType();
             if (controlLoopType == null) {
                 throw new ControlFlowIllegalStateException(
-                        ControlFlowIllegalStateException.exceptionMessageBuilder("No type for for loop control variable")
+                        ControlFlowIllegalStateException.exceptionMessageBuilder("No type for `for` loop control variable")
                                 .addCursor(getCursor())
                 );
             }
