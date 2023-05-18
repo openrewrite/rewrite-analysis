@@ -1476,7 +1476,7 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   /**
                    * Decodes the specified URL as per RFC 3986, i.e. transforms
-                   * percent-encoded octets to characters by decodingWiththe UTF-8 character
+                   * percent-encoded octets to characters by decoding with the UTF-8 character
                    * set. This function is primarily intended for usage with
                    * {@link java.net.URL} which unfortunately does not enforce proper URLs. As
                    * such, this method will leniently accept invalid characters or malformed
@@ -1533,7 +1533,7 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   /**
                    * Decodes the specified URL as per RFC 3986, i.e. transforms
-                   * percent-encoded octets to characters by decodingWiththe UTF-8 character
+                   * percent-encoded octets to characters by decoding with the UTF-8 character
                    * set. This function is primarily intended for usage with
                    * {@link java.net.URL} which unfortunately does not enforce proper URLs. As
                    * such, this method will leniently accept invalid characters or malformed
