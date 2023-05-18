@@ -873,7 +873,7 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
-    void forIndexedloopWithContinueAndBreak() {
+    void forIndexedLoopWithContinueAndBreak() {
         rewriteRun(
           java(
             """
@@ -922,7 +922,7 @@ class ControlFlowTest implements RewriteTest {
 
     @SuppressWarnings("InfiniteLoopStatement")
     @Test
-    void forIndexedloopForever() {
+    void forIndexedLoopForever() {
         rewriteRun(
           java(
             """
