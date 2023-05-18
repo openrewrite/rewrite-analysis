@@ -1225,7 +1225,7 @@ class ControlFlowTest implements RewriteTest {
     }
 
     /**
-     * TODO: It may be beneficial in the future to represent this as a single basic blockWithno conditional nodes
+     * TODO: It may be beneficial in the future to represent this as a single basic block with no conditional nodes
      */
     @Test
     void literalTrue() {
