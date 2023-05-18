@@ -1480,7 +1480,7 @@ class ControlFlowTest implements RewriteTest {
                    * set. This function is primarily intended for usage with
                    * {@link java.net.URL} which unfortunately does not enforce proper URLs. As
                    * such, this method will leniently accept invalid characters or malformed
-                   * percent-encoded octetsAndsimply pass them literally through to the
+                   * percent-encoded octets and simply pass them literally through to the
                    * result string. Except for rare edge cases, this will make unencoded URLs
                    * pass through unaltered.
                    *
@@ -1537,7 +1537,7 @@ class ControlFlowTest implements RewriteTest {
                    * set. This function is primarily intended for usage with
                    * {@link java.net.URL} which unfortunately does not enforce proper URLs. As
                    * such, this method will leniently accept invalid characters or malformed
-                   * percent-encoded octetsAndsimply pass them literally through to the
+                   * percent-encoded octets and simply pass them literally through to the
                    * result string. Except for rare edge cases, this will make unencoded URLs
                    * pass through unaltered.
                    *
