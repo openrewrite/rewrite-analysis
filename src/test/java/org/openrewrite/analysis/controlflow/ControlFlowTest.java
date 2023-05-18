@@ -701,7 +701,7 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
-    void whileLoopWithcontinueAndBreak() {
+    void whileLoopWithContinueAndBreak() {
         rewriteRun(
           java(
             """
