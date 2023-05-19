@@ -521,10 +521,10 @@ public final class ControlFlow {
 
         @SuppressWarnings("SpellCheckingInspection")
         @Override
-        public J.If.Else visitElse(J.If.Else elze, P p) {
+        public J.If.Else visitElse(J.If.Else else_, P p) {
             addCursorToBasicBlock();
-            visit(elze.getBody(), p);
-            return elze;
+            visit(else_.getBody(), p);
+            return else_;
         }
 
         @Override
@@ -695,7 +695,7 @@ public final class ControlFlow {
             JavaType controlLoopType = forLoop.getControl().getVariable().getVariables().get(0).getType();
             if (controlLoopType == null) {
                 throw new ControlFlowIllegalStateException(
-                        ControlFlowIllegalStateException.exceptionMessageBuilder("No type for for loop control variable")
+                        ControlFlowIllegalStateException.exceptionMessageBuilder("No type for `for` loop control variable")
                                 .addCursor(getCursor())
                 );
             }

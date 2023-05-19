@@ -31,9 +31,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     final List<J> nodesToPrint;
 
     @Override
-    public J visitAssert(J.Assert azzert, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(azzert, p);
-        return super.visitAssert(azzert, p);
+    public J visitAssert(J.Assert assert_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(assert_, p);
+        return super.visitAssert(assert_, p);
     }
 
     @Override
@@ -79,15 +79,15 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitCase(J.Case caze, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(caze, p);
-        return super.visitCase(caze, p);
+    public J visitCase(J.Case case_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(case_, p);
+        return super.visitCase(case_, p);
     }
 
     @Override
-    public J visitCatch(J.Try.Catch catzh, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(catzh, p);
-        return super.visitCatch(catzh, p);
+    public J visitCatch(J.Try.Catch catch_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(catch_, p);
+        return super.visitCatch(catch_, p);
     }
 
     @Override
@@ -127,9 +127,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitEnumValue(J.EnumValue enoom, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(enoom, p);
-        return super.visitEnumValue(enoom, p);
+    public J visitEnumValue(J.EnumValue enum_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(enum_, p);
+        return super.visitEnumValue(enum_, p);
     }
 
     @Override
@@ -193,9 +193,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitElse(J.If.Else elze, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(elze, p);
-        return super.visitElse(elze, p);
+    public J visitElse(J.If.Else else_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(else_, p);
+        return super.visitElse(else_, p);
     }
 
     @Override
@@ -259,9 +259,9 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     @Override
-    public J visitSwitch(J.Switch switzh, PrintOutputCapture<P> p) {
-        maybeEnableOrDisable(switzh, p);
-        return super.visitSwitch(switzh, p);
+    public J visitSwitch(J.Switch switch_, PrintOutputCapture<P> p) {
+        maybeEnableOrDisable(switch_, p);
+        return super.visitSwitch(switch_, p);
     }
 
     @Override
