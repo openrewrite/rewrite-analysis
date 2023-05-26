@@ -15,12 +15,12 @@
  */
 package org.openrewrite.analysis.trait.expr;
 
+import fj.data.Either;
+import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Top;
-import org.openrewrite.analysis.trait.util.Either;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.java.tree.J;
 

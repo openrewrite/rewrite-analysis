@@ -15,6 +15,8 @@
  */
 package org.openrewrite.analysis.trait.util;
 
+import fj.Semigroup;
+import fj.data.Validation;
 import org.openrewrite.Cursor;
 
 import javax.annotation.concurrent.Immutable;

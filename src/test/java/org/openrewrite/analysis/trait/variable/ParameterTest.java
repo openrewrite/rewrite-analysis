@@ -53,7 +53,7 @@ public class ParameterTest implements RewriteTest {
     void testVariableVisit() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
-                Parameter p = Parameter.viewOf(cursor).orSuccess(TraitErrors::doThrow);
+                Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals(0, p.getPosition(), "Parameter position is incorrect");
                 assertFalse(p.isVarArgs(), "Parameter isVarArgs is incorrect");
                 assertEquals("i", p.getName(), "Parameter name is incorrect");
@@ -72,7 +72,7 @@ public class ParameterTest implements RewriteTest {
     void testVariableVisitVarargs() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
-                Parameter p = Parameter.viewOf(cursor).orSuccess(TraitErrors::doThrow);
+                Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals(0, p.getPosition(), "Parameter position is incorrect");
                 assertTrue(p.isVarArgs(), "Parameter isVarArgs is incorrect");
                 assertEquals("i", p.getName(), "Parameter name is incorrect");

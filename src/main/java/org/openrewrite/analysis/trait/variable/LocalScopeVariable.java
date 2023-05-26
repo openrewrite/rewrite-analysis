@@ -15,11 +15,11 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.member.Callable;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 
 /** A locally scoped variable, that is, either a local variable or a parameter. */
 public interface LocalScopeVariable extends Variable {

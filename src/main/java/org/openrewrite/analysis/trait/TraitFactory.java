@@ -15,9 +15,9 @@
  */
 package org.openrewrite.analysis.trait;
 
+import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 
 public interface TraitFactory <T extends Top> {
     Validation<TraitErrors, T> viewOf(Cursor cursor);

@@ -15,6 +15,8 @@
  */
 package org.openrewrite.analysis.trait.member;
 
+import fj.F0;
+import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
@@ -22,7 +24,6 @@ import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
@@ -90,7 +91,7 @@ class MethodDeclarationMethod implements Method {
 
             @Override
             public J visitVariable(J.VariableDeclarations.NamedVariable variable, List<Parameter> parameters) {
-                parameters.add(Parameter.viewOf(getCursor()).orSuccess(TraitErrors::doThrow));
+                parameters.add(Parameter.viewOf(getCursor()).on(TraitErrors::doThrow));
                 return variable;
             }
         }.visit(methodDeclaration.getParameters(), parameters);

@@ -15,12 +15,13 @@
  */
 package org.openrewrite.analysis.trait.expr;
 
+import fj.data.Option;
+import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.internal.MaybeParenthesesPair;
 import org.openrewrite.analysis.trait.member.FieldDeclaration;
-import org.openrewrite.analysis.trait.util.Validation;
 import org.openrewrite.analysis.trait.variable.Field;
 import org.openrewrite.analysis.trait.variable.Variable;
 import org.openrewrite.internal.lang.Nullable;
@@ -45,7 +46,7 @@ public interface VarAccess extends Expr {
 
     boolean hasQualifier();
 
-    Optional<Expr> getQualifier();
+    Option<Expr> getQualifier();
 
     /**
      * True if this access refers to a local variable or a field of
@@ -128,8 +129,8 @@ class VarAccessBase implements VarAccess {
     }
 
     @Override
-    public Optional<Expr> getQualifier() {
-        return InstanceAccess.viewOf(cursor.getParentTreeCursor()).map(e -> (Expr) e).toOptional();
+    public Option<Expr> getQualifier() {
+        return InstanceAccess.viewOf(cursor.getParentTreeCursor()).map(e -> (Expr) e).toOption();
     }
 
     @Override
@@ -177,7 +178,7 @@ class VarAccessBase implements VarAccess {
                     assert varAccess.identifier.getFieldType().getOwner() != null;
                     assert variable.getName().getFieldType() != null;
                     if (varAccess.identifier.getFieldType().getOwner().equals(variable.getName().getFieldType().getOwner())) {
-                        closestVariable[0] = Variable.viewOf(getCursor()).orSuccess(TraitErrors::doThrow);
+                        closestVariable[0] = Variable.viewOf(getCursor()).on(TraitErrors::doThrow);
                     }
                 }
                 return super.visitVariable(variable, atomicBoolean);

@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Validation;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,7 +27,6 @@ import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.member.Callable;
 import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
