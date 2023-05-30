@@ -62,7 +62,7 @@ public class LocalVariableDeclTest implements RewriteTest {
     void testVariableVisit() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
-                LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).orSuccess(TraitErrors::doThrow);
+                LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals("i", p.getName(), "LocalVariableDecl name is incorrect");
                 assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
                 return SearchResult.found(variable);
@@ -80,7 +80,7 @@ public class LocalVariableDeclTest implements RewriteTest {
     void testVariableInInitBlock() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
-                LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).orSuccess(TraitErrors::doThrow);
+                LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals("i", p.getName(), "LocalVariableDecl name is incorrect");
                 assertEquals("<obinit>", p.getCallable().getName(), "Parameter callable name is incorrect");
                 return SearchResult.found(variable);
@@ -97,7 +97,7 @@ public class LocalVariableDeclTest implements RewriteTest {
     void testVariableInStaticInitBlock() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
-                LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).orSuccess(TraitErrors::doThrow);
+                LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals("i", p.getName(), "LocalVariableDecl name is incorrect");
                 assertEquals("<clinit>", p.getCallable().getName(), "Parameter callable name is incorrect");
                 return SearchResult.found(variable);

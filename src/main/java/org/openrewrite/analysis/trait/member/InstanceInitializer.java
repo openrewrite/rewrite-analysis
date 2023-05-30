@@ -15,9 +15,9 @@
  */
 package org.openrewrite.analysis.trait.member;
 
+import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 
 /**
  * An instance initializer is a method that contains field initializations

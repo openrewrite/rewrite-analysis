@@ -21,6 +21,7 @@ dependencies {
     implementation("org.openrewrite:rewrite-xml")
 
     implementation("io.github.classgraph:classgraph:latest.release")
+    implementation("org.functionaljava:functionaljava:latest.release")
 
     testImplementation("org.openrewrite:rewrite-test:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-java-tck:${rewriteVersion}")

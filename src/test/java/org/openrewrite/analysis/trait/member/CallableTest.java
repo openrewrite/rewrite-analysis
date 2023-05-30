@@ -41,7 +41,7 @@ public class CallableTest implements RewriteTest {
                   .map(c -> SearchResult.mergingFound(tree, c.getName()))
                   .bind(t -> InstanceInitializer.viewOf(getCursor())
                     .map(c -> SearchResult.mergingFound(t, c.getName())))
-                  .orSuccess(t ->
+                  .on(t ->
                     Method.viewOf(getCursor())
                       .map(c -> SearchResult.mergingFound(tree, c.getName()))
                       .orSuccess(tree));
