@@ -2,7 +2,7 @@
  * Copyright 2022 the original author or authors.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in complianceWiththe License.
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * <p>
  * https://www.apache.org/licenses/LICENSE-2.0
@@ -701,7 +701,7 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
-    void whileLoopWithcontinueAndBreak() {
+    void whileLoopWithContinueAndBreak() {
         rewriteRun(
           java(
             """
@@ -873,7 +873,7 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
-    void forIndexedloopWithContinueAndBreak() {
+    void forIndexedLoopWithContinueAndBreak() {
         rewriteRun(
           java(
             """
@@ -922,7 +922,7 @@ class ControlFlowTest implements RewriteTest {
 
     @SuppressWarnings("InfiniteLoopStatement")
     @Test
-    void forIndexedloopForever() {
+    void forIndexedLoopForever() {
         rewriteRun(
           java(
             """
@@ -1225,7 +1225,7 @@ class ControlFlowTest implements RewriteTest {
     }
 
     /**
-     * TODO: It may be beneficial in the future to represent this as a single basic blockWithno conditional nodes
+     * TODO: It may be beneficial in the future to represent this as a single basic block with no conditional nodes
      */
     @Test
     void literalTrue() {
@@ -1476,11 +1476,11 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   /**
                    * Decodes the specified URL as per RFC 3986, i.e. transforms
-                   * percent-encoded octets to characters by decodingWiththe UTF-8 character
+                   * percent-encoded octets to characters by decoding with the UTF-8 character
                    * set. This function is primarily intended for usage with
                    * {@link java.net.URL} which unfortunately does not enforce proper URLs. As
                    * such, this method will leniently accept invalid characters or malformed
-                   * percent-encoded octetsAndsimply pass them literally through to the
+                   * percent-encoded octets and simply pass them literally through to the
                    * result string. Except for rare edge cases, this will make unencoded URLs
                    * pass through unaltered.
                    *
@@ -1533,11 +1533,11 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   /**
                    * Decodes the specified URL as per RFC 3986, i.e. transforms
-                   * percent-encoded octets to characters by decodingWiththe UTF-8 character
+                   * percent-encoded octets to characters by decoding with the UTF-8 character
                    * set. This function is primarily intended for usage with
                    * {@link java.net.URL} which unfortunately does not enforce proper URLs. As
                    * such, this method will leniently accept invalid characters or malformed
-                   * percent-encoded octetsAndsimply pass them literally through to the
+                   * percent-encoded octets and simply pass them literally through to the
                    * result string. Except for rare edge cases, this will make unencoded URLs
                    * pass through unaltered.
                    *

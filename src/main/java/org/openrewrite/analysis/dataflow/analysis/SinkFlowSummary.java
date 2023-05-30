@@ -133,8 +133,8 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
                 pathToHere.push(edgeCursor);
                 // Recurse here with the longer path
                 recurseGetFlows(edge, pathToHere, pathsToSinks);
-                Cursor popedCursor = pathToHere.pop();
-                assert popedCursor == edgeCursor : "Expected " + edgeCursor + " but got " + popedCursor;
+                Cursor poppedCursor = pathToHere.pop();
+                assert poppedCursor == edgeCursor : "Expected " + edgeCursor + " but got " + poppedCursor;
             }
         }
     }

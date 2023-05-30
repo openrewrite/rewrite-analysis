@@ -42,7 +42,7 @@ public abstract class DataFlowNode {
         if (cursor.getValue() instanceof Expression) {
             return new ExpressionDataFlowNode(cursor, cursor.getValue());
         } else if (cursor.getValue() instanceof J.VariableDeclarations.NamedVariable) {
-            return new ParameterDataFlowNode(cursor, Parameter.viewOf(cursor).orSuccess(TraitErrors::doThrow));
+            return new ParameterDataFlowNode(cursor, Parameter.viewOf(cursor).on(TraitErrors::doThrow));
         } else {
             throw new IllegalArgumentException("DataFlowNode can not be of type: " + cursor.getValue().getClass());
         }

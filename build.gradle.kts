@@ -8,11 +8,7 @@ plugins {
 group = "org.openrewrite.meta"
 description = "Static code analysis APIs leveraging data flow, control flow, and other AST-based search"
 
-val rewriteVersion = if (project.hasProperty("releasing")) {
-    "latest.release"
-} else {
-    "latest.integration"
-}
+val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 
 dependencies {
     compileOnly("org.projectlombok:lombok:latest.release")
@@ -25,6 +21,7 @@ dependencies {
     implementation("org.openrewrite:rewrite-xml")
 
     implementation("io.github.classgraph:classgraph:latest.release")
+    implementation("org.functionaljava:functionaljava:latest.release")
 
     testImplementation("org.openrewrite:rewrite-test:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-java-tck:${rewriteVersion}")

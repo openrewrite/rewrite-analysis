@@ -199,7 +199,7 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
     }
 
     @Test
-    void taintFlowViaConstructorCallisNotDataFlow() {
+    void taintFlowViaConstructorCallIsNotDataFlow() {
         rewriteRun(
           spec -> spec.expectedCyclesThatMakeChanges(1).cycles(1),
           java(

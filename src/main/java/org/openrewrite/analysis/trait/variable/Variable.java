@@ -15,13 +15,13 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.analysis.trait.Element;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.util.Validation;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.Collection;
