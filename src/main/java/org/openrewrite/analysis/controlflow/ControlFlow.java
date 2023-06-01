@@ -30,7 +30,6 @@ import org.openrewrite.java.tree.*;
 import org.openrewrite.marker.Markers;
 
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -711,7 +710,7 @@ public final class ControlFlow {
             // NOTE: Don't move this line into the `visitForEachControl`, it will break. The cursor at this scope is important.
             J.MethodInvocation fakeConditionalMethod = createFakeConditionalMethod(
                     fakeIteratorAssignment.getVariables().get(0).getName(),
-                    forLoop.getControl().getIterable()
+                    new Cursor(new Cursor(getCursor(), forLoop.getControl()), forLoop.getControl().getIterable())
             );
 
             ControlFlowAnalysis<P> controlAnalysis = new ControlFlowAnalysis<P>(current, graphType) {
@@ -795,7 +794,7 @@ public final class ControlFlow {
             }
             // Use the template within the scope of the parent block
             Cursor blockCursor = getCursor().dropParentUntil(J.Block.class::isInstance);
-            J.Block newFakeBlock = block.withTemplate(fakeIterableVariableTemplate, blockCursor, coordinates, iterable);
+            J.Block newFakeBlock = fakeIterableVariableTemplate.apply(blockCursor, coordinates, iterable);
             // Find the newly generated statement within the block
             for (Statement statement : newFakeBlock.getStatements()) {
                 if (!(statement instanceof J.VariableDeclarations)) {
@@ -813,11 +812,11 @@ public final class ControlFlow {
         }
 
         @SelfLoathing(name = "Jonathan Leitschuh")
-        protected J.MethodInvocation createFakeConditionalMethod(J.Identifier iteratorIdentifier, Expression iterable) {
+        protected J.MethodInvocation createFakeConditionalMethod(J.Identifier iteratorIdentifier, Cursor iterableCursor) {
             JavaTemplate fakeConditionalTemplate = JavaTemplate.builder("#{any(java.util.Iterator)}.hasNext()").build();
-            JavaCoordinates coordinates = iterable.getCoordinates().replace();
-            J.MethodInvocation fakeConditional = iterable.withTemplate(fakeConditionalTemplate, getCursor(), coordinates, iteratorIdentifier);
-            if (iterable == fakeConditional) {
+            JavaCoordinates coordinates = iterableCursor.<Expression>getValue().getCoordinates().replace();
+            J.MethodInvocation fakeConditional = fakeConditionalTemplate.apply(iterableCursor, coordinates, iteratorIdentifier);
+            if (iterableCursor.getValue() == fakeConditional) {
                 throw new IllegalStateException("Failed to create a fake conditional!");
             }
             return fakeConditional;
@@ -973,8 +972,8 @@ public final class ControlFlow {
         private static boolean isDefaultCase(J.Case _case) {
             List<Expression> expressions = _case.getExpressions();
             return expressions.size() == 1 &&
-                    expressions.get(0) instanceof J.Identifier &&
-                    "default".equals(((J.Identifier) expressions.get(0)).getSimpleName());
+                   expressions.get(0) instanceof J.Identifier &&
+                   "default".equals(((J.Identifier) expressions.get(0)).getSimpleName());
         }
     }
 }
