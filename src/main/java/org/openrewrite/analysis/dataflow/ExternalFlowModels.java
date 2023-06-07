@@ -15,16 +15,13 @@
  */
 package org.openrewrite.analysis.dataflow;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.analysis.dataflow.internal.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
+import org.openrewrite.java.InvocationMatcher;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.Expression;
@@ -109,7 +106,7 @@ final class ExternalFlowModels {
 
     /**
      * Dedicated optimization step that attempts to optimize the {@link AdditionalFlowStepPredicate}s
-     * and reduce the number of them by merging similar method signatures into a single {@link org.openrewrite.analysis.dataflow.internal.InvocationMatcher}.
+     * and reduce the number of them by merging similar method signatures into a single {@link InvocationMatcher}.
      * <p>
      * <p>
      * As an example, take the following model method signatures:
@@ -119,9 +116,9 @@ final class ExternalFlowModels {
      *     <li>{@code "java.lang","String",false,"trim","","","Argument[-1]","ReturnValue","taint","manual"}</li>
      * </ul>
      * <p>
-     * These can be merged into a single {@link org.openrewrite.analysis.dataflow.internal.InvocationMatcher} that matches all these methods.
+     * These can be merged into a single {@link InvocationMatcher} that matches all these methods.
      * <p>
-     * From there, a single {@link org.openrewrite.analysis.dataflow.internal.InvocationMatcher.AdvancedInvocationMatcher} can be called by the
+     * From there, a single {@link InvocationMatcher.AdvancedInvocationMatcher} can be called by the
      * {@link AdditionalFlowStepPredicate}.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -135,7 +132,7 @@ final class ExternalFlowModels {
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            org.openrewrite.analysis.dataflow.internal.InvocationMatcher callMatcher = org.openrewrite.analysis.dataflow.internal.InvocationMatcher.fromMethodMatchers(methodMatchers);
+            InvocationMatcher callMatcher = InvocationMatcher.fromInvocationMatchers(methodMatchers);
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
                 return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
@@ -155,7 +152,7 @@ final class ExternalFlowModels {
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            org.openrewrite.analysis.dataflow.internal.InvocationMatcher callMatcher = org.openrewrite.analysis.dataflow.internal.InvocationMatcher.fromMethodMatchers(methodMatchers);
+            InvocationMatcher callMatcher = InvocationMatcher.fromInvocationMatchers(methodMatchers);
             assert argumentIndex != -1 : "Argument[-1] is the 'select' or 'qualifier' of a method call. Flow would be cyclic.";
             return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
                     callMatcher.advanced().isSelect(sinkCursor) &&
@@ -305,6 +302,7 @@ final class ExternalFlowModels {
     }
 
     @AllArgsConstructor
+    @ToString
     static class FlowModel implements GenericExternalModel {
         // package, type, subtypes, name, signature, ext, input, output, kind, provenance
         @Getter

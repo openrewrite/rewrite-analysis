@@ -31,12 +31,12 @@ public abstract class LocalTaintFlowSpec<Source extends Expression, Sink extends
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
-        return org.openrewrite.analysis.dataflow.ExternalFlowModels.instance().isAdditionalTaintStep(
+        return ExternalFlowModels.instance().isAdditionalTaintStep(
                 srcExpression,
                 srcCursor,
                 sinkExpression,
                 sinkCursor
-        ) || org.openrewrite.analysis.dataflow.DefaultFlowModels.isDefaultAdditionalTaintStep(
+        ) || DefaultFlowModels.isDefaultAdditionalTaintStep(
                 srcExpression,
                 srcCursor,
                 sinkExpression,
@@ -59,7 +59,7 @@ public abstract class LocalTaintFlowSpec<Source extends Expression, Sink extends
     }
 
     @Override
-    public final boolean isBarrierGuard(org.openrewrite.analysis.controlflow.Guard guard, boolean branch) {
+    public final boolean isBarrierGuard(Guard guard, boolean branch) {
         return isSanitizerGuard(guard, branch);
     }
 

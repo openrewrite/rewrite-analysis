@@ -15,16 +15,13 @@
  */
 package org.openrewrite.analysis.dataflow;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.analysis.dataflow.internal.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
+import org.openrewrite.java.InvocationMatcher;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.Expression;
@@ -101,13 +98,13 @@ public final class ExternalSinkModels {
     }
 
     private static class Optimizer {
-        private final org.openrewrite.analysis.dataflow.MethodMatcherCache methodMatcherCache = org.openrewrite.analysis.dataflow.MethodMatcherCache.create();
+        private final MethodMatcherCache methodMatcherCache = MethodMatcherCache.create();
 
         private SinkNodePredicate sinkNodePredicateForArgumentIndex(
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            org.openrewrite.analysis.dataflow.internal.InvocationMatcher invocationMatcher = org.openrewrite.analysis.dataflow.internal.InvocationMatcher.fromMethodMatchers(methodMatchers);
+            InvocationMatcher invocationMatcher = InvocationMatcher.fromInvocationMatchers(methodMatchers);
             return argumentIndex == -1 ?
                     ((expression, cursor) -> invocationMatcher.advanced().isSelect(cursor)) :
                     ((expression, cursor) -> invocationMatcher.advanced().isParameter(cursor, argumentIndex));
@@ -182,7 +179,7 @@ public final class ExternalSinkModels {
         /**
          * Loads the subset of {@link SinkModel}s that are relevant to the given {@link TypesInUse}.
          * <p>
-         * This optimization prevents the generation of {@link org.openrewrite.analysis.dataflow.AdditionalFlowStepPredicate} and {@link InvocationMatcher}
+         * This optimization prevents the generation of {@link AdditionalFlowStepPredicate} and {@link InvocationMatcher}
          * for method signatures that aren't even present in {@link J.CompilationUnit}.
          */
         SinkModels forTypesInUse(TypesInUse typesInUse) {
@@ -211,6 +208,7 @@ public final class ExternalSinkModels {
     }
 
     @AllArgsConstructor
+    @ToString
     static class SinkModel implements GenericExternalModel {
         // package, type, subtypes, name, signature, ext, input, kind, provenance
         @Getter

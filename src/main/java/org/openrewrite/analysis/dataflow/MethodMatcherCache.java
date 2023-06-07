@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
+import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel.MethodMatcherKey;
 import org.openrewrite.java.MethodMatcher;
 
 import java.util.*;
@@ -26,20 +27,20 @@ import java.util.*;
 @Incubating(since = "7.26.0")
 @NoArgsConstructor(access = AccessLevel.PACKAGE, staticName = "create")
 final class MethodMatcherCache {
-    private final Map<org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel.MethodMatcherKey, MethodMatcher> methodMapperCache =
+    private final Map<MethodMatcherKey, MethodMatcher> methodMapperCache =
             new WeakHashMap<>();
 
-    private MethodMatcher provideMethodMatcher(org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel.MethodMatcherKey key) {
+    private MethodMatcher provideMethodMatcher(MethodMatcherKey key) {
         return methodMapperCache.computeIfAbsent(
                 key,
                 k -> new MethodMatcher(k.getSignature(), k.isMatchOverrides())
         );
     }
 
-    Collection<MethodMatcher> provideMethodMatchers(Collection<? extends org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel> models) {
+    Collection<MethodMatcher> provideMethodMatchers(Collection<? extends GenericExternalModel> models) {
         List<MethodMatcher> mms = new ArrayList<>();
-        for (org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel model : models) {
-            GenericExternalModel.MethodMatcherKey asMethodMatcherKey = model.asMethodMatcherKey();
+        for (GenericExternalModel model : models) {
+            MethodMatcherKey asMethodMatcherKey = model.asMethodMatcherKey();
             MethodMatcher methodMatcher = provideMethodMatcher(asMethodMatcherKey);
             mms.add(methodMatcher);
         }

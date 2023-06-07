@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 @RequiredArgsConstructor
 public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
     private static final String FLOW_GRAPHS = "flowGraphs";
-    private final org.openrewrite.analysis.dataflow.LocalFlowSpec<?, ?> spec;
+    private final LocalFlowSpec<?, ?> spec;
 
     @Override
     public @Nullable J visit(@Nullable Tree tree, P p) {
@@ -76,7 +76,7 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
         return expression;
     }
 
-    public static boolean anyMatch(Cursor cursor, org.openrewrite.analysis.dataflow.LocalFlowSpec<?, ?> spec) {
+    public static boolean anyMatch(Cursor cursor, LocalFlowSpec<?, ?> spec) {
         JavaSourceFile enclosing = cursor.firstEnclosingOrThrow(JavaSourceFile.class);
         return new FindLocalFlowPaths<Integer>(spec).visit(enclosing, 0) != enclosing;
     }

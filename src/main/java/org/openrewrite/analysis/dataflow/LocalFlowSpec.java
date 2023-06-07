@@ -71,7 +71,7 @@ public abstract class LocalFlowSpec<Source extends Expression, Sink extends J> {
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
-        return org.openrewrite.analysis.dataflow.ExternalFlowModels.instance().isAdditionalFlowStep(
+        return ExternalFlowModels.instance().isAdditionalFlowStep(
                 srcExpression,
                 srcCursor,
                 sinkExpression,

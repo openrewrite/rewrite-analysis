@@ -19,6 +19,10 @@ import lombok.RequiredArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.ControlFlow;
+import org.openrewrite.analysis.dataflow.analysis.FlowGraph;
+import org.openrewrite.analysis.dataflow.analysis.ForwardFlow;
+import org.openrewrite.analysis.dataflow.analysis.SinkFlow;
+import org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary;
 import org.openrewrite.analysis.dataflow.analysis.SourceFlow;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.Expression;
@@ -36,7 +40,7 @@ public class Dataflow {
     @Nullable
     private final Cursor start;
 
-    public <Source extends Expression, Sink extends J> Optional<org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<Source, Sink>> findSinks(org.openrewrite.analysis.dataflow.LocalFlowSpec<Source, Sink> spec) {
+    public <Source extends Expression, Sink extends J> Optional<SinkFlowSummary<Source, Sink>> findSinks(LocalFlowSpec<Source, Sink> spec) {
         if (start == null) {
             return Optional.empty();
         }
@@ -50,9 +54,9 @@ public class Dataflow {
             return ControlFlow.startingAt(start).findControlFlow().flatMap(summary -> {
                 Set<Expression> reachable = summary.computeReachableExpressions(spec::isBarrierGuard);
 
-                org.openrewrite.analysis.dataflow.analysis.FlowGraph flow = new org.openrewrite.analysis.dataflow.analysis.SinkFlow(start);
-                org.openrewrite.analysis.dataflow.analysis.ForwardFlow.findSinks(flow, spec);
-                org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<Source, Sink> sinkFlowSummary = org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary.create(flow, spec, reachable);
+                FlowGraph flow = new SinkFlow(start);
+                ForwardFlow.findSinks(flow, spec);
+                SinkFlowSummary<Source, Sink> sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
                 return sinkFlowSummary.isNotEmpty() ? Optional.of(sinkFlowSummary) : Optional.empty();
             });
         }

@@ -18,14 +18,13 @@ package org.openrewrite.analysis.search;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.openrewrite.*;
-import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
 import org.openrewrite.analysis.dataflow.LocalFlowSpec;
 import org.openrewrite.analysis.dataflow.LocalTaintFlowSpec;
-import org.openrewrite.analysis.dataflow.internal.InvocationMatcher;
+import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.InvocationMatcher;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesAllMethods;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
@@ -117,7 +116,7 @@ public class FindFlowBetweenMethods extends Recipe {
             }
 
             private LocalFlowSpec<Expression, Expression> getFlowSpec(Expression source, MethodMatcher sink) {
-                final InvocationMatcher sinkMatcher = InvocationMatcher.fromMethodMatcher(sink);
+                final InvocationMatcher sinkMatcher = sink;
                 switch (flow) {
                     case "Data":
                         return new LocalFlowSpec<Expression, Expression>() {
