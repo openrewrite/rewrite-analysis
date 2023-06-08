@@ -49,7 +49,7 @@ final class ExternalFlowModels {
 
     private WeakReference<FullyQualifiedNameToFlowModels> fullyQualifiedNameToFlowModels;
 
-    private FullyQualifiedNameToFlowModels getFullyQualifiedNameToFlowModels() {
+    FullyQualifiedNameToFlowModels getFullyQualifiedNameToFlowModels() {
         FullyQualifiedNameToFlowModels f;
         if (this.fullyQualifiedNameToFlowModels == null) {
             f = Loader.create().load();
@@ -82,7 +82,7 @@ final class ExternalFlowModels {
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
-        return getOrComputeOptimizedFlowModels(srcCursor).value.stream().anyMatch(
+        return getOrComputeOptimizedFlowModels(srcCursor).getValuePredicates().stream().anyMatch(
                 value -> value.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)
         );
     }
@@ -93,15 +93,23 @@ final class ExternalFlowModels {
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
-        return getOrComputeOptimizedFlowModels(srcCursor).taint.stream().anyMatch(
+        return getOrComputeOptimizedFlowModels(srcCursor).getTaintPredicates().stream().anyMatch(
                 taint -> taint.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)
         );
     }
 
     @AllArgsConstructor
-    private static class OptimizedFlowModels {
-        private final List<AdditionalFlowStepPredicate> value;
-        private final List<AdditionalFlowStepPredicate> taint;
+    final static class OptimizedFlowModels {
+        private final Map<AdditionalFlowStepPredicate, Set<FlowModel>> value;
+        private final Map<AdditionalFlowStepPredicate, Set<FlowModel>> taint;
+
+        Set<AdditionalFlowStepPredicate> getValuePredicates() {
+            return value.keySet();
+        }
+
+        Set<AdditionalFlowStepPredicate> getTaintPredicates() {
+            return taint.keySet();
+        }
     }
 
     /**
@@ -122,7 +130,7 @@ final class ExternalFlowModels {
      * {@link AdditionalFlowStepPredicate}.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class Optimizer {
+    static class Optimizer {
         private final MethodMatcherCache methodMatcherCache = MethodMatcherCache.create();
 
         /**
@@ -159,14 +167,20 @@ final class ExternalFlowModels {
                             callMatcher.advanced().isParameter(srcCursor, argumentIndex);
         }
 
-        private List<AdditionalFlowStepPredicate> optimize(Collection<FlowModel> models) {
-            Map<Integer, List<FlowModel>> flowFromArgumentIndexToReturn = new HashMap<>();
-            Map<Integer, List<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
+        @Value
+        static class PredicateToFlowModels {
+            AdditionalFlowStepPredicate predicate;
+            Set<FlowModel> models;
+        }
+
+        private Map<AdditionalFlowStepPredicate, Set<FlowModel>> optimize(Collection<FlowModel> models) {
+            Map<Integer, Set<FlowModel>> flowFromArgumentIndexToReturn = new HashMap<>();
+            Map<Integer, Set<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
             models.forEach(model -> {
                 if ("ReturnValue".equals(model.output) || model.isConstructor()) {
                     model.getArgumentRange().ifPresent(argumentRange -> {
                         for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
-                            flowFromArgumentIndexToReturn.computeIfAbsent(i, __ -> new ArrayList<>())
+                            flowFromArgumentIndexToReturn.computeIfAbsent(i, __ -> new HashSet<>())
                                     .add(model);
                         }
                     });
@@ -174,41 +188,46 @@ final class ExternalFlowModels {
                 if ("Argument[-1]".equals(model.output) && !model.isConstructor()) {
                     model.getArgumentRange().ifPresent(argumentRange -> {
                         for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
-                            flowFromArgumentIndexToQualifier.computeIfAbsent(i, __ -> new ArrayList<>())
+                            flowFromArgumentIndexToQualifier.computeIfAbsent(i, __ -> new HashSet<>())
                                     .add(model);
                         }
                     });
                 }
             });
 
-            Stream<AdditionalFlowStepPredicate> flowFromArgumentIndexToReturnStream =
+            Stream<PredicateToFlowModels> flowFromArgumentIndexToReturnStream =
                     flowFromArgumentIndexToReturn
                             .entrySet()
                             .stream()
                             .map(entry -> {
                                 Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
-                                return forFlowFromArgumentIndexToReturn(
+                                return new PredicateToFlowModels(forFlowFromArgumentIndexToReturn(
                                         entry.getKey(),
                                         methodMatchers
-                                );
+                                ), entry.getValue());
                             });
-            Stream<AdditionalFlowStepPredicate> flowFromArgumentIndexToQualifierStream =
+            Stream<PredicateToFlowModels> flowFromArgumentIndexToQualifierStream =
                     flowFromArgumentIndexToQualifier
                             .entrySet()
                             .stream()
                             .map(entry -> {
                                 Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
-                                return forFlowFromArgumentIndexToQualifier(
+                                return new PredicateToFlowModels(forFlowFromArgumentIndexToQualifier(
                                         entry.getKey(),
                                         methodMatchers
-                                );
+                                ), entry.getValue());
                             });
 
             return Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toMap(PredicateToFlowModels::getPredicate,
+                            PredicateToFlowModels::getModels,
+                            (a, b) -> {
+                                throw new IllegalStateException("Not expecting duplicate keys");
+                            },
+                            IdentityHashMap::new));
         }
 
-        private static OptimizedFlowModels optimize(FlowModels flowModels) {
+        static OptimizedFlowModels optimize(FlowModels flowModels) {
             Optimizer optimizer = new Optimizer();
             return new OptimizedFlowModels(
                     optimizer.optimize(flowModels.value),
@@ -244,6 +263,13 @@ final class ExternalFlowModels {
             Map<String, List<FlowModel>> taint = new HashMap<>(this.taint);
             other.taint.forEach((k, v) -> taint.computeIfAbsent(k, kk -> new ArrayList<>(v.size())).addAll(v));
             return new FullyQualifiedNameToFlowModels(value, taint);
+        }
+
+        FlowModels forAll() {
+            return new FlowModels(
+                    this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()),
+                    this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())
+            );
         }
 
         /**
