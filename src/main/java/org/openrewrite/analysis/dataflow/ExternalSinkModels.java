@@ -18,10 +18,10 @@ package org.openrewrite.analysis.dataflow;
 import lombok.*;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
-import org.openrewrite.java.InvocationMatcher;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.Expression;
@@ -104,7 +104,7 @@ public final class ExternalSinkModels {
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.fromInvocationMatchers(methodMatchers);
+            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
             return argumentIndex == -1 ?
                     ((expression, cursor) -> invocationMatcher.advanced().isSelect(cursor)) :
                     ((expression, cursor) -> invocationMatcher.advanced().isParameter(cursor, argumentIndex));

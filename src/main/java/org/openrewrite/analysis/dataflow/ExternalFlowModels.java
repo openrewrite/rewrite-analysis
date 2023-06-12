@@ -18,10 +18,10 @@ package org.openrewrite.analysis.dataflow;
 import lombok.*;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
-import org.openrewrite.java.InvocationMatcher;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.Expression;
@@ -132,7 +132,7 @@ final class ExternalFlowModels {
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.fromInvocationMatchers(methodMatchers);
+            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
                 return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
@@ -152,7 +152,7 @@ final class ExternalFlowModels {
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.fromInvocationMatchers(methodMatchers);
+            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             assert argumentIndex != -1 : "Argument[-1] is the 'select' or 'qualifier' of a method call. Flow would be cyclic.";
             return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
                     callMatcher.advanced().isSelect(sinkCursor) &&
