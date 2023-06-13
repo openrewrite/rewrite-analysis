@@ -24,7 +24,6 @@ import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
-import org.openrewrite.marker.DotResult;
 import org.openrewrite.marker.SearchResult;
 
 import java.util.*;
@@ -45,7 +44,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
         J.MethodDeclaration m = super.visitMethodDeclaration(method, p);
         String dotFile = getCursor().pollMessage(CONTROL_FLOW_SUMMARY_CURSOR_MESSAGE);
         if (dotFile != null) {
-            return m.withMarkers(m.getMarkers().add(new DotResult(Tree.randomId(), dotFile)));
+            return SearchResult.mergingFound(m, dotFile);
         }
         return m;
     }
@@ -78,8 +77,8 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
 
                 final String searchResultText =
                         "BB: " + controlFlow.getBasicBlocks().size() +
-                                " CN: " + controlFlow.getConditionNodeCount() +
-                                " EX: " + controlFlow.getExitCount();
+                        " CN: " + controlFlow.getConditionNodeCount() +
+                        " EX: " + controlFlow.getExitCount();
                 if (dotFileGenerator != null) {
                     String graphName = methodDeclaration != null ? methodDeclaration.getSimpleName() : b.isStatic() ? "static block" : "init block";
                     String dotFile = dotFileGenerator.visualizeAsDotfile(graphName, darkMode, controlFlow);
@@ -87,7 +86,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                         getCursor().dropParentUntil(J.MethodDeclaration.class::isInstance).putMessage(CONTROL_FLOW_SUMMARY_CURSOR_MESSAGE, dotFile);
                     } else {
                         J.Block b2 = SearchResult.found(b, searchResultText);
-                        return b2.withMarkers(b2.getMarkers().add(new DotResult(Tree.randomId(), dotFile)));
+                        return SearchResult.mergingFound(b2, dotFile);
                     }
                 }
                 return SearchResult.found(b, searchResultText);
@@ -121,7 +120,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                     SearchResult searchResult = maybeSearchResult.get();
                     String newDescription =
                             (searchResult.getDescription() == null ? "" : searchResult.getDescription()) +
-                                    " | " + number + label;
+                            " | " + number + label;
                     return statement.withMarkers(
                             statement
                                     .getMarkers()

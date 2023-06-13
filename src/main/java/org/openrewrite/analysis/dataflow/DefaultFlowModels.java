@@ -71,7 +71,7 @@ final class DefaultFlowModels {
                 J.Binary binary = (J.Binary) sinkExpression;
                 return J.Binary.Type.Addition.equals(binary.getOperator()) &&
                         (binary.getLeft() == srcExpression || binary.getRight() == srcExpression) &&
-                        TypeUtils.isOfClassType(binary.getType(), "java.lang.String");
+                        TypeUtils.isString(binary.getType());
             }
             return false;
         }
