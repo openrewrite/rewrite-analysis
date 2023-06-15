@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright 2022 the original author or authors.
  * <p>
@@ -29,12 +30,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.openrewrite.java.Assertions.java;
+=======
+package org.openrewrite.analysis.dataflow;
+
+import org.junit.jupiter.api.Test;
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
 
 public class ExternalFlowModelsTest {
     @Test
     void listFlowModelsOptimized() {
         final var externalFlowModels = ExternalFlowModels.instance();
 
+<<<<<<< HEAD
         // Collect all flow models and all optimized flow models
         var flowModels = externalFlowModels.getFullyQualifiedNameToFlowModels().forAll();
         var optimizedModels = ExternalFlowModels.Optimizer.optimize(flowModels);
@@ -136,5 +143,9 @@ public class ExternalFlowModelsTest {
                 System.out.println(taint);
             }
         }
+=======
+        var flowModels = externalFlowModels.getFullyQualifiedNameToFlowModels().forAll();
+        var optimizedModels = ExternalFlowModels.Optimizer.optimize(flowModels);
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
     }
 }

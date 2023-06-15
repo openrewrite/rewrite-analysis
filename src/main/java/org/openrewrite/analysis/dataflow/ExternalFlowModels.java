@@ -111,6 +111,7 @@ final class ExternalFlowModels {
         Set<AdditionalFlowStepPredicate> getTaintPredicates() {
             return taint.keySet();
         }
+<<<<<<< HEAD
 
         Set<FlowModel> getValueFlowModels() {
             return value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
@@ -119,6 +120,8 @@ final class ExternalFlowModels {
         Set<FlowModel> getTaintFlowModels() {
             return taint.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         }
+=======
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
     }
 
     /**
@@ -176,6 +179,7 @@ final class ExternalFlowModels {
                             callMatcher.advanced().isParameter(srcCursor, argumentIndex);
         }
 
+<<<<<<< HEAD
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToArgumentIndex(
                 ArgumentIndices argumentIndices,
                 Collection<MethodMatcher> methodMatchers
@@ -186,12 +190,15 @@ final class ExternalFlowModels {
                             callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
         }
 
+=======
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
         @Value
         static class PredicateToFlowModels {
             AdditionalFlowStepPredicate predicate;
             Set<FlowModel> models;
         }
 
+<<<<<<< HEAD
         @Data
         static class ArgumentIndices {
             final int inputIndex;
@@ -202,6 +209,11 @@ final class ExternalFlowModels {
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToReturn = new HashMap<>();
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
             Map<ArgumentIndices, Set<FlowModel>> flowFromArgumentIndexToArgumentIndex = new HashMap<>();
+=======
+        private Map<AdditionalFlowStepPredicate, Set<FlowModel>> optimize(Collection<FlowModel> models) {
+            Map<Integer, Set<FlowModel>> flowFromArgumentIndexToReturn = new HashMap<>();
+            Map<Integer, Set<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
             models.forEach(model -> {
                 if ("ReturnValue".equals(model.output) || model.isConstructor()) {
                     model.getArgumentRange().ifPresent(argumentRange -> {
@@ -254,6 +266,7 @@ final class ExternalFlowModels {
                                         entry.getKey(),
                                         methodMatchers
                                 ), entry.getValue());
+<<<<<<< HEAD
                             });
             Stream<PredicateToFlowModels> flowFromArgumentIndexToArgumentIndexStream =
                     flowFromArgumentIndexToArgumentIndex
@@ -269,6 +282,11 @@ final class ExternalFlowModels {
 
             Stream<PredicateToFlowModels> s1 = Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream);
             return Stream.concat(s1, flowFromArgumentIndexToArgumentIndexStream)
+=======
+                            });
+
+            return Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream)
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
                     .collect(Collectors.toMap(PredicateToFlowModels::getPredicate,
                             PredicateToFlowModels::getModels,
                             (a, b) -> {
@@ -318,7 +336,11 @@ final class ExternalFlowModels {
         FlowModels forAll() {
             return new FlowModels(
                     this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()),
+<<<<<<< HEAD
                     this.taint.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())
+=======
+                    this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())
+>>>>>>> a7da7ec95534a35119c31c78f888438ff6cb9cdf
             );
         }
 
