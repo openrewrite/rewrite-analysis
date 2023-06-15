@@ -10,6 +10,10 @@ description = "Static code analysis APIs leveraging data flow, control flow, and
 
 val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 
+recipeDependencies {
+    parserClasspath("commons-io:commons-io:2.13.0")
+}
+
 dependencies {
     compileOnly("org.projectlombok:lombok:latest.release")
     annotationProcessor("org.projectlombok:lombok:latest.release")

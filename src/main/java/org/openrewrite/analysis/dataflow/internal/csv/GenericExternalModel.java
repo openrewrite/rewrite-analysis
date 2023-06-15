@@ -17,12 +17,16 @@ package org.openrewrite.analysis.dataflow.internal.csv;
 
 import lombok.Data;
 import lombok.Getter;
+import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.SimpleMethodMatcher;
+import org.openrewrite.java.tree.JavaType;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public interface GenericExternalModel {
+public interface GenericExternalModel extends SimpleMethodMatcher {
 
     String getNamespace();
     String getType();
@@ -39,6 +43,30 @@ public interface GenericExternalModel {
     default boolean isConstructor() {
         // If the type and the name are the same, then this the signature for a constructor
         return this.getType().equals(this.getName());
+    }
+
+    @Override
+    default boolean matchesTargetType(JavaType.@Nullable FullyQualified type) {
+        return true;
+    }
+
+    @Override
+    default boolean matchesMethodName(String methodName) {
+        if (isConstructor()) {
+            return "<constructor>".equals(methodName);
+        }
+        return getName().equals(methodName);
+    }
+
+    @Override
+    default boolean matchesParameterTypes(List<JavaType> parameterTypes) {
+        if (getSignature().isEmpty()) {
+            return true;
+        }
+        if ("()".equals(getSignature()) && !parameterTypes.isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     default MethodMatcherKey asMethodMatcherKey() {
@@ -61,7 +89,11 @@ public interface GenericExternalModel {
     }
 
     default Optional<ArgumentRange> getArgumentRange() {
-        Matcher argumentMatcher = Internal.ARGUMENT_MATCHER.matcher(getArguments());
+        return computeArgumentRange(getArguments());
+    }
+
+    static Optional<ArgumentRange> computeArgumentRange(String arguments) {
+        Matcher argumentMatcher = Internal.ARGUMENT_MATCHER.matcher(arguments);
 
         if (argumentMatcher.matches()) {
             int argumentIndexStart = Integer.parseInt(argumentMatcher.group(1));

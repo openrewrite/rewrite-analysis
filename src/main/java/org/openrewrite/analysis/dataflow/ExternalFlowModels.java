@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow;
 
 import lombok.*;
+import org.intellij.lang.annotations.Flow;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.InvocationMatcher;
@@ -110,6 +111,14 @@ final class ExternalFlowModels {
         Set<AdditionalFlowStepPredicate> getTaintPredicates() {
             return taint.keySet();
         }
+
+        Set<FlowModel> getValueFlowModels() {
+            return value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        }
+
+        Set<FlowModel> getTaintFlowModels() {
+            return taint.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        }
     }
 
     /**
@@ -167,15 +176,32 @@ final class ExternalFlowModels {
                             callMatcher.advanced().isParameter(srcCursor, argumentIndex);
         }
 
+        private AdditionalFlowStepPredicate forFlowFromArgumentIndexToArgumentIndex(
+                ArgumentIndices argumentIndices,
+                Collection<MethodMatcher> methodMatchers
+        ) {
+            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
+                    callMatcher.advanced().isParameter(srcCursor, argumentIndices.inputIndex) &&
+                            callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
+        }
+
         @Value
         static class PredicateToFlowModels {
             AdditionalFlowStepPredicate predicate;
             Set<FlowModel> models;
         }
 
+        @Data
+        static class ArgumentIndices {
+            final int inputIndex;
+            final int outputIndex;
+        }
+
         private Map<AdditionalFlowStepPredicate, Set<FlowModel>> optimize(Collection<FlowModel> models) {
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToReturn = new HashMap<>();
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
+            Map<ArgumentIndices, Set<FlowModel>> flowFromArgumentIndexToArgumentIndex = new HashMap<>();
             models.forEach(model -> {
                 if ("ReturnValue".equals(model.output) || model.isConstructor()) {
                     model.getArgumentRange().ifPresent(argumentRange -> {
@@ -192,6 +218,18 @@ final class ExternalFlowModels {
                                     .add(model);
                         }
                     });
+                }
+                // TODO - use computeArgumentRange, use ArgumentIndices class
+                Optional<GenericExternalModel.ArgumentRange> inputRange = GenericExternalModel.computeArgumentRange(model.input);
+                Optional<GenericExternalModel.ArgumentRange> outputRange = GenericExternalModel.computeArgumentRange(model.output);
+                if (inputRange.isPresent() && outputRange.isPresent()) {
+                    for (int i = inputRange.get().getStart(); i <= inputRange.get().getEnd(); i++) {
+                        for (int j = outputRange.get().getStart(); j <= outputRange.get().getEnd(); j++) {
+                            if (i >= 0 && j >= 0) {
+                                flowFromArgumentIndexToArgumentIndex.computeIfAbsent(new ArgumentIndices(i, j), __ -> new HashSet<>()).add(model);
+                            }
+                        }
+                    }
                 }
             });
 
@@ -217,8 +255,20 @@ final class ExternalFlowModels {
                                         methodMatchers
                                 ), entry.getValue());
                             });
+            Stream<PredicateToFlowModels> flowFromArgumentIndexToArgumentIndexStream =
+                    flowFromArgumentIndexToArgumentIndex
+                            .entrySet()
+                            .stream()
+                            .map(entry -> {
+                                Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
+                                return new PredicateToFlowModels(forFlowFromArgumentIndexToArgumentIndex(
+                                        entry.getKey(),
+                                        methodMatchers
+                                ), entry.getValue());
+                            });
 
-            return Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream)
+            Stream<PredicateToFlowModels> s1 = Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream);
+            return Stream.concat(s1, flowFromArgumentIndexToArgumentIndexStream)
                     .collect(Collectors.toMap(PredicateToFlowModels::getPredicate,
                             PredicateToFlowModels::getModels,
                             (a, b) -> {
@@ -268,7 +318,7 @@ final class ExternalFlowModels {
         FlowModels forAll() {
             return new FlowModels(
                     this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()),
-                    this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())
+                    this.taint.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())
             );
         }
 
