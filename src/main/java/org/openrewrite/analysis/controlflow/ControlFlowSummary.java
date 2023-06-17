@@ -72,7 +72,7 @@ public final class ControlFlowSummary {
                 .collect(Collectors.toSet());
     }
 
-    public Set<Expression> computeReachableExpressions(org.openrewrite.analysis.controlflow.BarrierGuardPredicate predicate) {
+    public Set<Expression> computeReachableExpressions(BarrierGuardPredicate predicate) {
         return computeExecutableCodePoints(predicate)
                 .stream()
                 .filter(cursor -> cursor.getValue() instanceof Expression)
@@ -80,14 +80,14 @@ public final class ControlFlowSummary {
                 .collect(Collectors.toSet());
     }
 
-    public Set<Cursor> computeExecutableCodePoints(org.openrewrite.analysis.controlflow.BarrierGuardPredicate predicate) {
+    public Set<Cursor> computeExecutableCodePoints(BarrierGuardPredicate predicate) {
         return computeReachableBasicBlock(predicate)
                 .stream()
                 .flatMap(b -> b.getNodeCursors().stream())
                 .collect(Collectors.toSet());
     }
 
-    public Set<ControlFlowNode.BasicBlock> computeReachableBasicBlock(org.openrewrite.analysis.controlflow.BarrierGuardPredicate predicate) {
+    public Set<ControlFlowNode.BasicBlock> computeReachableBasicBlock(BarrierGuardPredicate predicate) {
         Set<ControlFlowNode> reachable = new LinkedHashSet<>();
         recurseComputeReachableBasicBlock(start, predicate, reachable);
         return reachable

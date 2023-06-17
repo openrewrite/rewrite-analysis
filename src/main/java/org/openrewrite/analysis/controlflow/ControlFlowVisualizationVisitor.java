@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
     private static final String CONTROL_FLOW_SUMMARY_CURSOR_MESSAGE = "CONTROL_FLOW_SUMMARY";
     @Nullable
-    private final org.openrewrite.analysis.controlflow.ControlFlowDotFileGenerator dotFileGenerator;
+    private final ControlFlowDotFileGenerator dotFileGenerator;
 
     private final boolean darkMode;
 

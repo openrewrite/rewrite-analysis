@@ -41,7 +41,7 @@ class GuardTest implements RewriteTest {
                 if (statement instanceof Expression) {
                     return statement;
                 }
-                return org.openrewrite.analysis.controlflow.Guard.from(getCursor())
+                return Guard.from(getCursor())
                   .map(e -> SearchResult.found(statement))
                   .orElse(statement);
             }
