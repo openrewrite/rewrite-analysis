@@ -56,7 +56,7 @@ public abstract class ControlFlowNode {
     <C extends ControlFlowNode> C addSuccessor(C successor) {
         Objects.requireNonNull(successor, "successor must not be null");
         if (this == successor) {
-            throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Cannot add a node as a successor of itself", this);
+            throw new ControlFlowIllegalStateException("Cannot add a node as a successor of itself", this);
         }
         _addSuccessorInternal(successor);
         successor.predecessors.add(this);
@@ -68,11 +68,11 @@ public abstract class ControlFlowNode {
     }
 
     ConditionNode addConditionNodeTruthFirst() {
-        throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Can only add a condition node to a basic block", this);
+        throw new ControlFlowIllegalStateException("Can only add a condition node to a basic block", this);
     }
 
     ConditionNode addConditionNodeFalseFirst() {
-        throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Can only add a condition node to a basic block", this);
+        throw new ControlFlowIllegalStateException("Can only add a condition node to a basic block", this);
     }
 
     private static final ThreadLocal<AtomicInteger> recursionCounter =
@@ -105,10 +105,10 @@ public abstract class ControlFlowNode {
      */
     static final class ConditionNode extends ControlFlowNode {
 
-        private final org.openrewrite.analysis.controlflow.Guard guard;
+        private final Guard guard;
         private final boolean truthFirst;
 
-        private ConditionNode(org.openrewrite.analysis.controlflow.Guard guard, boolean truthFirst) {
+        private ConditionNode(Guard guard, boolean truthFirst) {
             this.guard = guard;
             this.truthFirst = truthFirst;
         }
@@ -136,7 +136,7 @@ public abstract class ControlFlowNode {
                 } else if (falsySuccessor == null) {
                     falsySuccessor = successor;
                 } else {
-                    throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Condition node already has both successors", this);
+                    throw new ControlFlowIllegalStateException("Condition node already has both successors", this);
                 }
             } else {
                 if (falsySuccessor == null) {
@@ -144,7 +144,7 @@ public abstract class ControlFlowNode {
                 } else if (truthySuccessor == null) {
                     truthySuccessor = successor;
                 } else {
-                    throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Condition node already has both successors", this);
+                    throw new ControlFlowIllegalStateException("Condition node already has both successors", this);
                 }
             }
         }
@@ -183,13 +183,13 @@ public abstract class ControlFlowNode {
 
         private void verifyState() {
             if (truthySuccessor == null && falsySuccessor == null) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Condition node has no successors. Should have both!", this);
+                throw new ControlFlowIllegalStateException("Condition node has no successors. Should have both!", this);
             }
             if (truthySuccessor == null) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Condition node has no truthy successor", this);
+                throw new ControlFlowIllegalStateException("Condition node has no truthy successor", this);
             }
             if (falsySuccessor == null) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException("Condition node has no falsy successor", this);
+                throw new ControlFlowIllegalStateException("Condition node has no falsy successor", this);
             }
         }
 
@@ -211,7 +211,7 @@ public abstract class ControlFlowNode {
             return nodes;
         }
 
-        org.openrewrite.analysis.controlflow.Guard asGuard() {
+        Guard asGuard() {
             return guard;
 
         }
@@ -261,7 +261,7 @@ public abstract class ControlFlowNode {
             return Guard
                     .from(cursor)
                     .map(guard -> new ConditionNode(guard, truthFirst))
-                    .orElseThrow(() -> new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Condition Node is not a guard!").addCursor(cursor)));
+                    .orElseThrow(() -> new ControlFlowIllegalStateException(exceptionMessageBuilder("Condition Node is not a guard!").addCursor(cursor)));
         }
     }
 
@@ -280,7 +280,7 @@ public abstract class ControlFlowNode {
 
         public J getLeader() {
             if (node.isEmpty()) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no nodes!").addPredecessors(this));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no nodes!").addPredecessors(this));
             }
             return node.get(0).getValue();
         }
@@ -294,8 +294,8 @@ public abstract class ControlFlowNode {
         }
 
         String getStatementsWithinBlock() {
-            org.openrewrite.analysis.controlflow.ControlFlowJavaPrinter.ControlFlowPrintOutputCapture<Integer> capture
-                    = new org.openrewrite.analysis.controlflow.ControlFlowJavaPrinter.ControlFlowPrintOutputCapture<>(0);
+            ControlFlowJavaPrinter.ControlFlowPrintOutputCapture<Integer> capture
+                    = new ControlFlowJavaPrinter.ControlFlowPrintOutputCapture<>(0);
             List<J> nodeValuesExpanded =
                     getNodeValues()
                             .stream()
@@ -309,7 +309,7 @@ public abstract class ControlFlowNode {
                                 return Stream.of(v);
                             })
                             .collect(Collectors.toList());
-            org.openrewrite.analysis.controlflow.ControlFlowJavaPrinter<Integer> printer = new org.openrewrite.analysis.controlflow.ControlFlowJavaPrinter<>(nodeValuesExpanded);
+            ControlFlowJavaPrinter<Integer> printer = new ControlFlowJavaPrinter<>(nodeValuesExpanded);
             Cursor commonBlock = getCommonBlock();
             printer.visit(commonBlock.getValue(), capture, commonBlock.getParentOrThrow());
             return StringUtils.trimIndentPreserveCRLF(capture.getOut()).
@@ -324,9 +324,9 @@ public abstract class ControlFlowNode {
             // Then, gets the list of J.Blocks that appear in all the basic block's cursors' cursor paths
             // (by taking the smallest list)
             List<Cursor> shortestList = node.stream().map(BasicBlock::computeBlockList).min(Comparator.comparingInt(List::size))
-                    .orElseThrow(() -> new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Could not find common block for basic block").thisNode(this)));
+                    .orElseThrow(() -> new ControlFlowIllegalStateException(exceptionMessageBuilder("Could not find common block for basic block").thisNode(this)));
             if (shortestList.isEmpty()) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Could not find common block for basic block").thisNode(this));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Could not find common block for basic block").thisNode(this));
             }
             // Obtains the deepest J.Block cursor in the AST which
             // encompasses all the cursors in the basic block.
@@ -352,7 +352,7 @@ public abstract class ControlFlowNode {
         @Override
         ConditionNode addConditionNodeTruthFirst() {
             if (node.isEmpty()) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Cannot add condition node to empty basic block").addPredecessors(this));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Cannot add condition node to empty basic block").addPredecessors(this));
             }
             return addSuccessor(ControlFlowNode.ConditionNode.create(node.get(node.size() - 1), nextConditionDefault));
         }
@@ -360,7 +360,7 @@ public abstract class ControlFlowNode {
         @Override
         ConditionNode addConditionNodeFalseFirst() {
             if (node.isEmpty()) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Cannot add condition node to empty basic block").addPredecessors(this));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Cannot add condition node to empty basic block").addPredecessors(this));
             }
             return addSuccessor(ControlFlowNode.ConditionNode.create(node.get(node.size() - 1), !nextConditionDefault));
         }
@@ -371,7 +371,7 @@ public abstract class ControlFlowNode {
                 return;
             }
             if (this.successor != null) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(
+                throw new ControlFlowIllegalStateException(
                         exceptionMessageBuilder("Basic block already has a successor").thisNode(this).current(this.successor).otherNode(successor)
                 );
             }
@@ -381,7 +381,7 @@ public abstract class ControlFlowNode {
         @Override
         Set<ControlFlowNode> getSuccessors() {
             if (successor == null) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no successor").thisNode(this));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no successor").thisNode(this));
             }
             return Collections.singleton(successor);
         }
@@ -429,7 +429,7 @@ public abstract class ControlFlowNode {
         @Override
         protected void _addSuccessorInternal(ControlFlowNode successor) {
             if (this.successor != null) {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Start node already has a successor").current(this.successor).otherNode(successor));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Start node already has a successor").current(this.successor).otherNode(successor));
             }
             this.successor = successor;
         }
@@ -461,7 +461,7 @@ public abstract class ControlFlowNode {
                 case LAMBDA:
                     return "Lambda Start";
                 default:
-                    throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Unknown graph type: " + graphType));
+                    throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Unknown graph type: " + graphType));
             }
         }
     }
@@ -476,7 +476,7 @@ public abstract class ControlFlowNode {
         Set<ControlFlowNode> getSuccessors() {
             if (GraphType.LAMBDA.equals(graphType)) {
                 if (successor == null) {
-                    throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node has no successor").thisNode(this).addPredecessors(this));
+                    throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node has no successor").thisNode(this).addPredecessors(this));
                 }
                 return Collections.singleton(successor);
             }
@@ -487,11 +487,11 @@ public abstract class ControlFlowNode {
         protected void _addSuccessorInternal(ControlFlowNode successor) {
             if (GraphType.LAMBDA.equals(graphType)) {
                 if (this.successor != null) {
-                    throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node already has a successor").thisNode(this).current(this.successor).otherNode(successor));
+                    throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node already has a successor").thisNode(this).current(this.successor).otherNode(successor));
                 }
                 this.successor = successor;
             } else {
-                throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("End nodes cannot have successors").otherNode(successor));
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("End nodes cannot have successors").otherNode(successor));
             }
         }
 
@@ -513,7 +513,7 @@ public abstract class ControlFlowNode {
                 case LAMBDA:
                     return "Lambda End";
                 default:
-                    throw new org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException(exceptionMessageBuilder("Unknown graph type: " + graphType));
+                    throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Unknown graph type: " + graphType));
             }
         }
     }

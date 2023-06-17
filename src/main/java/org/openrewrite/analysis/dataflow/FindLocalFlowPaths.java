@@ -44,8 +44,8 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
             JavaSourceFile c = (JavaSourceFile) super.visit(tree, p);
 
             Set<Expression> flowSteps = Collections.newSetFromMap(new IdentityHashMap<>());
-            List<org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<?, ?>> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
-            for (org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary<?, ?> flowGraphSummary : requireNonNull(sinkFlows)) {
+            List<SinkFlowSummary<?, ?>> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
+            for (SinkFlowSummary<?, ?> flowGraphSummary : requireNonNull(sinkFlows)) {
                 flowSteps.addAll(flowGraphSummary.getFlowParticipants());
             }
 

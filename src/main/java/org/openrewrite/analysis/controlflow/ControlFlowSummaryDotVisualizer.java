@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-final class ControlFlowSummaryDotVisualizer implements org.openrewrite.analysis.controlflow.ControlFlowDotFileGenerator {
+final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerator {
     @Override
     public String visualizeAsDotfile(String name, boolean darkMode, ControlFlowSummary summary) {
         StringBuilder sb = new StringBuilder("digraph ").append(name).append(" {\n");
