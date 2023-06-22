@@ -18,7 +18,6 @@ package org.openrewrite.analysis;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
-import org.openrewrite.Incubating;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.*;
@@ -27,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Matcher for finding {@link J.NewClass} and {@link J.MethodInvocation} {@link Expression}s.
@@ -39,7 +39,7 @@ public interface InvocationMatcher {
         return new AdvancedInvocationMatcher(this);
     }
 
-    static InvocationMatcher from(Collection<? extends MethodMatcher> matchers) {
+    static InvocationMatcher from(Collection<? extends InvocationMatcher> matchers) {
         if (matchers.isEmpty()) {
             return expression -> false;
         }
@@ -49,11 +49,15 @@ public interface InvocationMatcher {
         return expression -> matchers.stream().anyMatch(matcher -> matcher.matches(expression));
     }
 
-    static InvocationMatcher from(MethodMatcher... matchers) {
-        return from(Arrays.asList(matchers));
+    static InvocationMatcher fromMethodMatchers(Collection<? extends MethodMatcher> matchers) {
+        return from(matchers.stream().map(InvocationMatcher::fromMethodMatcher).collect(Collectors.toSet()));
     }
 
-    static InvocationMatcher from(MethodMatcher matcher) {
+    static InvocationMatcher fromMethodMatchers(MethodMatcher... matchers) {
+        return fromMethodMatchers(Arrays.asList(matchers));
+    }
+
+    static InvocationMatcher fromMethodMatcher(MethodMatcher matcher) {
         return matcher::matches;
     }
 

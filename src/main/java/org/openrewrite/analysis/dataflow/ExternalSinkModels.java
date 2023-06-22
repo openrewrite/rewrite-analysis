@@ -104,7 +104,7 @@ public final class ExternalSinkModels {
                 int argumentIndex,
                 Collection<MethodMatcher> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher invocationMatcher = InvocationMatcher.fromMethodMatchers(methodMatchers);
             return argumentIndex == -1 ?
                     ((expression, cursor) -> invocationMatcher.advanced().isSelect(cursor)) :
                     ((expression, cursor) -> invocationMatcher.advanced().isParameter(cursor, argumentIndex));

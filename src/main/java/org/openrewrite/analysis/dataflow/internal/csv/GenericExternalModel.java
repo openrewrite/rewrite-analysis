@@ -17,12 +17,17 @@ package org.openrewrite.analysis.dataflow.internal.csv;
 
 import lombok.Data;
 import lombok.Getter;
+import org.openrewrite.analysis.BasicJavaTypeMethodMatcher;
+import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.tree.JavaType;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
-public interface GenericExternalModel {
+public interface GenericExternalModel extends BasicJavaTypeMethodMatcher {
 
     String getNamespace();
     String getType();
@@ -33,12 +38,47 @@ public interface GenericExternalModel {
     String getArguments();
 
     default String getFullyQualifiedName() {
+        if (getNamespace().isEmpty()) {
+            return getType();
+        }
         return getNamespace() + "." + getType();
     }
 
     default boolean isConstructor() {
         // If the type and the name are the same, then this the signature for a constructor
         return this.getType().equals(this.getName());
+    }
+
+    @Override
+    default boolean isMatchOverrides() {
+        return isSubtypes();
+    }
+
+    @Override
+    default boolean matchesTargetTypeName(String fullyQualifiedTypeName) {
+        return getFullyQualifiedName().equals(fullyQualifiedTypeName);
+    }
+
+    default boolean matchesMethodName(String methodName) {
+        if (isConstructor()) {
+            return "<constructor>".equals(methodName);
+        }
+        return getName().equals(methodName);
+    }
+
+    default boolean matchesParameterTypes(List<JavaType> parameterTypes) {
+        if (getSignature().isEmpty()) {
+            return true;
+        }
+        if ("()".equals(getSignature())) {
+            return parameterTypes.isEmpty();
+        }
+
+        String[] signatureArray = getSignature().substring(1, getSignature().length() - 1).split(",");
+        if (signatureArray.length != parameterTypes.size()) {
+            return false;
+        }
+        return IntStream.range(0, parameterTypes.size()).allMatch(i -> Internal.matches(parameterTypes.get(i), signatureArray[i]));
     }
 
     default MethodMatcherKey asMethodMatcherKey() {
@@ -61,7 +101,11 @@ public interface GenericExternalModel {
     }
 
     default Optional<ArgumentRange> getArgumentRange() {
-        Matcher argumentMatcher = Internal.ARGUMENT_MATCHER.matcher(getArguments());
+        return computeArgumentRange(getArguments());
+    }
+
+    static Optional<ArgumentRange> computeArgumentRange(String arguments) {
+        Matcher argumentMatcher = Internal.ARGUMENT_MATCHER.matcher(arguments);
 
         if (argumentMatcher.matches()) {
             int argumentIndexStart = Integer.parseInt(argumentMatcher.group(1));
@@ -97,4 +141,37 @@ public interface GenericExternalModel {
 
 class Internal {
     static final Pattern ARGUMENT_MATCHER = Pattern.compile("Argument\\[(-?\\d+)\\.?\\.?(\\d+)?]");
+
+    static boolean matches(JavaType parameter, String parameterSignature) {
+        String parameterString = typePattern(parameter);
+
+        if (parameterString == null) {
+            return false;
+        }
+        if (parameterSignature.contains(".")) {
+            return parameterString.equals(parameterSignature);
+        }
+
+        return parameterString
+                .substring(parameterString.lastIndexOf('.') + 1)
+                .equals(parameterSignature);
+    }
+
+    @Nullable
+    static String typePattern(JavaType type) {
+        if (type instanceof JavaType.Primitive) {
+            if (type.equals(JavaType.Primitive.String)) {
+                return ((JavaType.Primitive) type).getClassName();
+            }
+            return ((JavaType.Primitive) type).getKeyword();
+        } else if (type instanceof JavaType.Unknown) {
+            return "*";
+        } else if (type instanceof JavaType.FullyQualified) {
+            return ((JavaType.FullyQualified) type).getFullyQualifiedName();
+        } else if (type instanceof JavaType.Array) {
+            JavaType elemType = ((JavaType.Array) type).getElemType();
+            return typePattern(elemType) + "[]";
+        }
+        return null;
+    }
 }
