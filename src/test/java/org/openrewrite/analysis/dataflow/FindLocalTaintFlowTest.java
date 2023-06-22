@@ -549,107 +549,177 @@ class FindLocalTaintFlowTest implements RewriteTest {
         );
     }
 
-//    @Test
-//    void taintTrackingThroughFileCopyLarge() {
-//        rewriteRun(
-//          spec -> spec.parser(JavaParser.fromJavaVersion()
-//            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
-//          java(
-//            """
-//              import org.apache.commons.io.*;
-//              import java.io.File;
-//              class Test {
-//                  byte[] source() { null; }
-//                  void test() {
-//                      File source = new File("source.txt");
-//                      File dest = new File("dest.txt");
-//                      byte[] buffer = source();
-//                      long bytesCopied = IOUtils.copyLarge(source, dest, buffer);
-//                  }
-//              }
-//              """,
-//            """
-//              import org.apache.commons.io.*;
-//              import java.io.File;
-//              class Test {
-//                  byte[] source() { null; }
-//                  void test() {
-//                      File source = new File("source.txt");
-//                      File dest = new File("dest.txt");
-//                      byte[] buffer = /*~~>*/source();
-//                      long bytesCopied = IOUtils.copyLarge(source, /*~~>*/dest, /*~~>*/buffer);
-//                  }
-//              }
-//              """
-//          )
-//        );
-//    }
-//
-//    @Test
-//    void taintTrackingThroughWritingLines() {
-//        rewriteRun(
-//          spec -> spec.parser(JavaParser.fromJavaVersion()
-//            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
-//          java(
-//            """
-//              import org.apache.commons.io.*;
-//              import java.io.File;
-//              import java.util.List;
-//              class Test {
-//                  String source() { null; }
-//                  void test() {
-//                      List<String> lines = List.of("a", "b", "c");
-//                      String source = source();
-//                      File output = new File("output.txt");
-//                      IOUtils.writeLines(lines, source, output);
-//                  }
-//              }
-//              """,
-//            """
-//              import org.apache.commons.io.*;
-//              import java.io.File;
-//              import java.util.List;
-//              class Test {
-//                  String source() { null; }
-//                  void test() {
-//                      List<String> lines = List.of("a", "b", "c");
-//                      String source = /*~~>*/source();
-//                      File output = new File("output.txt");
-//                      IOUtils.writeLines(lines, /*~~>*/source, /*~~>*/output);
-//                  }
-//              }
-//              """
-//          )
-//        );
-//    }
-
     @Test
-    void taintTrackingThroughJoiner() {
+    void taintTrackingThroughFileCopyLargeShortSignature() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.+")),
+            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
           java(
             """
               import org.apache.commons.io.IOUtils;
-              import java.io.File;
+              import java.io.InputStream;
+              import java.io.OutputStream;
+              import java.io.FileOutputStream;
               class Test {
-                  File source() { return null; }
+                  InputStream source() { return null; }
                   void test() {
-                      File source = source();
-                      File dest = new File("dest.txt");
-                      IOUtils.copy(source, dest);
+                      InputStream source = source();
+                      OutputStream dest = new FileOutputStream("dest.txt");
+                      byte[] buffer = new byte[16];
+                      long bytesCopied = IOUtils.copyLarge(source, dest, buffer);
                   }
               }
               """,
             """
               import org.apache.commons.io.IOUtils;
-              import java.io.File;
+              import java.io.InputStream;
+              import java.io.OutputStream;
+              import java.io.FileOutputStream;
               class Test {
-                  File source() { return null; }
+                  InputStream source() { return null; }
                   void test() {
-                      File source = /*~~>*/source();
-                      File dest = new File("dest.txt");
-                      IOUtils.copy(/*~~>*/source, dest);
+                      InputStream source = /*~~>*/source();
+                      OutputStream dest = new FileOutputStream("dest.txt");
+                      byte[] buffer = new byte[16];
+                      long bytesCopied = IOUtils.copyLarge(/*~~>*/source, /*~~>*/dest, buffer);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void taintTrackingThroughWritingLines() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
+          java(
+            """
+              import org.apache.commons.io.IOUtils;
+              import java.io.OutputStream;
+              import java.io.FileOutputStream;
+              import java.util.List;
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      List<String> lines = List.of("a", "b", "c");
+                      String source = source();
+                      OutputStream output = new FileOutputStream("dest.txt");
+                      IOUtils.writeLines(lines, source, output);
+                  }
+              }
+              """,
+            """
+              import org.apache.commons.io.IOUtils;
+              import java.io.OutputStream;
+              import java.io.FileOutputStream;
+              import java.util.List;
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      List<String> lines = List.of("a", "b", "c");
+                      String source = /*~~>*/source();
+                      OutputStream output = new FileOutputStream("dest.txt");
+                      IOUtils.writeLines(lines, /*~~>*/source, /*~~>*/output);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void taintTrackingThroughJoiner() {
+        rewriteRun(
+          spec -> spec.parser(JavaParser.fromJavaVersion()
+            .classpathFromResources(new InMemoryExecutionContext(), "guava-31.0-jre")),
+          java(
+            """
+              import com.google.common.base.Joiner;
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      StringBuilder result = new StringBuilder();
+                      String source = source();
+                      Joiner.appendTo(result, source, "hello", null);
+                      System.out.println(result);
+                  }
+              }
+              """,
+            """
+              import com.google.common.base.Joiner;
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      StringBuilder result = new StringBuilder();
+                      String source = /*~~>*/source();
+                      /*~~>*/Joiner.appendTo(/*~~>*/result, /*~~>*/source, "hello", null);
+                      System.out.println(/*~~>*/result);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void taintTrackingThroughTransferTo() {
+        rewriteRun(
+          java(
+            """
+              import java.io.InputStream;
+              import java.io.OutputStream;
+              class Test {
+                  InputStream source() { return null; }
+                  void test() {
+                      InputStream input = source();
+                      OutputStream output = null;
+                      input.transferTo(output);
+                      System.out.println(output.toString());
+                  }
+              }
+              """,
+            """
+              import java.io.InputStream;
+              import java.io.OutputStream;
+              class Test {
+                  InputStream source() { return null; }
+                  void test() {
+                      InputStream input = /*~~>*/source();
+                      OutputStream output = null;
+                      /*~~>*/input.transferTo(/*~~>*/output);
+                      System.out.println(/*~~>*/output.toString());
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void taintTrackingThroughGetChars() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      String str = source();
+                      char[] dest = new char[32];
+                      str.getChars(0, 5, dest, 0);
+                      System.out.println(dest);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      String str = /*~~>*/source();
+                      char[] dest = new char[32];
+                      /*~~>*/str.getChars(0, 5, /*~~>*/dest, 0);
+                      System.out.println(/*~~>*/dest);
                   }
               }
               """

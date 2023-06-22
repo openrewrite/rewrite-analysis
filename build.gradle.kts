@@ -12,6 +12,7 @@ val rewriteVersion = rewriteRecipe.rewriteVersion.get()
 
 recipeDependencies {
     parserClasspath("commons-io:commons-io:2.13.0")
+    parserClasspath("com.google.guava:guava:32.0.1-jre")
 }
 
 dependencies {

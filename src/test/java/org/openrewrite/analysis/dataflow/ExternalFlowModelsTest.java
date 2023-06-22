@@ -28,6 +28,7 @@ import java.util.Set;
 
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openrewrite.java.Assertions.java;
 
 public class ExternalFlowModelsTest {
@@ -48,37 +49,12 @@ public class ExternalFlowModelsTest {
         taint.removeAll(optimizedModels.getTaintFlowModels());
 
         // Filter out unwanted data/taint flow models
-        value = value.stream().filter(model -> filterModels(model)).collect(Collectors.toSet());
-        taint = taint.stream().filter(model -> filterModels(model)).collect(Collectors.toSet());
+        value = value.stream().filter(ExternalFlowModelsTest::filterModels).collect(Collectors.toSet());
+        taint = taint.stream().filter(ExternalFlowModelsTest::filterModels).collect(Collectors.toSet());
 
         // Ensure that there are no unchecked values
-        assert value.size() == 0;
-
-        // Create a Map to count different taint flow models
-        Map<String, Set<ExternalFlowModels.FlowModel>> taintCategories = new HashMap<String, Set<ExternalFlowModels.FlowModel>>();
-        categorizeTaintModels(taint, taintCategories);
-
-        // Print out results
-        System.out.println("taint flow models types:");
-        taintCategories.entrySet().stream().sorted((s1, s2) -> s2.getValue().size() - s1.getValue().size()).forEach(entry -> System.out.println(entry.getKey() + " -> " + entry.getValue().size()));
-        System.out.println("TOTAL: " + taint.size());
-
-        // Ensure that Map was computed correctly
-        assert taintCategories.values().stream().mapToInt(set -> set.size()).sum() == taint.size();
-
-        /*// CHANGE VARIABLES BELOW TO VIEW UNCOVERED TAINT FLOWS
-        String input = "Argument[1..2]";
-        String output = "Argument[0]";
-        printFlowModelContents(input, output, taintCategories);*/
-        for (Set<ExternalFlowModels.FlowModel> set : taintCategories.values()) {
-            for (ExternalFlowModels.FlowModel flowModel : set) {
-                if (!flowModel.namespace.contains("kotlin") && !flowModel.namespace.contains("apache.commons.io")) {
-                    if (!flowModel.input.contains("-1")) {
-                        System.out.println(flowModel);
-                    }
-                }
-            }
-        }
+        assertEquals(0, value.size(), "All value models should be optimized");
+        assertEquals(0, taint.size(), "All taint models should be optimized");
     }
     
     static boolean filterModels(ExternalFlowModels.FlowModel model) {
@@ -109,32 +85,5 @@ public class ExternalFlowModelsTest {
         }
 
         return true;
-    }
-
-    static void categorizeTaintModels(Set<ExternalFlowModels.FlowModel> taint, Map<String, Set<ExternalFlowModels.FlowModel>> taintCategories) {
-        for (ExternalFlowModels.FlowModel t : taint) {
-            String newKey = "input: " + t.input + ", output: " + t.output;
-
-            if (!taintCategories.containsKey(newKey)) {
-                Set<ExternalFlowModels.FlowModel> newFlowModelSet = new HashSet<ExternalFlowModels.FlowModel>();
-                taintCategories.put(newKey, newFlowModelSet);
-            }
-
-            taintCategories.get(newKey).add(t);
-        }
-    }
-
-    static void printFlowModelContents(String input, String output, Map<String, Set<ExternalFlowModels.FlowModel>> taintCategories) {
-        String key = "input: " + input + ", output: " + output;
-
-        if (taintCategories.containsKey(key)) {
-            Set<ExternalFlowModels.FlowModel> taintModels = taintCategories.get(key);
-
-            System.out.println("\ntaint models with " + key + " (count = " + taintModels.size() + ")");
-
-            for (ExternalFlowModels.FlowModel taint : taintModels) {
-                System.out.println(taint);
-            }
-        }
     }
 }

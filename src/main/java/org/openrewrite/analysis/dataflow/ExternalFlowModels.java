@@ -16,7 +16,6 @@
 package org.openrewrite.analysis.dataflow;
 
 import lombok.*;
-import org.intellij.lang.annotations.Flow;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.InvocationMatcher;
@@ -83,9 +82,12 @@ final class ExternalFlowModels {
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
-        return getOrComputeOptimizedFlowModels(srcCursor).getValuePredicates().stream().anyMatch(
-                value -> value.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)
-        );
+        for (AdditionalFlowStepPredicate value : getOrComputeOptimizedFlowModels(srcCursor).getValuePredicates()) {
+            if (value.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean isAdditionalTaintStep(
@@ -94,9 +96,12 @@ final class ExternalFlowModels {
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
-        return getOrComputeOptimizedFlowModels(srcCursor).getTaintPredicates().stream().anyMatch(
-                taint -> taint.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)
-        );
+        for (AdditionalFlowStepPredicate taint : getOrComputeOptimizedFlowModels(srcCursor).getTaintPredicates()) {
+            if (taint.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @AllArgsConstructor
@@ -147,17 +152,17 @@ final class ExternalFlowModels {
          */
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToReturn(
                 int argumentIndex,
-                Collection<MethodMatcher> methodMatchers
+                Collection<? extends InvocationMatcher> methodMatchers
         ) {
             InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
                 return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                        sinkExpression instanceof MethodCall &&
+                        callMatcher.matches(sinkExpression) &&
                                 callMatcher.advanced().isSelect(srcCursor);
             } else {
                 return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                        sinkExpression instanceof MethodCall &&
+                        callMatcher.matches(sinkExpression) &&
                                 callMatcher.advanced().isParameter(srcCursor, argumentIndex);
             }
         }
@@ -167,7 +172,7 @@ final class ExternalFlowModels {
          */
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToQualifier(
                 int argumentIndex,
-                Collection<MethodMatcher> methodMatchers
+                Collection<? extends InvocationMatcher> methodMatchers
         ) {
             InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             assert argumentIndex != -1 : "Argument[-1] is the 'select' or 'qualifier' of a method call. Flow would be cyclic.";
@@ -178,12 +183,18 @@ final class ExternalFlowModels {
 
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToArgumentIndex(
                 ArgumentIndices argumentIndices,
-                Collection<MethodMatcher> methodMatchers
+                Collection<? extends InvocationMatcher> methodMatchers
         ) {
             InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
-            return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                    callMatcher.advanced().isParameter(srcCursor, argumentIndices.inputIndex) &&
-                            callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
+            if (argumentIndices.inputIndex == -1) {
+                return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
+                        callMatcher.advanced().isSelect(srcCursor) &&
+                                callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
+            } else {
+                return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
+                        callMatcher.advanced().isParameter(srcCursor, argumentIndices.inputIndex) &&
+                                callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
+            }
         }
 
         @Value
@@ -219,14 +230,14 @@ final class ExternalFlowModels {
                         }
                     });
                 }
-                // TODO - use computeArgumentRange, use ArgumentIndices class
                 Optional<GenericExternalModel.ArgumentRange> inputRange = GenericExternalModel.computeArgumentRange(model.input);
                 Optional<GenericExternalModel.ArgumentRange> outputRange = GenericExternalModel.computeArgumentRange(model.output);
                 if (inputRange.isPresent() && outputRange.isPresent()) {
                     for (int i = inputRange.get().getStart(); i <= inputRange.get().getEnd(); i++) {
                         for (int j = outputRange.get().getStart(); j <= outputRange.get().getEnd(); j++) {
-                            if (i >= 0 && j >= 0) {
-                                flowFromArgumentIndexToArgumentIndex.computeIfAbsent(new ArgumentIndices(i, j), __ -> new HashSet<>()).add(model);
+                            if (j >= 0) {
+                                flowFromArgumentIndexToArgumentIndex.computeIfAbsent(new ArgumentIndices(i, j), __ -> new HashSet<>())
+                                        .add(model);
                             }
                         }
                     }
@@ -238,10 +249,9 @@ final class ExternalFlowModels {
                             .entrySet()
                             .stream()
                             .map(entry -> {
-                                Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
                                 return new PredicateToFlowModels(forFlowFromArgumentIndexToReturn(
                                         entry.getKey(),
-                                        methodMatchers
+                                        entry.getValue()
                                 ), entry.getValue());
                             });
             Stream<PredicateToFlowModels> flowFromArgumentIndexToQualifierStream =
@@ -249,10 +259,9 @@ final class ExternalFlowModels {
                             .entrySet()
                             .stream()
                             .map(entry -> {
-                                Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
                                 return new PredicateToFlowModels(forFlowFromArgumentIndexToQualifier(
                                         entry.getKey(),
-                                        methodMatchers
+                                        entry.getValue()
                                 ), entry.getValue());
                             });
             Stream<PredicateToFlowModels> flowFromArgumentIndexToArgumentIndexStream =
@@ -260,10 +269,9 @@ final class ExternalFlowModels {
                             .entrySet()
                             .stream()
                             .map(entry -> {
-                                Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
                                 return new PredicateToFlowModels(forFlowFromArgumentIndexToArgumentIndex(
                                         entry.getKey(),
-                                        methodMatchers
+                                        entry.getValue()
                                 ), entry.getValue());
                             });
 
@@ -405,6 +413,11 @@ final class ExternalFlowModels {
         @Override
         public String getArguments() {
             return input;
+        }
+
+        @Override
+        public boolean isMatchOverrides() {
+            return true;
         }
     }
 

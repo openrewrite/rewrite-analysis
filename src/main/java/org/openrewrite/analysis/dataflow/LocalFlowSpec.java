@@ -71,6 +71,8 @@ public abstract class LocalFlowSpec<Source extends Expression, Sink extends J> {
             Expression sinkExpression,
             Cursor sinkCursor
     ) {
+        assert srcCursor.getValue() == srcExpression : "Incorrect srcCursor & srcExpression";
+        assert sinkCursor.getValue() == sinkExpression : "Incorrect sinkCursor & sinkExpression";
         return ExternalFlowModels.instance().isAdditionalFlowStep(
                 srcExpression,
                 srcCursor,

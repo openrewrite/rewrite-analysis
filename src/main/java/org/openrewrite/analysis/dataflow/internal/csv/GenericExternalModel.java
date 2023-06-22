@@ -17,16 +17,17 @@ package org.openrewrite.analysis.dataflow.internal.csv;
 
 import lombok.Data;
 import lombok.Getter;
+import org.openrewrite.analysis.BasicJavaTypeMethodMatcher;
 import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.SimpleMethodMatcher;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
-public interface GenericExternalModel extends SimpleMethodMatcher {
+public interface GenericExternalModel extends BasicJavaTypeMethodMatcher {
 
     String getNamespace();
     String getType();
@@ -37,6 +38,9 @@ public interface GenericExternalModel extends SimpleMethodMatcher {
     String getArguments();
 
     default String getFullyQualifiedName() {
+        if (getNamespace().isEmpty()) {
+            return getType();
+        }
         return getNamespace() + "." + getType();
     }
 
@@ -46,11 +50,10 @@ public interface GenericExternalModel extends SimpleMethodMatcher {
     }
 
     @Override
-    default boolean matchesTargetType(JavaType.@Nullable FullyQualified type) {
-        return true;
+    default boolean matchesTargetTypeName(String fullyQualifiedTypeName) {
+        return getFullyQualifiedName().equals(fullyQualifiedTypeName);
     }
 
-    @Override
     default boolean matchesMethodName(String methodName) {
         if (isConstructor()) {
             return "<constructor>".equals(methodName);
@@ -58,15 +61,19 @@ public interface GenericExternalModel extends SimpleMethodMatcher {
         return getName().equals(methodName);
     }
 
-    @Override
     default boolean matchesParameterTypes(List<JavaType> parameterTypes) {
         if (getSignature().isEmpty()) {
             return true;
         }
-        if ("()".equals(getSignature()) && !parameterTypes.isEmpty()) {
+        if ("()".equals(getSignature())) {
+            return parameterTypes.isEmpty();
+        }
+
+        String[] signatureArray = getSignature().substring(1, getSignature().length() - 1).split(",");
+        if (signatureArray.length != parameterTypes.size()) {
             return false;
         }
-        return true;
+        return IntStream.range(0, parameterTypes.size()).allMatch(i -> Internal.matches(parameterTypes.get(i), signatureArray[i]));
     }
 
     default MethodMatcherKey asMethodMatcherKey() {
@@ -129,4 +136,37 @@ public interface GenericExternalModel extends SimpleMethodMatcher {
 
 class Internal {
     static final Pattern ARGUMENT_MATCHER = Pattern.compile("Argument\\[(-?\\d+)\\.?\\.?(\\d+)?]");
+
+    static boolean matches(JavaType parameter, String parameterSignature) {
+        String parameterString = typePattern(parameter);
+
+        if (parameterString == null) {
+            return false;
+        }
+        if (parameterSignature.contains(".")) {
+            return parameterString.equals(parameterSignature);
+        }
+
+        return parameterString
+                .substring(parameterString.lastIndexOf('.') + 1)
+                .equals(parameterSignature);
+    }
+
+    @Nullable
+    static String typePattern(JavaType type) {
+        if (type instanceof JavaType.Primitive) {
+            if (type.equals(JavaType.Primitive.String)) {
+                return ((JavaType.Primitive) type).getClassName();
+            }
+            return ((JavaType.Primitive) type).getKeyword();
+        } else if (type instanceof JavaType.Unknown) {
+            return "*";
+        } else if (type instanceof JavaType.FullyQualified) {
+            return ((JavaType.FullyQualified) type).getFullyQualifiedName();
+        } else if (type instanceof JavaType.Array) {
+            JavaType elemType = ((JavaType.Array) type).getElemType();
+            return typePattern(elemType) + "[]";
+        }
+        return null;
+    }
 }

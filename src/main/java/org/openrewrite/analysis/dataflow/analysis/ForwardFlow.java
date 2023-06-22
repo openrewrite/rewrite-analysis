@@ -376,29 +376,33 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                         }
                     }
 
-                    // Flow from one argument to another argument
-                    if (methodInvocation.getArguments().contains(previousCursor.getValue())) {
+                    // Flow from one argument or the select to another argument
+                    if (methodInvocation.getArguments().contains(previousCursor.getValue()) ||
+                            methodInvocation.getSelect() == previousCursor.getValue()) {
                         for (Expression expr : methodInvocation.getArguments()) {
-                            if (!expr.equals(previousCursor.getValue())) {
-                                Cursor argumentCursor = new Cursor(methodInvocationCursor, expr);
+                            if (expr.equals(previousCursor.getValue())) {
+                                // There is no flow to itself
+                                continue;
+                            }
 
-                                if (spec.isFlowStep(
-                                        previousCursor.getValue(),
-                                        previousCursor,
-                                        expr,
-                                        argumentCursor
-                                )) {
-                                    nextFlowGraph = nextFlowGraph.addEdge(argumentCursor);
-                                    Expression unwrappedArgument = expr.unwrap();
-                                    VariableNameToFlowGraph variableNameToFlowGraph =
-                                            computeVariableAssignment(argumentCursor, nextFlowGraph, spec);
-                                    if (unwrappedArgument instanceof J.Identifier) {
-                                        // If the argument is an identifier, then we can add it to the map of variable names to flow graphs
-                                        String variableName = ((J.Identifier) unwrappedArgument).getSimpleName();
-                                        variableNameToFlowGraph.identifierToFlow.put(variableName, nextFlowGraph);
-                                    }
-                                    return variableNameToFlowGraph;
+                            Cursor argumentCursor = new Cursor(methodInvocationCursor, expr);
+
+                            if (spec.isFlowStep(
+                                    previousCursor.getValue(),
+                                    previousCursor,
+                                    expr,
+                                    argumentCursor
+                            )) {
+                                nextFlowGraph = nextFlowGraph.addEdge(argumentCursor);
+                                Expression unwrappedArgument = expr.unwrap();
+                                VariableNameToFlowGraph variableNameToFlowGraph =
+                                        computeVariableAssignment(argumentCursor, nextFlowGraph, spec);
+                                if (unwrappedArgument instanceof J.Identifier) {
+                                    // If the argument is an identifier, then we can add it to the map of variable names to flow graphs
+                                    String variableName = ((J.Identifier) unwrappedArgument).getSimpleName();
+                                    variableNameToFlowGraph.identifierToFlow.put(variableName, nextFlowGraph);
                                 }
+                                return variableNameToFlowGraph;
                             }
                         }
                     }

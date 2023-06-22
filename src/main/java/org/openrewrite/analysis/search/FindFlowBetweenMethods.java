@@ -116,7 +116,7 @@ public class FindFlowBetweenMethods extends Recipe {
             }
 
             private LocalFlowSpec<Expression, Expression> getFlowSpec(Expression source, MethodMatcher sink) {
-                final InvocationMatcher sinkMatcher = InvocationMatcher.from(sink);
+                final InvocationMatcher sinkMatcher = InvocationMatcher.fromMethodMatcher(sink);
                 switch (flow) {
                     case "Data":
                         return new LocalFlowSpec<Expression, Expression>() {
