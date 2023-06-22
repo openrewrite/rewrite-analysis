@@ -50,6 +50,11 @@ public interface GenericExternalModel extends BasicJavaTypeMethodMatcher {
     }
 
     @Override
+    default boolean isMatchOverrides() {
+        return isSubtypes();
+    }
+
+    @Override
     default boolean matchesTargetTypeName(String fullyQualifiedTypeName) {
         return getFullyQualifiedName().equals(fullyQualifiedTypeName);
     }

@@ -414,11 +414,6 @@ final class ExternalFlowModels {
         public String getArguments() {
             return input;
         }
-
-        @Override
-        public boolean isMatchOverrides() {
-            return true;
-        }
     }
 
     private static class Loader {

@@ -235,11 +235,6 @@ public final class ExternalSinkModels {
         public String getArguments() {
             return input;
         }
-
-        @Override
-        public boolean isMatchOverrides() {
-            return true;
-        }
     }
 
     static class Loader {
