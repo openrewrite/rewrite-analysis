@@ -203,10 +203,10 @@ final class ExternalFlowModels {
             Set<FlowModel> models;
         }
 
-        @Data
+        @Value
         static class ArgumentIndices {
-            final int inputIndex;
-            final int outputIndex;
+            int inputIndex;
+            int outputIndex;
         }
 
         private Map<AdditionalFlowStepPredicate, Set<FlowModel>> optimize(Collection<FlowModel> models) {
