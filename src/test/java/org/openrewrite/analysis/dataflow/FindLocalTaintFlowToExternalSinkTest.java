@@ -39,7 +39,7 @@ class FindLocalTaintFlowToExternalSinkTest implements RewriteTest {
 
             @Override
             public boolean isSink(Expression sink, Cursor cursor) {
-                return ExternalSinkModels.getInstance().isSinkNode(sink, cursor, "create-file");
+                return ExternalSinkModels.instance().isSinkNode(sink, cursor, "create-file");
             }
         }))).expectedCyclesThatMakeChanges(1).cycles(1);
     }

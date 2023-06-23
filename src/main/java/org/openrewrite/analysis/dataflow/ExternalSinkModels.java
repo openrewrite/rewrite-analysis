@@ -22,7 +22,6 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
-import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
@@ -31,6 +30,7 @@ import org.openrewrite.java.tree.JavaType;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Incubating(since = "7.25.0")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,13 +38,21 @@ public final class ExternalSinkModels {
     private static final String CURSOR_MESSAGE_KEY = "OPTIMIZED_SINK_MODELS";
     private static final ExternalSinkModels instance = new ExternalSinkModels();
 
+    /**
+     * @deprecated Use {@link #instance()} instead.
+     */
+    @Deprecated
     public static ExternalSinkModels getInstance() {
+        return instance;
+    }
+
+    public static ExternalSinkModels instance() {
         return instance;
     }
 
     private WeakReference<FullyQualifiedNameToSinkModels> fullyQualifiedNameToSinkModel;
 
-    private FullyQualifiedNameToSinkModels getFullyQualifiedNameToSinkModel() {
+    FullyQualifiedNameToSinkModels getFullyQualifiedNameToSinkModel() {
         FullyQualifiedNameToSinkModels f;
         if (fullyQualifiedNameToSinkModel == null) {
             f = Loader.load();
@@ -78,63 +86,102 @@ public final class ExternalSinkModels {
      * @return If this is a sink of the given {@code kind}.
      */
     public boolean isSinkNode(Expression expression, Cursor cursor, String kind) {
-        return getOrComputeOptimizedSinkModels(cursor)
-                .forKind(kind)
-                .stream()
-                .anyMatch(predicate -> predicate.isSinkNode(expression, cursor));
+        for (SinkNodePredicate predicate : getOrComputeOptimizedSinkModels(cursor).forKind(kind)) {
+            if (predicate.isSinkNode(expression, cursor)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private interface SinkNodePredicate {
         boolean isSinkNode(Expression expression, Cursor cursor);
     }
 
-    @AllArgsConstructor
-    private static class OptimizedSinkModels {
-        private final Map<String, List<SinkNodePredicate>> sinkKindToPredicates;
+    @Value
+    static class PredicateToSinkModels implements SinkNodePredicate {
+        SinkNodePredicate predicate;
+        Set<SinkModel> sinkModels;
 
-        private List<SinkNodePredicate> forKind(String kind) {
-            return sinkKindToPredicates.getOrDefault(kind, Collections.emptyList());
+        @Override
+        public boolean isSinkNode(Expression expression, Cursor cursor) {
+            return predicate.isSinkNode(expression, cursor);
         }
     }
 
-    private static class Optimizer {
-        private final MethodMatcherCache methodMatcherCache = MethodMatcherCache.create();
+    @AllArgsConstructor
+    static class OptimizedSinkModels {
+        private final Map<String, Set<PredicateToSinkModels>> sinkKindToPredicates;
+
+        private Set<? extends SinkNodePredicate> forKind(String kind) {
+            return sinkKindToPredicates.getOrDefault(kind, Collections.emptySet());
+        }
+
+        Set<SinkModel> getSinkModels() {
+            return sinkKindToPredicates.values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .map(PredicateToSinkModels::getSinkModels)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+        }
+
+    }
+
+    static class Optimizer {
 
         private SinkNodePredicate sinkNodePredicateForArgumentIndex(
                 int argumentIndex,
-                Collection<MethodMatcher> methodMatchers
+                Collection<? extends InvocationMatcher> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.fromMethodMatchers(methodMatchers);
+            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
             return argumentIndex == -1 ?
                     ((expression, cursor) -> invocationMatcher.advanced().isSelect(cursor)) :
                     ((expression, cursor) -> invocationMatcher.advanced().isParameter(cursor, argumentIndex));
         }
 
-        private List<SinkNodePredicate> optimize(Collection<SinkModel> models) {
-            Map<Integer, List<SinkModel>> sinkForArgument = new HashMap<>();
+        private SinkNodePredicate sinkNodePredicateForReturnValue(
+                Collection<? extends InvocationMatcher> methodMatchers
+        ) {
+            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
+            return (expression, cursor) -> invocationMatcher.matches(expression);
+        }
+
+        private Set<PredicateToSinkModels> optimize(Collection<SinkModel> models) {
+            Map<Integer, Set<SinkModel>> sinkForArgument = new HashMap<>();
+            // Uncommon, so don't allocate unless needed
+            Set<SinkModel> sinkForReturnValue = new HashSet<>(0);
             for (SinkModel model : models) {
                 model.getArgumentRange().ifPresent(argumentRange -> {
                     for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
-                        sinkForArgument.computeIfAbsent(i, __ -> new ArrayList<>()).add(model);
+                        sinkForArgument.computeIfAbsent(i, __ -> new HashSet<>()).add(model);
                     }
                 });
+                if ("ReturnValue".equals(model.input)) {
+                    sinkForReturnValue.add(model);
+                }
             }
-            return sinkForArgument
-                    .entrySet()
-                    .stream()
-                    .map(entry -> {
-                        Collection<MethodMatcher> methodMatchers = methodMatcherCache.provideMethodMatchers(entry.getValue());
-                        return sinkNodePredicateForArgumentIndex(
-                                entry.getKey(),
-                                methodMatchers
-                        );
-                    })
-                    .collect(Collectors.toList());
+            Stream<PredicateToSinkModels> predicateToSinkModelsStream =
+                    sinkForArgument
+                            .entrySet()
+                            .stream()
+                            .map(entry -> new PredicateToSinkModels(
+                                    sinkNodePredicateForArgumentIndex(entry.getKey(), entry.getValue()),
+                                    entry.getValue()
+                            ));
+            Stream<PredicateToSinkModels> returnValuePredicateToSinkModelsStream =
+                    sinkForReturnValue.isEmpty() ? Stream.empty() : Stream.of(new PredicateToSinkModels(
+                            sinkNodePredicateForReturnValue(sinkForReturnValue),
+                            sinkForReturnValue
+                    ));
+            return Stream
+                    .concat(predicateToSinkModelsStream, returnValuePredicateToSinkModelsStream)
+                    .collect(Collectors.toSet());
         }
 
-        private static OptimizedSinkModels optimize(SinkModels sinkModels) {
+        static OptimizedSinkModels optimize(SinkModels sinkModels) {
             Optimizer optimizer = new Optimizer();
-            Map<String, List<SinkNodePredicate>> sinkKindToPredicates =
+            Map<String, Set<PredicateToSinkModels>> sinkKindToPredicates =
                     sinkModels
                             .sinkModels
                             .entrySet()
@@ -154,6 +201,10 @@ public final class ExternalSinkModels {
     @AllArgsConstructor
     static class SinkModels {
         Map<String /* SinkModel.kind */, Set<SinkModel>> sinkModels;
+
+        Set<SinkModel> getSinkModels() {
+            return sinkModels.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        }
     }
 
     @AllArgsConstructor
@@ -200,6 +251,13 @@ public final class ExternalSinkModels {
                             sinkModels.computeIfAbsent(sinkModel.kind, k -> new HashSet<>(1)).add(sinkModel)
                     );
             return new SinkModels(sinkModels);
+        }
+
+        SinkModels forAll() {
+            return new SinkModels(fqnToSinkModels.entrySet().stream().collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> new HashSet<>(e.getValue())
+            )));
         }
 
         static FullyQualifiedNameToSinkModels empty() {
