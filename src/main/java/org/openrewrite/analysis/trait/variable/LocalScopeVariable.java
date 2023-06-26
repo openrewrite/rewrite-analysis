@@ -30,14 +30,11 @@ public interface LocalScopeVariable extends Variable {
 
         @Override
         public Validation<TraitErrors, LocalScopeVariable> viewOf(Cursor cursor) {
-            Validation<TraitErrors, LocalScopeVariable> parameter = Parameter.viewOf(cursor).map(p -> p);
-            return parameter.f().bind(parameterFail -> {
-                Validation<TraitErrors, LocalScopeVariable> localVariableDecl = LocalVariableDecl.viewOf(cursor).map(l -> l);
-                return localVariableDecl.f().bind(localVariableDeclFail -> Validation.fail(TraitErrors.semigroup.sum(
-                        parameterFail,
-                        localVariableDeclFail
-                )));
-            });
+            return TraitFactory.findFirstViewOf(
+                    cursor,
+                    Parameter.Factory.F,
+                    LocalVariableDecl.Factory.F
+            );
         }
     }
 

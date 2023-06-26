@@ -44,15 +44,11 @@ public interface Variable extends Element {
 
         @Override
         public Validation<TraitErrors, Variable> viewOf(Cursor cursor) {
-            Validation<TraitErrors, Variable> localScopeVariable = LocalScopeVariable.viewOf(cursor).map(l -> l);
-            return localScopeVariable.f().bind(localScopeVariableFail -> {
-                Validation<TraitErrors, Variable> field = Field.viewOf(cursor).map(f -> f);
-                return field.f().bind(fieldFail -> Validation.fail(TraitErrors.semigroup.sum(
-                        localScopeVariableFail,
-                        fieldFail
-                )));
-            });
-
+            return TraitFactory.findFirstViewOf(
+                    cursor,
+                    LocalScopeVariable.Factory.F,
+                    Field.Factory.F
+            );
         }
     }
 
