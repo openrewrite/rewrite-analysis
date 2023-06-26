@@ -81,25 +81,6 @@ public interface GenericExternalModel extends BasicJavaTypeMethodMatcher {
         return IntStream.range(0, parameterTypes.size()).allMatch(i -> Internal.matches(parameterTypes.get(i), signatureArray[i]));
     }
 
-    default MethodMatcherKey asMethodMatcherKey() {
-        final String signature;
-        if (this.getSignature().isEmpty()) {
-            signature = "(..)";
-        } else {
-            signature = getSignature();
-        }
-        final String fullSignature;
-        if (this.isConstructor()) {
-            fullSignature = getNamespace() + '.' + getType() + ' ' + "<constructor>" + signature;
-        } else {
-            fullSignature = getNamespace() + '.' + getType() + ' ' + getName() + signature;
-        }
-        return new MethodMatcherKey(
-                fullSignature,
-                isSubtypes()
-        );
-    }
-
     default Optional<ArgumentRange> getArgumentRange() {
         return computeArgumentRange(getArguments());
     }

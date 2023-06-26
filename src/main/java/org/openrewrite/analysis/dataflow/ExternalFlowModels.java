@@ -145,7 +145,6 @@ final class ExternalFlowModels {
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     static class Optimizer {
-        private final MethodMatcherCache methodMatcherCache = MethodMatcherCache.create();
 
         /**
          * Return the 'optimized' {@link AdditionalFlowStepPredicate} for the {@link MethodMatcher}.
