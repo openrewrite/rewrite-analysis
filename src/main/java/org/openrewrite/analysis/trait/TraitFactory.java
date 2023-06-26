@@ -15,10 +15,65 @@
  */
 package org.openrewrite.analysis.trait;
 
+import fj.data.NonEmptyList;
+import fj.data.Option;
 import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
-public interface TraitFactory <T extends Top> {
+public interface TraitFactory<T extends Top> {
     Validation<TraitErrors, T> viewOf(Cursor cursor);
+
+    /**
+     * Find the first view of a given type that matches a cursor.
+     *
+     * @param cursor    The cursor to create a trait view of.
+     * @param factory   The first factory to try to create a view with.
+     * @param factories The remaining factories to try to create a view with.
+     * @param <T>       The type of trait to find a view of.
+     * @return A validation of either the first view of the given type, or a list of errors.
+     */
+    @SafeVarargs
+    static <T extends Top> Validation<TraitErrors, T> findFirstViewOf(
+            Cursor cursor,
+            TraitFactory<? extends T> factory,
+            TraitFactory<? extends T>... factories
+    ) {
+        return findFirstViewOf(
+                cursor,
+                NonEmptyList.nel(factory, factories)
+        );
+    }
+
+    /**
+     * Find the first view of a given type that matches a cursor.
+     *
+     * @param cursor    The cursor to create a trait view of.
+     * @param factories The factories to try to create a view with.
+     * @param <T>       The type of trait to find a view of.
+     * @return A validation of either the first view of the given type, or a list of errors.
+     */
+    static <T extends Top> Validation<TraitErrors, T> findFirstViewOf(
+            Cursor cursor,
+            NonEmptyList<TraitFactory<? extends T>> factories
+    ) {
+        Validation<TraitErrors, T> view = factories.head().viewOf(cursor).map(t -> t);
+        Option<NonEmptyList<TraitFactory<? extends T>>> remainder =
+                NonEmptyList.fromList(
+                        factories.tail()
+                );
+        if (remainder.isNone()) {
+            return view;
+        }
+        return view.f().bind(fail -> {
+            Validation<TraitErrors, T> next = findFirstViewOf(
+                    cursor,
+                    remainder.some()
+            );
+            return next.f().bind(nextFail -> Validation.fail(TraitErrors.semigroup.sum(
+                    fail,
+                    nextFail
+            )));
+        });
+    }
 }
