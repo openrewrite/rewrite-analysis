@@ -54,7 +54,7 @@ public interface InitializerMethod extends Callable {
 }
 
 @AllArgsConstructor
-abstract class InitializerMethodBase implements InitializerMethod {
+abstract class InitializerMethodBase extends Top.Base implements InitializerMethod {
     /**
      * IMPORTANT: This cursor points to the {@link J.Block} that is the body of the class, NOT the initializer block.
      * This is because the static/object initializer block may not be explicitly declared, and so the cursor would be null.
@@ -64,16 +64,6 @@ abstract class InitializerMethodBase implements InitializerMethod {
     @Override
     public UUID getId() {
         return cursor.<Tree>getValue().getId();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     static <V extends InitializerMethodBase> Validation<TraitErrors, V> genericViewOf(Cursor cursor, Function<Cursor, V> initializer, Class<V> clazz) {

@@ -45,13 +45,11 @@ public interface InstanceAccess extends Expr {
 
         @Override
         public Validation<TraitErrors, InstanceAccess> viewOf(Cursor cursor) {
-            return ThisAccess.viewOf(cursor)
-                    .map(t -> (InstanceAccess) t)
-                    .f()
-                    .bind(thisFail -> SuperAccess.viewOf(cursor)
-                            .map(s -> (InstanceAccess) s)
-                            .f()
-                            .bind(superFail -> Validation.fail(TraitErrors.semigroup.sum(thisFail, superFail))));
+            return TraitFactory.findFirstViewOf(
+                    cursor,
+                    ThisAccess.Factory.F,
+                    SuperAccess.Factory.F
+            );
         }
     }
 
@@ -61,7 +59,7 @@ public interface InstanceAccess extends Expr {
 }
 
 @AllArgsConstructor
-class InstanceAccessBase implements InstanceAccess {
+class InstanceAccessBase extends Top.Base implements InstanceAccess {
     final Cursor cursor;
     /**
      * Either a {@link J.Identifier} or a {@link J.FieldAccess} representing the instance access.
@@ -87,16 +85,6 @@ class InstanceAccessBase implements InstanceAccess {
     public boolean isOwnInstanceAccess() {
         // TODO: Implement this
         return true;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     static Validation<TraitErrors, InstanceAccessBase> viewOf(Cursor cursor) {

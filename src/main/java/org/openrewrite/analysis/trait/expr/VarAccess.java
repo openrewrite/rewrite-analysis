@@ -107,7 +107,7 @@ public interface VarAccess extends Expr {
 }
 
 @AllArgsConstructor
-class VarAccessBase implements VarAccess {
+class VarAccessBase extends Top.Base implements VarAccess {
     private final Cursor cursor;
     private final J.Identifier identifier;
     @Getter(lazy = true, onMethod =  @__(@Override))
@@ -199,16 +199,6 @@ class VarAccessBase implements VarAccess {
             return FieldFromJavaTypeVariable.create(varAccessIdent.getFieldType(), cursor);
         }
         throw new IllegalStateException("Unable to find variable for " + varAccessIdent.getSimpleName());
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     static Validation<TraitErrors, VarAccess> viewOf(Cursor cursor, J.Identifier ident) {
@@ -315,7 +305,7 @@ class VarAccessBase implements VarAccess {
 
 
 @AllArgsConstructor
-class FieldFromJavaTypeVariable implements Field {
+class FieldFromJavaTypeVariable extends Top.Base implements Field {
     JavaType.Variable variable;
     Cursor compilationUnitCursor;
 
@@ -342,16 +332,6 @@ class FieldFromJavaTypeVariable implements Field {
     @Override
     public Collection<VarAccess> getVarAccesses() {
         return VarAccess.findAllInScope(compilationUnitCursor, this);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     static Field create(JavaType.Variable variable, Cursor anyCursor) {

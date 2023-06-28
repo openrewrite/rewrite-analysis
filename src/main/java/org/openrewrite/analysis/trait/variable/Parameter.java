@@ -72,7 +72,7 @@ public interface Parameter extends LocalScopeVariable {
 
 @AllArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-class ParameterBase implements Parameter {
+class ParameterBase extends Top.Base implements Parameter {
     Cursor cursor;
     J.VariableDeclarations.NamedVariable namedVariable;
     @Getter(onMethod = @__(@Override))
@@ -101,16 +101,6 @@ class ParameterBase implements Parameter {
             throw new IllegalStateException("Variable type is null for " + this.namedVariable);
         }
         return this.namedVariable.getVariableType().hasFlags(Flag.Varargs);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     @Override

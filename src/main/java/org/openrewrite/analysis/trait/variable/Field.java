@@ -67,7 +67,7 @@ public interface Field extends Member, Variable {
 }
 
 @AllArgsConstructor
-class FieldFromCursor implements Field {
+class FieldFromCursor extends Top.Base implements Field {
     Cursor cursor;
     J.VariableDeclarations.NamedVariable variable;
     Cursor parentBlock;
@@ -98,15 +98,5 @@ class FieldFromCursor implements Field {
         // not just within the class (which may contain multiple classes).
         Cursor searchScope = parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance);
         return VarAccess.findAllInScope(searchScope, this);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 }

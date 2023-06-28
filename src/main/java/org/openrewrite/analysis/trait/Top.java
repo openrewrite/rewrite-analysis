@@ -39,4 +39,22 @@ public interface Top {
     static int hashCode(Top e) {
         return 41 * e.getId().hashCode();
     }
+
+    /**
+     * A base class for implementing the {@link Top} interface that
+     * provides default implementations for {@link #equals(Object)}
+     * and {@link #hashCode()}.
+     */
+    abstract class Base implements Top {
+        @Override
+        public int hashCode() {
+            return Top.hashCode(this);
+        }
+
+        @Override
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+        public boolean equals(Object obj) {
+            return Top.equals(this, obj);
+        }
+    }
 }

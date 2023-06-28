@@ -47,14 +47,16 @@ public class TraitArchitectureTest {
     }
 
     private static final ArchCondition<JavaClass> haveExplicitlyDeclaredEqualsMethod =
-        haveExplicitlyDeclaredMethodWithName(javaClass -> javaClass.tryGetMethod("equals", Object.class), "Class %s has no equals(Object) method declared");
+      haveExplicitlyDeclaredMethodWithName(javaClass -> javaClass.tryGetMethod("equals", Object.class), "Class %s has no equals(Object) method declared");
 
     private static final ArchCondition<JavaClass> haveExplicitlyDeclaredHashCodeMethod =
-        haveExplicitlyDeclaredMethodWithName(javaClass -> javaClass.tryGetMethod("hashCode"), "Class %s has no hashCode() method declared");
+      haveExplicitlyDeclaredMethodWithName(javaClass -> javaClass.tryGetMethod("hashCode"), "Class %s has no hashCode() method declared");
 
     @ArchTest
     public static final ArchRule topImplementationClassesMustOverrideEqualsAndHashCode =
       classes().that().implement(Top.class)
-        .should(haveExplicitlyDeclaredEqualsMethod)
-        .andShould(haveExplicitlyDeclaredHashCodeMethod);
+        .should().beAssignableTo(Top.Base.class)
+        .orShould(
+          haveExplicitlyDeclaredEqualsMethod.and(haveExplicitlyDeclaredHashCodeMethod)
+        );
 }

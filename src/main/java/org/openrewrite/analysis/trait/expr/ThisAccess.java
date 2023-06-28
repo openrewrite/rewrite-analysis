@@ -53,18 +53,7 @@ public interface ThisAccess extends InstanceAccess {
 }
 
 @AllArgsConstructor
-class ThisAccessBase implements ThisAccess {
+class ThisAccessBase extends Top.Base implements ThisAccess {
     @Delegate
     private final InstanceAccessBase delegate;
-
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
-    }
 }
