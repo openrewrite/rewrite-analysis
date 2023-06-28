@@ -44,7 +44,7 @@ public interface Method extends Callable {
 
 }
 @AllArgsConstructor
-class MethodDeclarationMethod implements Method {
+class MethodDeclarationMethod extends Top.Base implements Method {
     Cursor cursor;
 
     J.MethodDeclaration methodDeclaration;
@@ -68,16 +68,6 @@ class MethodDeclarationMethod implements Method {
     @Override
     public UUID getId() {
         return methodDeclaration.getId();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     private static List<Parameter> collectParameters(Cursor cursor, J.MethodDeclaration methodDeclaration) {

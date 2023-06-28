@@ -52,17 +52,7 @@ public interface SuperAccess extends InstanceAccess {
 }
 
 @AllArgsConstructor
-class SuperAccessBase implements SuperAccess {
+class SuperAccessBase extends Top.Base implements SuperAccess {
     @Delegate
     private final InstanceAccessBase delegate;
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
-    }
 }

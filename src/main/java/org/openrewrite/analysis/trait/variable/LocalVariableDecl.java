@@ -61,7 +61,7 @@ public interface LocalVariableDecl extends LocalScopeVariable {
 }
 
 @AllArgsConstructor
-class LocalVariableDeclBase implements LocalVariableDecl {
+class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
     final Cursor cursor;
     final J.VariableDeclarations.NamedVariable variable;
     @Getter(onMethod = @__(@Override))
@@ -85,16 +85,6 @@ class LocalVariableDeclBase implements LocalVariableDecl {
     @Override
     public Collection<VarAccess> getVarAccesses() {
         return VarAccess.findAllInScope(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return Top.equals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Top.hashCode(this);
     }
 
     static Validation<TraitErrors, Callable> findNearestParentCallable(Cursor cursor) {
