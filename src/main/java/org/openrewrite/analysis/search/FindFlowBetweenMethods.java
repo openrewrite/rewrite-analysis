@@ -19,9 +19,11 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.openrewrite.*;
 import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
 import org.openrewrite.analysis.dataflow.LocalFlowSpec;
 import org.openrewrite.analysis.dataflow.LocalTaintFlowSpec;
+import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
@@ -78,7 +80,7 @@ public class FindFlowBetweenMethods extends Recipe {
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
                 J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
                 if (startMethodMatcher.matches(method)) {
-                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(method, endMethodMatcher)));
+                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(getCursor(), endMethodMatcher)));
                 }
                 return m;
             }
@@ -87,7 +89,7 @@ public class FindFlowBetweenMethods extends Recipe {
             public J.MemberReference visitMemberReference(J.MemberReference memberRef, ExecutionContext ctx) {
                 J.MemberReference m = super.visitMemberReference(memberRef, ctx);
                 if (startMethodMatcher.matches(m.getMethodType())) {
-                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(memberRef, endMethodMatcher)));
+                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(getCursor(), endMethodMatcher)));
                 }
                 return m;
             }
@@ -96,7 +98,7 @@ public class FindFlowBetweenMethods extends Recipe {
             public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
                 J.NewClass n = super.visitNewClass(newClass, ctx);
                 if (startMethodMatcher.matches(newClass)) {
-                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(newClass, endMethodMatcher)));
+                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(getCursor(), endMethodMatcher)));
                 }
                 return n;
             }
@@ -115,32 +117,44 @@ public class FindFlowBetweenMethods extends Recipe {
                 }
             }
 
-            private LocalFlowSpec<Expression, Expression> getFlowSpec(Expression source, MethodMatcher sink) {
+            private LocalFlowSpec<Expression, Expression> getFlowSpec(Cursor srcCursor, MethodMatcher sink) {
                 final InvocationMatcher sinkMatcher = InvocationMatcher.fromMethodMatcher(sink);
                 switch (flow) {
                     case "Data":
                         return new LocalFlowSpec<Expression, Expression>() {
 
                             @Override
-                            public boolean isSource(Expression expression, Cursor cursor) {
-                                return expression == source;
+                            public boolean isSource(DataFlowNode srcNode) {
+                                return srcNode
+                                        .asExpr()
+                                        .map(src -> Expr.viewOf(srcCursor)
+                                                .map(s -> s.equals(src))
+                                                .toOption()
+                                                .isSome())
+                                        .orElse(false);
                             }
 
                             @Override
-                            public boolean isSink(Expression expression, Cursor cursor) {
-                                return conditional(sinkMatcher, cursor);
+                            public boolean isSink(DataFlowNode sinkNode) {
+                                return conditional(sinkMatcher, sinkNode.getCursor());
                             }
                         };
                     case "Taint":
                         return new LocalTaintFlowSpec<Expression, Expression>() {
                             @Override
-                            public boolean isSource(Expression expression, Cursor cursor) {
-                                return expression == source;
+                            public boolean isSource(DataFlowNode srcNode) {
+                                return srcNode
+                                        .asExpr()
+                                        .map(src -> Expr.viewOf(srcCursor)
+                                                .map(s -> s.equals(src))
+                                                .toOption()
+                                                .isSome())
+                                        .orElse(false);
                             }
 
                             @Override
-                            public boolean isSink(Expression expression, Cursor cursor) {
-                                return conditional(sinkMatcher, cursor);
+                            public boolean isSink(DataFlowNode sinkNode) {
+                                return conditional(sinkMatcher, sinkNode.getCursor());
                             }
                         };
                     default:

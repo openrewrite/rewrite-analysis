@@ -23,6 +23,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.analysis.trait.expr.Call;
+import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.java.tree.Expression;
@@ -44,12 +46,16 @@ class FindLocalTaintFlowTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalTaintFlowSpec<J.MethodInvocation, Expression>() {
             @Override
-            public boolean isSource(J.MethodInvocation methodInvocation, Cursor cursor) {
-                return methodInvocation.getSimpleName().equals("source");
+            public boolean isSource(DataFlowNode srcNode) {
+                return srcNode
+                  .asExpr(MethodAccess.class)
+                  .map(MethodAccess::getSimpleName)
+                  .map("source"::equals)
+                  .orElse(false);
             }
 
             @Override
-            public boolean isSink(Expression expression, Cursor cursor) {
+            public boolean isSink(DataFlowNode sinkNode) {
                 return true;
             }
 

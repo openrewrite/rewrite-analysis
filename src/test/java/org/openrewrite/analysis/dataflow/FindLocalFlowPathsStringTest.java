@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.controlflow.Guard;
+import org.openrewrite.analysis.trait.expr.Literal;
+import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RecipeSpec;
@@ -52,18 +54,20 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalFlowSpec<>() {
             @Override
-            public boolean isSource(Expression expr, Cursor cursor) {
-                if (expr instanceof J.Literal) {
-                    return Objects.equals(((J.Literal) expr).getValue(), "42");
-                }
-                if (expr instanceof J.MethodInvocation) {
-                    return ((J.MethodInvocation) expr).getName().getSimpleName().equals("source");
-                }
-                return false;
+            public boolean isSource(DataFlowNode srcNode) {
+                return srcNode
+                  .asExpr(Literal.class)
+                  .flatMap(Literal::getValue)
+                  .map("42"::equals)
+                  .orElseGet(() -> srcNode
+                    .asExpr(MethodAccess.class)
+                    .map(ma -> ma.getSimpleName()
+                      .equals("source"))
+                    .orElse(false));
             }
 
             @Override
-            public boolean isSink(J j, Cursor cursor) {
+            public boolean isSink(DataFlowNode sinkNode) {
                 return true;
             }
 

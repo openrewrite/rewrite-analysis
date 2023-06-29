@@ -18,10 +18,11 @@ package org.openrewrite.analysis.search;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.openrewrite.*;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
 import org.openrewrite.analysis.dataflow.LocalFlowSpec;
@@ -98,7 +99,7 @@ public class FindMethods extends Recipe {
                         }
                         m = SearchResult.found(m);
                     } else {
-                        doAfterVisit(new FindLocalFlowPaths<>(getFlowSpec(method)));
+                        doAfterVisit(new FindLocalFlowPaths<>(getFlowSpec(getCursor())));
                     }
                 }
                 return m;
@@ -118,7 +119,7 @@ public class FindMethods extends Recipe {
                         }
                         m = m.withReference(SearchResult.found(m.getReference()));
                     } else {
-                        doAfterVisit(new FindLocalFlowPaths<>(getFlowSpec(memberRef)));
+                        doAfterVisit(new FindLocalFlowPaths<>(getFlowSpec(getCursor())));
                     }
                 }
                 return m;
@@ -138,35 +139,47 @@ public class FindMethods extends Recipe {
                         }
                         n = SearchResult.found(n);
                     } else {
-                        doAfterVisit(new FindLocalFlowPaths<>(getFlowSpec(newClass)));
+                        doAfterVisit(new FindLocalFlowPaths<>(getFlowSpec(getCursor())));
                     }
                 }
                 return n;
             }
 
-            private LocalFlowSpec<Expression, Expression> getFlowSpec(Expression source) {
+            private LocalFlowSpec<Expression, Expression> getFlowSpec(Cursor srcCursor) {
                 switch (flow) {
                     case "data":
                         return new LocalFlowSpec<Expression, Expression>() {
                             @Override
-                            public boolean isSource(Expression expression, Cursor cursor) {
-                                return expression == source;
+                            public boolean isSource(DataFlowNode srcNode) {
+                                return srcNode
+                                        .asExpr()
+                                        .map(src -> Expr.viewOf(srcCursor)
+                                                .map(s -> s.equals(src))
+                                                .toOption()
+                                                .isSome())
+                                        .orElse(false);
                             }
 
                             @Override
-                            public boolean isSink(Expression expression, Cursor cursor) {
+                            public boolean isSink(DataFlowNode sinkNode) {
                                 return true;
                             }
                         };
                     case "taint":
                         return new LocalTaintFlowSpec<Expression, Expression>() {
                             @Override
-                            public boolean isSource(Expression expression, Cursor cursor) {
-                                return expression == source;
+                            public boolean isSource(DataFlowNode srcNode) {
+                                return srcNode
+                                        .asExpr()
+                                        .map(src -> Expr.viewOf(srcCursor)
+                                                .map(s -> s.equals(src))
+                                                .toOption()
+                                                .isSome())
+                                        .orElse(false);
                             }
 
                             @Override
-                            public boolean isSink(Expression expression, Cursor cursor) {
+                            public boolean isSink(DataFlowNode sinkNode) {
                                 return true;
                             }
                         };

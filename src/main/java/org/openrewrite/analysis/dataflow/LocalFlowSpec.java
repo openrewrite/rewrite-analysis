@@ -50,39 +50,29 @@ public abstract class LocalFlowSpec<Source extends Expression, Sink extends J> {
     /**
      * The following is always true: {@code  source == cursor.getValue()}.
      *
-     * @param source The {@link Expression} to check to determine if it should be considered flow-graph source.
-     * @param cursor The current cursor position of the {@code source}.
-     * @return {@code true} if {@code source} and {@code cursor} should be considered the source or root of a flow graph.
+     * @param srcNode The {@link DataFlowNode} to check to determine if it should be considered flow-graph source.
+     * @return {@code true} if {@code srcNode} should be considered the source or root of a flow graph.
      */
-    public abstract boolean isSource(Source source, Cursor cursor);
+    public abstract boolean isSource(DataFlowNode srcNode);
 
     /**
      * The following is always true: {@code  sink == cursor.getValue()}.
      *
-     * @param sink The {@link Expression} to check to determine if it should be considered a flow-graph sink.
-     * @param cursor The current cursor position of the {@code sink}.
-     * @return {@code true} if {@code sink} and {@code cursor} should be considered the sink or leaf of a flow graph.
+     * @param sinkNode The {@link DataFlowNode} to check to determine if it should be considered a flow-graph sink.
+     * @return {@code true} if {@code sinkNode} should be considered the sink or leaf of a flow graph.
      */
-    public abstract boolean isSink(Sink sink, Cursor cursor);
+    public abstract boolean isSink(DataFlowNode sinkNode);
 
     public final boolean isFlowStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
-        assert srcCursor.getValue() == srcExpression : "Incorrect srcCursor & srcExpression";
-        assert sinkCursor.getValue() == sinkExpression : "Incorrect sinkCursor & sinkExpression";
         return ExternalFlowModels.instance().isAdditionalFlowStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         ) || isAdditionalFlowStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         );
     }
 
@@ -97,10 +87,8 @@ public abstract class LocalFlowSpec<Source extends Expression, Sink extends J> {
      * {@code  srcExpression == srcCursor.getValue() && sinkExpression == sinkCursor.getValue()}.
      */
     public boolean isAdditionalFlowStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
         return false;
     }

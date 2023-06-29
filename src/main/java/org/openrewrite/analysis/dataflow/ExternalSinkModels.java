@@ -22,8 +22,8 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
+import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.java.internal.TypesInUse;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
@@ -85,9 +85,9 @@ public final class ExternalSinkModels {
      *
      * @return If this is a sink of the given {@code kind}.
      */
-    public boolean isSinkNode(Expression expression, Cursor cursor, String kind) {
-        for (SinkNodePredicate predicate : getOrComputeOptimizedSinkModels(cursor).forKind(kind)) {
-            if (predicate.isSinkNode(expression, cursor)) {
+    public boolean isSinkNode(DataFlowNode sinkNode, String kind) {
+        for (SinkNodePredicate predicate : getOrComputeOptimizedSinkModels(sinkNode.getCursor()).forKind(kind)) {
+            if (predicate.isSinkNode(sinkNode)) {
                 return true;
             }
         }
@@ -95,7 +95,7 @@ public final class ExternalSinkModels {
     }
 
     private interface SinkNodePredicate {
-        boolean isSinkNode(Expression expression, Cursor cursor);
+        boolean isSinkNode(DataFlowNode sinkNode);
     }
 
     @Value
@@ -104,8 +104,8 @@ public final class ExternalSinkModels {
         Set<SinkModel> sinkModels;
 
         @Override
-        public boolean isSinkNode(Expression expression, Cursor cursor) {
-            return predicate.isSinkNode(expression, cursor);
+        public boolean isSinkNode(DataFlowNode sinkNode) {
+            return predicate.isSinkNode(sinkNode);
         }
     }
 
@@ -136,15 +136,15 @@ public final class ExternalSinkModels {
         ) {
             InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
             return argumentIndex == -1 ?
-                    ((expression, cursor) -> invocationMatcher.advanced().isSelect(cursor)) :
-                    ((expression, cursor) -> invocationMatcher.advanced().isParameter(cursor, argumentIndex));
+                    (sinkNode -> invocationMatcher.advanced().isSelect(sinkNode.getCursor())) :
+                    (sinkNode -> invocationMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndex));
         }
 
         private SinkNodePredicate sinkNodePredicateForReturnValue(
                 Collection<? extends InvocationMatcher> methodMatchers
         ) {
             InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
-            return (expression, cursor) -> invocationMatcher.matches(expression);
+            return sinkNode -> sinkNode.asExpr(MethodAccess.class).map(ma -> ma.matches(invocationMatcher)).orElse(false);
         }
 
         private Set<PredicateToSinkModels> optimize(Collection<SinkModel> models) {

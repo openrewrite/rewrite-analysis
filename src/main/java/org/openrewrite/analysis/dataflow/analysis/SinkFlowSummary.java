@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.LocalFlowSpec;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
@@ -122,7 +123,7 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
             }
 
             boolean isSinkType = spec.getSinkType().isAssignableFrom(cursor.getValue().getClass());
-            if (isSinkType && spec.isSink(cursor.getValue(), cursor)) {
+            if (isSinkType && spec.isSink(DataFlowNode.of(cursor))) {
                 List<Cursor> flow = new ArrayList<>(pathToHere);
                 flow.add(cursor);
                 pathsToSinks.add(flow);

@@ -48,7 +48,7 @@ public class Dataflow {
         if (spec.getSourceType().isAssignableFrom(value.getClass())) {
             //noinspection unchecked
             Source source = (Source) value;
-            if (!spec.isSource(source, start)) {
+            if (!spec.isSource(DataFlowNode.of(start))) {
                 return Optional.empty();
             }
             return ControlFlow.startingAt(start).findControlFlow().flatMap(summary -> {

@@ -18,6 +18,7 @@ package org.openrewrite.analysis.dataflow.analysis;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
@@ -358,10 +359,8 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     if (methodInvocation.getSelect() != null && methodInvocation.getArguments().contains(previousCursor.getValue())) {
                         Cursor selectCursor = new Cursor(methodInvocationCursor, methodInvocation.getSelect());
                         if (spec.isFlowStep(
-                                previousCursor.getValue(),
-                                previousCursor,
-                                methodInvocation.getSelect(),
-                                selectCursor
+                                DataFlowNode.of(previousCursor),
+                                DataFlowNode.of(selectCursor)
                         )) {
                             nextFlowGraph = nextFlowGraph.addEdge(selectCursor);
                             Expression unwrappedSelect = methodInvocation.getSelect().unwrap();
@@ -388,10 +387,8 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                             Cursor argumentCursor = new Cursor(methodInvocationCursor, expr);
 
                             if (spec.isFlowStep(
-                                    previousCursor.getValue(),
-                                    previousCursor,
-                                    expr,
-                                    argumentCursor
+                                    DataFlowNode.of(previousCursor),
+                                    DataFlowNode.of(argumentCursor)
                             )) {
                                 nextFlowGraph = nextFlowGraph.addEdge(argumentCursor);
                                 Expression unwrappedArgument = expr.unwrap();
@@ -408,10 +405,8 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     }
                 }
                 if (spec.isFlowStep(
-                        previousCursor.getValue(),
-                        previousCursor,
-                        (Expression) ancestor,
-                        ancestorCursor
+                        DataFlowNode.of(previousCursor),
+                        DataFlowNode.of(ancestorCursor)
                 )) {
                     nextFlowGraph = nextFlowGraph.addEdge(ancestorCursor);
                     J ancestorParent = ancestorCursor.getParentTreeCursor().getValue();
