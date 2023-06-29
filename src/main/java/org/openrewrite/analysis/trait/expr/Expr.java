@@ -18,6 +18,7 @@ package org.openrewrite.analysis.trait.expr;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
+import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.Expression;
@@ -50,7 +51,7 @@ public interface Expr extends ExprParent {
 }
 
 @AllArgsConstructor
-class ExprFallback implements Expr {
+class ExprFallback extends Top.Base implements Expr {
     Cursor cursor;
     Expression expression;
 

@@ -156,7 +156,7 @@ public class FindMethods extends Recipe {
                                         .map(src -> Expr.viewOf(srcCursor)
                                                 .map(s -> s.equals(src))
                                                 .toOption()
-                                                .isSome())
+                                                .orSome(false))
                                         .orElse(false);
                             }
 
@@ -174,7 +174,7 @@ public class FindMethods extends Recipe {
                                         .map(src -> Expr.viewOf(srcCursor)
                                                 .map(s -> s.equals(src))
                                                 .toOption()
-                                                .isSome())
+                                                .orSome(false))
                                         .orElse(false);
                             }
 

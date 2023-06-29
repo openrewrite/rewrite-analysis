@@ -16,7 +16,6 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
-import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.java.tree.Expression;
@@ -38,7 +37,7 @@ class FindLocalTaintFlowToExternalSinkTest implements RewriteTest {
                 return srcNode
                   .asExpr(MethodAccess.class)
                   .map(MethodAccess::getSimpleName)
-                  .map(ma -> ma.equals("source"))
+                  .map("source"::equals)
                   .orElse(false);
             }
 

@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.search;
 
 import org.openrewrite.*;
+import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.trait.expr.BinaryExpr;
 import org.openrewrite.analysis.trait.expr.Literal;
@@ -30,7 +31,8 @@ import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 public class UriCreatedWithHttpScheme extends Recipe {
-    private static final MethodMatcher URI_CREATE = new MethodMatcher("java.net.URI create(..)");
+    private static final MethodMatcher URI_CREATE_METHOD_MATCHER = new MethodMatcher("java.net.URI create(..)");
+    private static final InvocationMatcher URI_CREATE = InvocationMatcher.fromMethodMatcher(URI_CREATE_METHOD_MATCHER);
     private static final MethodMatcher STRING_REPLACE = new MethodMatcher("java.lang.String replace(..)");
 
     private static final LocalFlowSpec<J.Literal, Expression> INSECURE_URI_CREATE = new LocalFlowSpec<J.Literal, Expression>() {
@@ -45,10 +47,7 @@ public class UriCreatedWithHttpScheme extends Recipe {
 
         @Override
         public boolean isSink(DataFlowNode sinkNode) {
-            return sinkNode
-                    .asExpr(MethodAccess.class)
-                    .map(ma -> ma.matches(URI_CREATE)) // TODO: getArguments().contains(sink)?
-                    .orElse(false);
+            return URI_CREATE.advanced().isAnyArgument(sinkNode.getCursor());
         }
 
         @Override
@@ -79,7 +78,7 @@ public class UriCreatedWithHttpScheme extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesMethod<>(URI_CREATE), new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesMethod<>(URI_CREATE_METHOD_MATCHER), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                 J.Literal l = super.visitLiteral(literal, ctx);

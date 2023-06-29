@@ -16,17 +16,13 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
-import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.controlflow.Guard;
 import org.openrewrite.analysis.trait.expr.Literal;
 import org.openrewrite.analysis.trait.expr.MethodAccess;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
-
-import java.util.Objects;
 
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;

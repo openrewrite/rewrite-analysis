@@ -18,6 +18,7 @@ package org.openrewrite.analysis.trait.expr;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
+import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.J;
@@ -45,7 +46,7 @@ public interface Literal extends Expr {
 }
 
 @AllArgsConstructor
-class LiteralBase implements Literal {
+class LiteralBase extends Top.Base implements Literal {
     private final Cursor cursor;
     private final J.Literal literal;
 

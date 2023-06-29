@@ -19,6 +19,7 @@ import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.J;
@@ -44,7 +45,7 @@ public interface ClassInstanceExpr extends ConstructorCall, Expr {
 }
 
 @AllArgsConstructor
-class ClassInstanceExprBase implements ClassInstanceExpr {
+class ClassInstanceExprBase extends Top.Base implements ClassInstanceExpr {
     private final Cursor cursor;
     private final J.NewClass newClass;
 

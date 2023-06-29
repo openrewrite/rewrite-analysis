@@ -21,6 +21,10 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
+/**
+ * Any call to a callable. This includes method calls, constructor and super
+ * constructor invocations, and constructors invoked through class instantiation.
+ */
 public interface Call extends ExprParent {
     boolean matches(InvocationMatcher callMatcher);
 

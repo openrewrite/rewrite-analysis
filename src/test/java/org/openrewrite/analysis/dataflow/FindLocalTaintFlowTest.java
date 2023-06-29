@@ -23,7 +23,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
-import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaParser;

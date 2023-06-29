@@ -22,7 +22,7 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
-import org.openrewrite.analysis.trait.expr.MethodAccess;
+import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -144,7 +144,7 @@ public final class ExternalSinkModels {
                 Collection<? extends InvocationMatcher> methodMatchers
         ) {
             InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
-            return sinkNode -> sinkNode.asExpr(MethodAccess.class).map(ma -> ma.matches(invocationMatcher)).orElse(false);
+            return sinkNode -> sinkNode.asExprParent(Call.class).map(call -> call.matches(invocationMatcher)).orElse(false);
         }
 
         private Set<PredicateToSinkModels> optimize(Collection<SinkModel> models) {

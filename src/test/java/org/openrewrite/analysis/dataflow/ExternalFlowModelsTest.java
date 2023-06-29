@@ -16,20 +16,13 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
-import org.openrewrite.InMemoryExecutionContext;
-import org.openrewrite.java.JavaParser;
-import org.openrewrite.java.search.FindMethods;
-import org.openrewrite.test.RewriteTest;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.openrewrite.java.Assertions.java;
 
 public class ExternalFlowModelsTest {
     @Test
