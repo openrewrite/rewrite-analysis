@@ -15,8 +15,55 @@
  */
 package org.openrewrite.analysis.trait.expr;
 
+import fj.data.Validation;
+import lombok.AllArgsConstructor;
+import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Top;
+import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.java.tree.Expression;
+
+import java.util.UUID;
 
 /** A common super-class that represents all kinds of expressions. */
-public interface Expr extends Top {
+public interface Expr extends ExprParent {
+    enum Factory implements TraitFactory<Expr> {
+        F;
+
+        @Override
+        public Validation<TraitErrors, Expr> viewOf(Cursor cursor) {
+            return TraitFactory.findFirstViewOf(
+                    cursor,
+                    InstanceAccess.Factory.F,
+                    VarAccess.Factory.F,
+                    Literal.Factory.F,
+                    MethodAccess.Factory.F,
+                    BinaryExpr.Factory.F,
+                    ClassInstanceExpr.Factory.F,
+                    c -> ExprFallback.viewOf(c).map(o -> o)
+            );
+        }
+    }
+
+    static Validation<TraitErrors, Expr> viewOf(Cursor cursor) {
+        return Factory.F.viewOf(cursor);
+    }
+}
+
+@AllArgsConstructor
+class ExprFallback extends Top.Base implements Expr {
+    Cursor cursor;
+    Expression expression;
+
+    @Override
+    public UUID getId() {
+        return expression.getId();
+    }
+
+    static Validation<TraitErrors, ExprFallback> viewOf(Cursor cursor) {
+        if (cursor.getValue() instanceof Expression) {
+            return Validation.success(new ExprFallback(cursor, cursor.getValue()));
+        }
+        return TraitErrors.invalidTraitCreationType(ExprFallback.class, cursor, Expression.class);
+    }
 }

@@ -19,7 +19,6 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -75,12 +74,12 @@ class DataflowFunctionalTest implements RewriteTest {
               private void doRunDataFlow() {
                   Dataflow.startingAt(getCursor()).findSinks(new LocalTaintFlowSpec<Expression, Expression>() {
                       @Override
-                      public boolean isSource(Expression expression, Cursor cursor) {
+                      public boolean isSource(DataFlowNode srcNode) {
                           return true;
                       }
 
                       @Override
-                      public boolean isSink(Expression expression, Cursor cursor) {
+                      public boolean isSink(DataFlowNode sinkNode) {
                           return true;
                       }
                   });

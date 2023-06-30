@@ -22,12 +22,11 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
+import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.MethodCall;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -77,13 +76,11 @@ final class ExternalFlowModels {
     }
 
     boolean isAdditionalFlowStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
-        for (AdditionalFlowStepPredicate value : getOrComputeOptimizedFlowModels(srcCursor).getValuePredicates()) {
-            if (value.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)) {
+        for (AdditionalFlowStepPredicate value : getOrComputeOptimizedFlowModels(srcNode.getCursor()).getValuePredicates()) {
+            if (value.isAdditionalFlowStep(srcNode, sinkNode)) {
                 return true;
             }
         }
@@ -91,13 +88,11 @@ final class ExternalFlowModels {
     }
 
     boolean isAdditionalTaintStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
-        for (AdditionalFlowStepPredicate taint : getOrComputeOptimizedFlowModels(srcCursor).getTaintPredicates()) {
-            if (taint.isAdditionalFlowStep(srcExpression, srcCursor, sinkExpression, sinkCursor)) {
+        for (AdditionalFlowStepPredicate taint : getOrComputeOptimizedFlowModels(srcNode.getCursor()).getTaintPredicates()) {
+            if (taint.isAdditionalFlowStep(srcNode, sinkNode)) {
                 return true;
             }
         }
@@ -156,13 +151,13 @@ final class ExternalFlowModels {
             InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
-                return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                        callMatcher.matches(sinkExpression) &&
-                                callMatcher.advanced().isSelect(srcCursor);
+                return (srcNode, sinkNode) ->
+                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orElse(false) &&
+                                callMatcher.advanced().isSelect(srcNode.getCursor());
             } else {
-                return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                        callMatcher.matches(sinkExpression) &&
-                                callMatcher.advanced().isParameter(srcCursor, argumentIndex);
+                return (srcNode, sinkNode) ->
+                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orElse(false) &&
+                                callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndex);
             }
         }
 
@@ -175,9 +170,9 @@ final class ExternalFlowModels {
         ) {
             InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             assert argumentIndex != -1 : "Argument[-1] is the 'select' or 'qualifier' of a method call. Flow would be cyclic.";
-            return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                    callMatcher.advanced().isSelect(sinkCursor) &&
-                            callMatcher.advanced().isParameter(srcCursor, argumentIndex);
+            return (srcNode, sinkNode) ->
+                    callMatcher.advanced().isSelect(sinkNode.getCursor()) &&
+                            callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndex);
         }
 
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToArgumentIndex(
@@ -186,13 +181,13 @@ final class ExternalFlowModels {
         ) {
             InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
             if (argumentIndices.inputIndex == -1) {
-                return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                        callMatcher.advanced().isSelect(srcCursor) &&
-                                callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
+                return (srcNode, sinkNode) ->
+                        callMatcher.advanced().isSelect(srcNode.getCursor()) &&
+                                callMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndices.outputIndex);
             } else {
-                return (srcExpression, srcCursor, sinkExpression, sinkCursor) ->
-                        callMatcher.advanced().isParameter(srcCursor, argumentIndices.inputIndex) &&
-                                callMatcher.advanced().isParameter(sinkCursor, argumentIndices.outputIndex);
+                return (srcNode, sinkNode) ->
+                        callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndices.inputIndex) &&
+                                callMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndices.outputIndex);
             }
         }
 

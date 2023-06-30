@@ -17,7 +17,10 @@ package org.openrewrite.analysis.dataflow;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.openrewrite.Cursor;
+import org.openrewrite.analysis.trait.expr.Expr;
+import org.openrewrite.analysis.trait.expr.ExprParent;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.tree.Expression;
@@ -30,17 +33,26 @@ import static java.util.Objects.requireNonNull;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public abstract class DataFlowNode {
+    @Getter
     final Cursor cursor;
 
-    abstract Optional<Expression> asExpression();
+    public abstract Optional<Expr> asExpr();
+
+    public <E extends Expr> Optional<E> asExpr(Class<E> clazz) {
+        return asExpr().filter(clazz::isInstance).map(clazz::cast);
+    }
+
+    public <E extends ExprParent> Optional<E> asExprParent(Class<E> clazz) {
+        return asExpr().filter(clazz::isInstance).map(clazz::cast);
+    }
 
     abstract Optional<Parameter> asParameter();
 
-    abstract <T> T map(Function<Expression, T> whenExpression, Function<Parameter, T> whenParameter);
+    abstract <T> T map(Function<Expr, T> whenExpression, Function<Parameter, T> whenParameter);
 
     public static DataFlowNode of(Cursor cursor) {
         if (cursor.getValue() instanceof Expression) {
-            return new ExpressionDataFlowNode(cursor, cursor.getValue());
+            return new ExpressionDataFlowNode(cursor, Expr.viewOf(cursor).on(TraitErrors::doThrow));
         } else if (cursor.getValue() instanceof J.VariableDeclarations.NamedVariable) {
             return new ParameterDataFlowNode(cursor, Parameter.viewOf(cursor).on(TraitErrors::doThrow));
         } else {
@@ -50,14 +62,14 @@ public abstract class DataFlowNode {
 }
 
 class ExpressionDataFlowNode extends DataFlowNode {
-    private final Expression expression;
-    ExpressionDataFlowNode(Cursor cursor, Expression expression) {
+    private final Expr expression;
+    ExpressionDataFlowNode(Cursor cursor, Expr expression) {
         super(cursor);
         this.expression = requireNonNull(expression, "expression");
     }
 
     @Override
-    Optional<Expression> asExpression() {
+    public Optional<Expr> asExpr() {
         return Optional.of(expression);
     }
 
@@ -67,7 +79,7 @@ class ExpressionDataFlowNode extends DataFlowNode {
     }
 
     @Override
-    <T> T map(Function<Expression, T> whenExpression, Function<Parameter, T> whenParameter) {
+    <T> T map(Function<Expr, T> whenExpression, Function<Parameter, T> whenParameter) {
         requireNonNull(whenExpression, "whenExpression");
         requireNonNull(whenParameter, "whenParameter");
         return whenExpression.apply(expression);
@@ -82,7 +94,7 @@ class ParameterDataFlowNode extends DataFlowNode {
     }
 
     @Override
-    Optional<Expression> asExpression() {
+    public Optional<Expr> asExpr() {
         return Optional.empty();
     }
 
@@ -92,7 +104,7 @@ class ParameterDataFlowNode extends DataFlowNode {
     }
 
     @Override
-    <T> T map(Function<Expression, T> whenExpression, Function<Parameter, T> whenParameter) {
+    <T> T map(Function<Expr, T> whenExpression, Function<Parameter, T> whenParameter) {
         requireNonNull(whenExpression, "whenExpression");
         requireNonNull(whenParameter, "whenParameter");
         return whenParameter.apply(parameter);

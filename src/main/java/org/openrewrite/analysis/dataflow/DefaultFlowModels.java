@@ -17,11 +17,9 @@ package org.openrewrite.analysis.dataflow;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.java.tree.Expression;
+import org.openrewrite.analysis.trait.expr.BinaryExpr;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.TypeUtils;
 
 @Incubating(since = "7.24.2")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -32,48 +30,38 @@ final class DefaultFlowModels {
      * taint flow configurations.
      */
     static boolean isDefaultAdditionalTaintStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
         return isLocalAdditionalTaintStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         );
     }
 
     private static boolean isLocalAdditionalTaintStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
         return AdditionalLocalTaint.isStringAddTaintStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         );
     }
 
     private static final class AdditionalLocalTaint {
 
         private static boolean isStringAddTaintStep(
-                Expression srcExpression,
-                Cursor srcCursor,
-                Expression sinkExpression,
-                Cursor sinkCursor
+                DataFlowNode srcNode,
+                DataFlowNode sinkNode
         ) {
-            if (sinkExpression instanceof J.Binary) {
-                J.Binary binary = (J.Binary) sinkExpression;
-                return J.Binary.Type.Addition.equals(binary.getOperator()) &&
-                        (binary.getLeft() == srcExpression || binary.getRight() == srcExpression) &&
-                        TypeUtils.isString(binary.getType());
-            }
-            return false;
+            return sinkNode
+                    .asExpr(BinaryExpr.class)
+                    .flatMap(binary -> srcNode
+                            .asExpr()
+                            .map(src -> J.Binary.Type.Addition.equals(binary.getOperator()) &&
+                                    binary.getLeft().equals(src) || binary.getRight().equals(src)))
+                    .orElse(false);
         }
     }
 }

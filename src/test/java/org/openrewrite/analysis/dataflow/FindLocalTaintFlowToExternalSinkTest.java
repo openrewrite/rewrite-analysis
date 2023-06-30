@@ -16,8 +16,8 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
-import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RecipeSpec;
@@ -33,13 +33,17 @@ class FindLocalTaintFlowToExternalSinkTest implements RewriteTest {
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalTaintFlowSpec<J.MethodInvocation, Expression>() {
             @Override
-            public boolean isSource(J.MethodInvocation methodInvocation, Cursor cursor) {
-                return methodInvocation.getSimpleName().equals("source");
+            public boolean isSource(DataFlowNode srcNode) {
+                return srcNode
+                  .asExpr(MethodAccess.class)
+                  .map(MethodAccess::getSimpleName)
+                  .map("source"::equals)
+                  .orElse(false);
             }
 
             @Override
-            public boolean isSink(Expression sink, Cursor cursor) {
-                return ExternalSinkModels.instance().isSinkNode(sink, cursor, "create-file");
+            public boolean isSink(DataFlowNode sinkNode) {
+                return ExternalSinkModels.instance().isSinkNode(sinkNode, "create-file");
             }
         }))).expectedCyclesThatMakeChanges(1).cycles(1);
     }

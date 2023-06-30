@@ -16,6 +16,11 @@
 package org.openrewrite.analysis.search;
 
 import org.openrewrite.*;
+import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.analysis.trait.expr.BinaryExpr;
+import org.openrewrite.analysis.trait.expr.Literal;
+import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.analysis.dataflow.Dataflow;
@@ -26,32 +31,33 @@ import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 public class UriCreatedWithHttpScheme extends Recipe {
-    private static final MethodMatcher URI_CREATE = new MethodMatcher("java.net.URI create(..)");
+    private static final MethodMatcher URI_CREATE_METHOD_MATCHER = new MethodMatcher("java.net.URI create(..)");
+    private static final InvocationMatcher URI_CREATE = InvocationMatcher.fromMethodMatcher(URI_CREATE_METHOD_MATCHER);
     private static final MethodMatcher STRING_REPLACE = new MethodMatcher("java.lang.String replace(..)");
 
     private static final LocalFlowSpec<J.Literal, Expression> INSECURE_URI_CREATE = new LocalFlowSpec<J.Literal, Expression>() {
         @Override
-        public boolean isSource(J.Literal source, Cursor cursor) {
-            return source.getValue() != null && source.getValue().toString().startsWith("http://");
+        public boolean isSource(DataFlowNode srcNode) {
+            return srcNode
+                    .asExpr(Literal.class)
+                    .flatMap(Literal::getValue)
+                    .map(v -> v.toString().startsWith("http://"))
+                    .orElse(false);
         }
 
         @Override
-        public boolean isSink(Expression sink, Cursor cursor) {
-            J.MethodInvocation maybeMethodInvocation = cursor.firstEnclosing(J.MethodInvocation.class);
-            if (maybeMethodInvocation != null && URI_CREATE.matches(maybeMethodInvocation)) {
-                return maybeMethodInvocation.getArguments().contains(sink);
-            } else {
-                return false;
-            }
+        public boolean isSink(DataFlowNode sinkNode) {
+            return URI_CREATE.advanced().isAnyArgument(sinkNode.getCursor());
         }
 
         @Override
-        public boolean isAdditionalFlowStep(Expression srcExpression, Cursor srcCursor, Expression sinkExpression, Cursor sinkCursor) {
-            if (sinkExpression instanceof J.Binary) {
-                J.Binary endBinary = (J.Binary) sinkExpression;
-                return srcExpression == endBinary.getLeft();
-            }
-            return false;
+        public boolean isAdditionalFlowStep(DataFlowNode srcNode, DataFlowNode sinkNode) {
+            return sinkNode
+                    .asExpr(BinaryExpr.class)
+                    .flatMap(binary -> srcNode
+                            .asExpr()
+                            .map(src -> binary.getLeft().equals(src)))
+                    .orElse(false);
         }
 
         @Override
@@ -72,7 +78,7 @@ public class UriCreatedWithHttpScheme extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesMethod<>(URI_CREATE), new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesMethod<>(URI_CREATE_METHOD_MATCHER), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                 J.Literal l = super.visitLiteral(literal, ctx);

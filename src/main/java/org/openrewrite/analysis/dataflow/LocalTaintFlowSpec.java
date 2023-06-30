@@ -26,34 +26,24 @@ public abstract class LocalTaintFlowSpec<Source extends Expression, Sink extends
 
     @Override
     public final boolean isAdditionalFlowStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
         return ExternalFlowModels.instance().isAdditionalTaintStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         ) || DefaultFlowModels.isDefaultAdditionalTaintStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         ) || isAdditionalTaintStep(
-                srcExpression,
-                srcCursor,
-                sinkExpression,
-                sinkCursor
+                srcNode,
+                sinkNode
         );
     }
 
     public boolean isAdditionalTaintStep(
-            Expression srcExpression,
-            Cursor srcCursor,
-            Expression sinkExpression,
-            Cursor sinkCursor
+            DataFlowNode srcNode,
+            DataFlowNode sinkNode
     ) {
         return false;
     }
