@@ -21,6 +21,9 @@ import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
+/**
+ * An expression parent is an element that may have an expression as its child.
+ */
 public interface ExprParent extends Top {
     enum Factory implements TraitFactory<ExprParent> {
         F;

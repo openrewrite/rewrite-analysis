@@ -20,6 +20,10 @@ import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
+/**
+ * A constructor call, which occurs either as a constructor invocation
+ * inside a constructor, or as part of a class instance expression.
+ */
 public interface ConstructorCall extends Call {
     enum Factory implements TraitFactory<ConstructorCall> {
         F;

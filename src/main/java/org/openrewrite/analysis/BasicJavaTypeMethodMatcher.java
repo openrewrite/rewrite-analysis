@@ -18,6 +18,7 @@ package org.openrewrite.analysis;
 import io.micrometer.core.lang.Nullable;
 import lombok.NoArgsConstructor;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.List;
 
@@ -46,31 +47,11 @@ public interface BasicJavaTypeMethodMatcher extends JavaTypeMethodMatcher {
      * @implNote {@link #isMatchOverrides()} will be used to determine if parent types should also be checked
      */
     default boolean matchesTargetType(@Nullable JavaType.FullyQualified type) {
-        if (type == null || type instanceof JavaType.Unknown) {
-            return false;
-        }
-
-        if (matchesTargetTypeName(type.getFullyQualifiedName())) {
-            return true;
-        }
-
-        if (isMatchOverrides()) {
-            if (!"java.lang.Object".equals(type.getFullyQualifiedName()) &&
-                    matchesTargetType(SimpleMethodMatcherHolder.OBJECT_CLASS)) {
-                return true;
-            }
-
-            if (matchesTargetType(type.getSupertype())) {
-                return true;
-            }
-
-            for (JavaType.FullyQualified anInterface : type.getInterfaces()) {
-                if (matchesTargetType(anInterface)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return TypeUtils.isOfTypeWithName(
+                type,
+                isMatchOverrides(),
+                this::matchesTargetTypeName
+        );
     }
 
     /**

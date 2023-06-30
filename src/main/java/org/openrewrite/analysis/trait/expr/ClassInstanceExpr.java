@@ -26,6 +26,9 @@ import org.openrewrite.java.tree.J;
 
 import java.util.UUID;
 
+/**
+ * A class instance creation expression.
+ */
 public interface ClassInstanceExpr extends ConstructorCall, Expr {
     enum Factory implements TraitFactory<ClassInstanceExpr> {
         F;
