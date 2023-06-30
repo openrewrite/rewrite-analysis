@@ -26,6 +26,9 @@ import org.openrewrite.java.tree.J;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * A common super-class to represent constant literals.
+ */
 public interface Literal extends Expr {
     Optional<Object> getValue();
 

@@ -26,6 +26,9 @@ import org.openrewrite.java.tree.JavaType;
 
 import java.util.UUID;
 
+/**
+ * A common super-class to represent binary operator expressions.
+ */
 public interface BinaryExpr extends Expr {
     J.Binary.Type getOperator();
 

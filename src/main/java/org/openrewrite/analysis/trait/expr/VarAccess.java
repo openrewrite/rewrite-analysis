@@ -36,6 +36,10 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+/**
+ * A variable access is a (possibly qualified) reference to a field,
+ * parameter or local variable.
+ */
 public interface VarAccess extends Expr {
 
     String getName();

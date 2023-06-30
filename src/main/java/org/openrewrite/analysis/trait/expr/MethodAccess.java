@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * A method access is an invocation of a method with a list of arguments.
+ */
 public interface MethodAccess extends Expr, Call {
     String getSimpleName();
 
