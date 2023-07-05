@@ -638,7 +638,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
     void taintTrackingThroughJoiner() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "guava-31.0-jre")),
+            .classpathFromResources(new InMemoryExecutionContext(), "guava-32.0")),
           java(
             """
               import com.google.common.base.Joiner;
