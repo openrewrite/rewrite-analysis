@@ -520,7 +520,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
     void taintTrackingThroughFileCopy() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
+            .classpath("commons-io")),
           java(
             """
               import org.apache.commons.io.IOUtils;
@@ -558,7 +558,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
     void taintTrackingThroughFileCopyLargeShortSignature() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
+            .classpath("commons-io")),
           java(
             """
               import org.apache.commons.io.IOUtils;
@@ -598,7 +598,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
     void taintTrackingThroughWritingLines() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
+            .classpath("commons-io")),
           java(
             """
               import org.apache.commons.io.IOUtils;
@@ -638,7 +638,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
     void taintTrackingThroughJoiner() {
         rewriteRun(
           spec -> spec.parser(JavaParser.fromJavaVersion()
-            .classpathFromResources(new InMemoryExecutionContext(), "guava-32.0")),
+            .classpath("guava")),
           java(
             """
               import com.google.common.base.Joiner;
