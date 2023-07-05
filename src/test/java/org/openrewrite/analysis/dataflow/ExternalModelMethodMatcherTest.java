@@ -69,7 +69,7 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               "copy",
               signature)))
             .parser(JavaParser.fromJavaVersion()
-              .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
+              .classpath("commons-io")),
           java(
             """
               import org.apache.commons.io.IOUtils;
@@ -114,7 +114,7 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               "buffer",
               "(InputStream,int)")))
             .parser(JavaParser.fromJavaVersion()
-              .classpathFromResources(new InMemoryExecutionContext(), "commons-io-2.13.0")),
+              .classpath("commons-io")),
           java(
             """
               import org.apache.commons.io.IOUtils;
