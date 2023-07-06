@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.controlflow;
 
+import fj.data.Option;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -47,13 +48,13 @@ public final class ControlFlow {
      * A return value of {@link Optional#empty()} indicates that control flow can not be computed for the given
      * start point.
      */
-    public Optional<ControlFlowSummary> findControlFlow() {
+    public Option<ControlFlowSummary> findControlFlow() {
         if (start == null) {
-            return Optional.empty();
+            return Option.none();
         }
         return start.computeMessageIfAbsent(CONTROL_FLOW_MESSAGE_KEY, __ -> {
             ControlFlowSimpleSummary summary = findControlFlowInternal(start, ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER);
-            return Optional.of(ControlFlowSummary.forGraph(summary.start, summary.end));
+            return Option.fromNull(ControlFlowSummary.forGraph(summary.start, summary.end));
         });
     }
 
@@ -83,6 +84,9 @@ public final class ControlFlow {
                     return new ControlFlow(nextCursor);
                 }
             } else if (next instanceof J.MethodDeclaration) {
+                if (methodDeclarationBlockCursor == null && ((J.MethodDeclaration) next).getBody() != null) {
+                    methodDeclarationBlockCursor = new Cursor(nextCursor, ((J.MethodDeclaration) next).getBody());
+                }
                 return new ControlFlow(methodDeclarationBlockCursor);
             }
         }

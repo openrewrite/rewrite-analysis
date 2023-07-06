@@ -18,7 +18,6 @@ package org.openrewrite.analysis.dataflow;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.trait.expr.Literal;
-import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -30,14 +29,14 @@ class FindLocalFlowPathsNumericTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalFlowSpec<J.Literal, J>() {
+        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new DataFlowSpec() {
             @Override
             public boolean isSource(DataFlowNode srcNode) {
                 return srcNode
                   .asExpr(Literal.class)
-                  .flatMap(Literal::getValue)
+                  .bind(Literal::getValue)
                   .map(l -> "42".equals(l.toString()))
-                  .orElse(false);
+                  .orSome(false);
             }
 
             @Override

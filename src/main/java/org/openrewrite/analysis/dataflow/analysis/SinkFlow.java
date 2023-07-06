@@ -15,17 +15,15 @@
  */
 package org.openrewrite.analysis.dataflow.analysis;
 
-import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.java.tree.Expression;
-import org.openrewrite.java.tree.J;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
 
 @Incubating(since = "7.24.0")
-public class SinkFlow<Source extends Expression, Sink extends J> extends FlowGraph {
-    private final Cursor source;
+public class SinkFlow extends FlowGraph {
+    private final DataFlowNode node;
 
-    public SinkFlow(Cursor source) {
-        super(source);
-        this.source = source;
+    public SinkFlow(DataFlowNode node) {
+        super(node);
+        this.node = node;
     }
 }

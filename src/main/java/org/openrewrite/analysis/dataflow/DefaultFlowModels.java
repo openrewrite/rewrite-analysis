@@ -57,11 +57,11 @@ final class DefaultFlowModels {
         ) {
             return sinkNode
                     .asExpr(BinaryExpr.class)
-                    .flatMap(binary -> srcNode
+                    .bind(binary -> srcNode
                             .asExpr()
                             .map(src -> J.Binary.Type.Addition.equals(binary.getOperator()) &&
                                     binary.getLeft().equals(src) || binary.getRight().equals(src)))
-                    .orElse(false);
+                    .orSome(false);
         }
     }
 }

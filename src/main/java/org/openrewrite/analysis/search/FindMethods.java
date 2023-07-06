@@ -19,17 +19,16 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.openrewrite.*;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.analysis.dataflow.DataFlowSpec;
+import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
+import org.openrewrite.analysis.dataflow.TaintFlowSpec;
 import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
-import org.openrewrite.analysis.dataflow.LocalFlowSpec;
-import org.openrewrite.analysis.dataflow.LocalTaintFlowSpec;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.table.MethodCalls;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.marker.SearchResult;
@@ -145,10 +144,10 @@ public class FindMethods extends Recipe {
                 return n;
             }
 
-            private LocalFlowSpec<Expression, Expression> getFlowSpec(Cursor srcCursor) {
+            private DataFlowSpec getFlowSpec(Cursor srcCursor) {
                 switch (flow) {
                     case "data":
-                        return new LocalFlowSpec<Expression, Expression>() {
+                        return new DataFlowSpec() {
                             @Override
                             public boolean isSource(DataFlowNode srcNode) {
                                 return srcNode
@@ -157,7 +156,7 @@ public class FindMethods extends Recipe {
                                                 .map(s -> s.equals(src))
                                                 .toOption()
                                                 .orSome(false))
-                                        .orElse(false);
+                                        .orSome(false);
                             }
 
                             @Override
@@ -166,7 +165,7 @@ public class FindMethods extends Recipe {
                             }
                         };
                     case "taint":
-                        return new LocalTaintFlowSpec<Expression, Expression>() {
+                        return new TaintFlowSpec() {
                             @Override
                             public boolean isSource(DataFlowNode srcNode) {
                                 return srcNode
@@ -175,7 +174,7 @@ public class FindMethods extends Recipe {
                                                 .map(s -> s.equals(src))
                                                 .toOption()
                                                 .orSome(false))
-                                        .orElse(false);
+                                        .orSome(false);
                             }
 
                             @Override

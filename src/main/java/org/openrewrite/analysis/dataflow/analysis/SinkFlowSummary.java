@@ -19,8 +19,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
-import org.openrewrite.analysis.dataflow.DataFlowNode;
-import org.openrewrite.analysis.dataflow.LocalFlowSpec;
+import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
@@ -28,14 +27,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public class SinkFlowSummary<Source extends Expression, Sink extends J> {
-    private final SinkFlowSummaryFlowGraphWalker<Source, Sink> flowGraphWalker;
+public class SinkFlowSummary {
+    private final SinkFlowSummaryFlowGraphWalker flowGraphWalker;
 
     @Getter
     private final Cursor sourceCursor;
 
     @Getter(lazy = true)
-    private final  List<List<Cursor>> flows = flowGraphWalker.computeFlows();
+    private final List<List<Cursor>> flows = flowGraphWalker.computeFlows();
 
     @Getter(lazy = true)
     private final List<Cursor> sinkCursors = computeSinkCursors();
@@ -50,11 +49,11 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
     }
 
     @Getter(lazy = true)
-    private final List<Sink> sinks =
-      getSinkCursors()
-        .stream()
-        .map(Cursor::<Sink>getValue)
-        .collect(Collectors.toList());
+    private final List<J> sinks =
+            getSinkCursors()
+                    .stream()
+                    .map(Cursor::<J>getValue)
+                    .collect(Collectors.toList());
 
     @Getter(lazy = true)
     private final Set<Cursor> flowCursorParticipants =
@@ -70,7 +69,7 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
                     .map(Cursor::<Expression>getValue)
                     .collect(Collectors.toCollection(() -> Collections.newSetFromMap(new IdentityHashMap<>())));
 
-    public Source getSource() {
+    public J getSource() {
         return getSourceCursor().getValue();
     }
 
@@ -82,21 +81,21 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
         return !isEmpty();
     }
 
-    public static <Source extends Expression, Sink extends J> SinkFlowSummary create(
-      FlowGraph start,
-      LocalFlowSpec<Source, Sink> spec,
-      Set<Expression> reachable
+    public static SinkFlowSummary create(
+            FlowGraph start,
+            DataFlowSpec spec,
+            Set<Expression> reachable
     ) {
         return new SinkFlowSummary(
-          SinkFlowSummaryFlowGraphWalker.create(spec, reachable, start),
-          start.getCursor()
+                SinkFlowSummaryFlowGraphWalker.create(spec, reachable, start),
+                start.getNode().getCursor()
         );
     }
 
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE, staticName = "create")
-    private static class SinkFlowSummaryFlowGraphWalker<Source extends Expression, Sink extends J> {
-        private final LocalFlowSpec<Source, Sink> spec;
+    private static class SinkFlowSummaryFlowGraphWalker {
+        private final DataFlowSpec spec;
         private final Set<Expression> reachable;
 
         private final FlowGraph start;
@@ -107,7 +106,7 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
             // But we need to consider that the source can also be a valid sink.
             List<List<Cursor>> flows = new ArrayList<>();
             Deque<Cursor> path = new ArrayDeque<>();
-            path.push(start.getCursor());
+            path.push(start.getNode().getCursor());
             recurseGetFlows(start, path, flows);
             return flows;
         }
@@ -117,20 +116,19 @@ public class SinkFlowSummary<Source extends Expression, Sink extends J> {
           Deque<Cursor> pathToHere,
           List<List<Cursor>> pathsToSinks
         ) {
-            Cursor cursor = flowGraph.getCursor();
+            Cursor cursor = flowGraph.getNode().getCursor();
             if (cursor.getValue() instanceof Expression && !reachable.contains(cursor.<Expression>getValue())) {
                 return;
             }
 
-            boolean isSinkType = spec.getSinkType().isAssignableFrom(cursor.getValue().getClass());
-            if (isSinkType && spec.isSink(DataFlowNode.of(cursor))) {
+            if (spec.isSink(flowGraph.getNode())) {
                 List<Cursor> flow = new ArrayList<>(pathToHere);
                 flow.add(cursor);
                 pathsToSinks.add(flow);
             }
 
             for (FlowGraph edge : flowGraph.getEdges()) {
-                Cursor edgeCursor = edge.getCursor();
+                Cursor edgeCursor = edge.getNode().getCursor();
                 pathToHere.push(edgeCursor);
                 // Recurse here with the longer path
                 recurseGetFlows(edge, pathToHere, pathsToSinks);

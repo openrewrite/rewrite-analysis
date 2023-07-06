@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.trait.expr;
 
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
@@ -23,14 +24,13 @@ import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.J;
 
-import java.util.Optional;
 import java.util.UUID;
 
 /**
  * A common super-class to represent constant literals.
  */
 public interface Literal extends Expr {
-    Optional<Object> getValue();
+    Option<Object> getValue();
 
     enum Factory implements TraitFactory<Literal> {
         F;
@@ -53,8 +53,8 @@ class LiteralBase extends Top.Base implements Literal {
     private final Cursor cursor;
     private final J.Literal literal;
 
-    public Optional<Object> getValue() {
-        return Optional.ofNullable(literal.getValue());
+    public Option<Object> getValue() {
+        return Option.fromNull(literal.getValue());
     }
 
     static Validation<TraitErrors, LiteralBase> viewOf(Cursor cursor) {

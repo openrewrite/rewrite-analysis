@@ -20,18 +20,17 @@ import io.github.classgraph.ScanResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.openrewrite.Cursor;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.analysis.trait.expr.BinaryExpr;
+import org.openrewrite.analysis.trait.expr.Literal;
 import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaParser;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -43,14 +42,14 @@ class FindLocalTaintFlowTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalTaintFlowSpec<J.MethodInvocation, Expression>() {
+        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new TaintFlowSpec() {
             @Override
             public boolean isSource(DataFlowNode srcNode) {
                 return srcNode
                   .asExpr(MethodAccess.class)
                   .map(MethodAccess::getSimpleName)
                   .map("source"::equals)
-                  .orElse(false);
+                  .orSome(false);
             }
 
             @Override
@@ -59,13 +58,13 @@ class FindLocalTaintFlowTest implements RewriteTest {
             }
 
             @Override
-            public boolean isSanitizer(Expression expression, Cursor cursor) {
-                if (expression instanceof J.Binary binary) {
-                    return binary.getOperator() == J.Binary.Type.Addition &&
-                      binary.getRight() instanceof J.Literal &&
-                      Objects.equals(((J.Literal) binary.getRight()).getValue(), "sanitizer");
-                }
-                return false;
+            public boolean isSanitizer(DataFlowNode node) {
+                return node
+                  .asExpr(BinaryExpr.class)
+                  .map(binary -> binary.getOperator() == J.Binary.Type.Addition &&
+                    binary.getRight() instanceof Literal &&
+                    ((Literal) binary.getRight()).getValue().map("sanitizer"::equals).orSome(false))
+                  .orSome(false);
             }
         }))).expectedCyclesThatMakeChanges(1).cycles(1);
     }

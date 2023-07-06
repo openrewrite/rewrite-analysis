@@ -34,8 +34,8 @@ public class LiteralTest implements RewriteTest {
             public J preVisit(J tree, ExecutionContext executionContext) {
                 return Literal.viewOf(getCursor())
                   .map(l -> {
-                      assert l.getValue().isPresent();
-                      return SearchResult.found(tree, l.getValue().get().toString());
+                      assert l.getValue().isSome();
+                      return SearchResult.found(tree, l.getValue().some().toString());
                   })
                   .orSuccess(tree);
             }

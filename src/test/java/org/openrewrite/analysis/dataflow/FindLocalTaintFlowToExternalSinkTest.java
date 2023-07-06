@@ -18,8 +18,6 @@ package org.openrewrite.analysis.dataflow;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.trait.expr.MethodAccess;
-import org.openrewrite.java.tree.Expression;
-import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -31,14 +29,14 @@ class FindLocalTaintFlowToExternalSinkTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalTaintFlowSpec<J.MethodInvocation, Expression>() {
+        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new TaintFlowSpec() {
             @Override
             public boolean isSource(DataFlowNode srcNode) {
                 return srcNode
                   .asExpr(MethodAccess.class)
                   .map(MethodAccess::getSimpleName)
                   .map("source"::equals)
-                  .orElse(false);
+                  .orSome(false);
             }
 
             @Override

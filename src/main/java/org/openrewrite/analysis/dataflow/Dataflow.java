@@ -15,18 +15,14 @@
  */
 package org.openrewrite.analysis.dataflow;
 
+import fj.data.Option;
 import lombok.RequiredArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.ControlFlow;
-import org.openrewrite.analysis.dataflow.analysis.FlowGraph;
-import org.openrewrite.analysis.dataflow.analysis.ForwardFlow;
-import org.openrewrite.analysis.dataflow.analysis.SinkFlow;
-import org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary;
-import org.openrewrite.analysis.dataflow.analysis.SourceFlow;
+import org.openrewrite.analysis.dataflow.analysis.*;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.Expression;
-import org.openrewrite.java.tree.J;
 
 import java.util.Optional;
 import java.util.Set;
@@ -40,30 +36,26 @@ public class Dataflow {
     @Nullable
     private final Cursor start;
 
-    public <Source extends Expression, Sink extends J> Optional<SinkFlowSummary<Source, Sink>> findSinks(LocalFlowSpec<Source, Sink> spec) {
+    public Option<SinkFlowSummary> findSinks(DataFlowSpec spec) {
         if (start == null) {
-            return Optional.empty();
+            return Option.none();
         }
-        Object value = start.getValue();
-        if (spec.getSourceType().isAssignableFrom(value.getClass())) {
-            //noinspection unchecked
-            Source source = (Source) value;
-            if (!spec.isSource(DataFlowNode.of(start))) {
-                return Optional.empty();
+        return DataFlowNode.of(start).bind(n -> {
+            if (!spec.isSource(n)) {
+                return Option.none();
             }
-            return ControlFlow.startingAt(start).findControlFlow().flatMap(summary -> {
+            return ControlFlow.startingAt(start).findControlFlow().bind(summary -> {
                 Set<Expression> reachable = summary.computeReachableExpressions(spec::isBarrierGuard);
 
-                FlowGraph flow = new SinkFlow(start);
+                FlowGraph flow = new SinkFlow(n);
                 ForwardFlow.findSinks(flow, spec);
-                SinkFlowSummary<Source, Sink> sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
-                return sinkFlowSummary.isNotEmpty() ? Optional.of(sinkFlowSummary) : Optional.empty();
+                SinkFlowSummary sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
+                return sinkFlowSummary.isNotEmpty() ? Option.some(sinkFlowSummary) : Option.none();
             });
-        }
-        return Optional.empty();
+        });
     }
 
-    public <E extends Expression> Optional<SourceFlow<E>> findSources(LocalFlowSpec<E, ?> spec) {
+    public <E extends Expression> Optional<SourceFlow> findSources(DataFlowSpec spec) {
         throw new UnsupportedOperationException("Not yet implemented.");
     }
 }

@@ -15,14 +15,11 @@
  */
 package org.openrewrite.analysis.dataflow;
 
-import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.Guard;
-import org.openrewrite.java.tree.Expression;
-import org.openrewrite.java.tree.J;
 
 @Incubating(since = "7.25.0")
-public abstract class LocalTaintFlowSpec<Source extends Expression, Sink extends J> extends LocalFlowSpec<Source, Sink> {
+public abstract class TaintFlowSpec extends DataFlowSpec {
 
     @Override
     public final boolean isAdditionalFlowStep(
@@ -58,11 +55,11 @@ public abstract class LocalTaintFlowSpec<Source extends Expression, Sink extends
     }
 
     @Override
-    public final boolean isBarrier(Expression expression, Cursor cursor) {
-        return isSanitizer(expression, cursor);
+    public final boolean isBarrier(DataFlowNode node) {
+        return isSanitizer(node);
     }
 
-    public boolean isSanitizer(Expression expression, Cursor cursor) {
+    public boolean isSanitizer(DataFlowNode node) {
         return false;
     }
 }
