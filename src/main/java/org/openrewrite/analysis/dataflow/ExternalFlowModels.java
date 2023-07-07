@@ -152,11 +152,11 @@ final class ExternalFlowModels {
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
                 return (srcNode, sinkNode) ->
-                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orElse(false) &&
+                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orSome(false) &&
                                 callMatcher.advanced().isSelect(srcNode.getCursor());
             } else {
                 return (srcNode, sinkNode) ->
-                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orElse(false) &&
+                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orSome(false) &&
                                 callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndex);
             }
         }

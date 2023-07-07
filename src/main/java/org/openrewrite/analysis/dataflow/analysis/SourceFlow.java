@@ -15,19 +15,12 @@
  */
 package org.openrewrite.analysis.dataflow.analysis;
 
-import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.java.tree.Expression;
-
-import java.util.List;
+import org.openrewrite.analysis.dataflow.DataFlowNode;
 
 @Incubating(since = "7.24.0")
-public class SourceFlow<Source extends Expression> extends FlowGraph {
-    public SourceFlow(Cursor cursor) {
-        super(cursor);
-    }
-
-    public List<Source> getSources() {
-        throw new UnsupportedOperationException("Implement me");
+public class SourceFlow extends FlowGraph {
+    public SourceFlow(DataFlowNode node) {
+        super(node);
     }
 }

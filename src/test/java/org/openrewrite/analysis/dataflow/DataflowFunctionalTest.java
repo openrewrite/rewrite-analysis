@@ -72,7 +72,7 @@ class DataflowFunctionalTest implements RewriteTest {
               }
 
               private void doRunDataFlow() {
-                  Dataflow.startingAt(getCursor()).findSinks(new LocalTaintFlowSpec<Expression, Expression>() {
+                  Dataflow.startingAt(getCursor()).findSinks(new TaintFlowSpec() {
                       @Override
                       public boolean isSource(DataFlowNode srcNode) {
                           return true;

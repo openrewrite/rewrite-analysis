@@ -18,7 +18,6 @@ package org.openrewrite.analysis.controlflow;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.openrewrite.Incubating;
-import org.openrewrite.Tree;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
@@ -90,7 +89,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                     }
                 }
                 return SearchResult.found(b, searchResultText);
-            }).orElse(b);
+            }).orSome(b);
         }
         return b;
     }

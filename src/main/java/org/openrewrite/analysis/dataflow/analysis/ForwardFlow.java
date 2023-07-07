@@ -15,14 +15,15 @@
  */
 package org.openrewrite.analysis.dataflow.analysis;
 
+import fj.data.Option;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.analysis.dataflow.LocalFlowSpec;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
@@ -34,9 +35,9 @@ import java.util.stream.Stream;
 @Incubating(since = "7.24.0")
 public class ForwardFlow extends JavaVisitor<Integer> {
 
-    public static void findSinks(FlowGraph root, LocalFlowSpec<?, ?> spec) {
+    public static void findSinks(FlowGraph root, DataFlowSpec spec) {
         VariableNameToFlowGraph variableNameToFlowGraph =
-                computeVariableAssignment(root.getCursor(), root, spec);
+                computeVariableAssignment(root.getNode().getCursor(), root, spec);
         if (variableNameToFlowGraph.identifierToFlow.isEmpty()) {
             return;
         }
@@ -61,7 +62,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
 
         Analysis analysis = new Analysis(spec, variableNameToFlowGraph.identifierToFlow.copy());
         if (taintStmtCursorParent == null) {
-            throw new IllegalStateException("`taintStmtCursorParent` is null. Computing flow starting at " + root.getCursor().getValue());
+            throw new IllegalStateException("`taintStmtCursorParent` is null. Computing flow starting at " + root.getNode().getCursor().getValue());
         }
         if (taintStmt instanceof J.WhileLoop ||
                 taintStmt instanceof J.DoWhileLoop ||
@@ -80,10 +81,13 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             J.Try _try = (J.Try) taintStmt;
             analysis.visit(_try.getBody(), 0, taintStmtCursorParent);
             analysis.visit(_try.getFinally(), 0, taintStmtCursorParent);
+        } else if (taintStmt instanceof J.MethodDeclaration) {
+            J.MethodDeclaration methodDeclaration = (J.MethodDeclaration) taintStmt;
+            analysis.visit(methodDeclaration.getBody(), 0, taintStmtCursorParent);
         } else {
             // This is when assignment occurs within the body of a block
             assert taintStmt != null : "taintStmt is null";
-            visitBlocksRecursive(root.getCursor().dropParentUntil(J.Block.class::isInstance), taintStmt, analysis);
+            visitBlocksRecursive(root.getNode().getCursor().dropParentUntil(J.Block.class::isInstance), taintStmt, analysis);
         }
     }
 
@@ -189,8 +193,9 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             }
             Iterator<FlowGraph> iterator = get(identifier).iterator();
             FlowGraph flow = iterator.next();
+            DataFlowNode flowNode = DataFlowNode.ofOrThrow(cursor, "identifier is not a DataFlowNode: " + cursor);
             // Create a FlowGraph for the current identifier being visited
-            FlowGraph newFlowGraph = flow.addEdge(cursor);
+            FlowGraph newFlowGraph = flow.addEdge(flowNode);
             while (iterator.hasNext()) {
                 // Add edges to all other flows for this identifier, pointing all existing flows to the new flow
                 FlowGraph next = iterator.next();
@@ -226,11 +231,11 @@ public class ForwardFlow extends JavaVisitor<Integer> {
     }
 
     private static class Analysis extends JavaVisitor<Integer> {
-        final LocalFlowSpec<?, ?> localFlowSpec;
+        final DataFlowSpec dataFlowSpec;
         Stack<IdentifierToFlows> flowsByIdentifier = new Stack<>();
 
-        Analysis(LocalFlowSpec<?, ?> localFlowSpec, IdentifierToFlows initial) {
-            this.localFlowSpec = localFlowSpec;
+        Analysis(DataFlowSpec dataFlowSpec, IdentifierToFlows initial) {
+            this.dataFlowSpec = dataFlowSpec;
             this.flowsByIdentifier.push(initial);
         }
 
@@ -273,7 +278,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                 FlowGraph next = flowsByIdentifier.peek().addForIdentifierVisit(ident.getSimpleName(), getCursor());
 
                 VariableNameToFlowGraph variableNameToFlowGraph =
-                        computeVariableAssignment(getCursor(), next, localFlowSpec);
+                        computeVariableAssignment(getCursor(), next, dataFlowSpec);
 
                 if (!variableNameToFlowGraph.identifierToFlow.isEmpty()) {
                     flowsByIdentifier.peek().putAll(variableNameToFlowGraph.identifierToFlow);
@@ -297,7 +302,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             if (left instanceof J.Identifier) {
                 String variableName = ((J.Identifier) left).getSimpleName();
                 if (flowsByIdentifier.peek().hasFlows(variableName) &&
-                        flowsByIdentifier.peek().get(variableName).stream().allMatch(v -> v.getCursor().getValue() != a.getAssignment())) {
+                        flowsByIdentifier.peek().get(variableName).stream().allMatch(v -> v.getNode().getCursor().getValue() != a.getAssignment())) {
                     flowsByIdentifier.peek().remove(variableName);
                 }
             }
@@ -326,27 +331,40 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         Iterator<Cursor> remainingCursorPath;
     }
 
-    private static VariableNameToFlowGraph computeVariableAssignment(Cursor startCursor, FlowGraph currentFlow, LocalFlowSpec<?, ?> spec) {
-        Iterator<Cursor> cursorPath = startCursor.getPathAsCursors();
+    private static VariableNameToFlowGraph computeVariableAssignment(Cursor startCursor, FlowGraph currentFlow, DataFlowSpec spec) {
+        Iterator<Cursor> cursorPath = startCursor.getPathAsCursors(c -> c.getValue() instanceof J);
         Cursor ancestorCursor = null;
         if (cursorPath.hasNext()) {
             // Must avoid inspecting the 'current' node to compute the variable assignment.
             // This is because we perform filtering here, and filtered types may be valid 'source' types.
             ancestorCursor = cursorPath.next();
+            if (currentFlow.getNode().asParameter().isSome()) {
+                // If currentFlow is a parameter, then the name of the parameter is the only flow.
+                // The cursor path will contain no additional variable names where flow can occur.
+                IdentifierToFlows identifierToFlows = new IdentifierToFlows();
+                identifierToFlows.put(currentFlow.getNode().asParameter().some().getName(), currentFlow);
+                // If the current flow is a parameter, then we can't have any additional flows.
+                return new VariableNameToFlowGraph(identifierToFlows, currentFlow.getNode().getCursor(), cursorPath);
+            }
         }
         IdentifierToFlows identifierToFlow = new IdentifierToFlows();
         FlowGraph nextFlowGraph = currentFlow;
         while (cursorPath.hasNext()) {
             ancestorCursor = cursorPath.next();
             Object ancestor = ancestorCursor.getValue();
-            if (ancestor instanceof Expression) {
+
+            Option<DataFlowNode> maybeAncestorNode = DataFlowNode.of(ancestorCursor);
+            if (maybeAncestorNode.isSome()) {
+                DataFlowNode ancestorNode = maybeAncestorNode.some();
+                if (ancestorNode.asParameter().isSome()) {
+                    continue;
+                }
                 // Offer the cursor of the current flow graph, and a next possible expression to
                 // `isAdditionalFlowStep` to see if it should be added to the flow graph.
                 // This allows the API user to extend what the definition of 'flow' is.
-                Cursor previousCursor = nextFlowGraph.getCursor();
+                Cursor previousCursor = nextFlowGraph.getNode().getCursor();
                 if (spec.isBarrier(
-                        (Expression) ancestor,
-                        ancestorCursor
+                        ancestorNode
                 )) {
                     break;
                 }
@@ -358,11 +376,12 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     // Support flow from any argument to the subject of a method invocation
                     if (methodInvocation.getSelect() != null && methodInvocation.getArguments().contains(previousCursor.getValue())) {
                         Cursor selectCursor = new Cursor(methodInvocationCursor, methodInvocation.getSelect());
+                        DataFlowNode selectNode = DataFlowNode.ofOrThrow(selectCursor, "Unable to create DataFlowNode for " + selectCursor);
                         if (spec.isFlowStep(
-                                DataFlowNode.of(previousCursor),
-                                DataFlowNode.of(selectCursor)
+                                DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                                selectNode
                         )) {
-                            nextFlowGraph = nextFlowGraph.addEdge(selectCursor);
+                            nextFlowGraph = nextFlowGraph.addEdge(selectNode);
                             Expression unwrappedSelect = methodInvocation.getSelect().unwrap();
                             VariableNameToFlowGraph variableNameToFlowGraph =
                                     computeVariableAssignment(selectCursor, nextFlowGraph, spec);
@@ -385,12 +404,13 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                             }
 
                             Cursor argumentCursor = new Cursor(methodInvocationCursor, expr);
+                            DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor, "Unable to create DataFlowNode for " + argumentCursor);
 
                             if (spec.isFlowStep(
-                                    DataFlowNode.of(previousCursor),
-                                    DataFlowNode.of(argumentCursor)
+                                    DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                                    argumentNode
                             )) {
-                                nextFlowGraph = nextFlowGraph.addEdge(argumentCursor);
+                                nextFlowGraph = nextFlowGraph.addEdge(argumentNode);
                                 Expression unwrappedArgument = expr.unwrap();
                                 VariableNameToFlowGraph variableNameToFlowGraph =
                                         computeVariableAssignment(argumentCursor, nextFlowGraph, spec);
@@ -405,10 +425,10 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     }
                 }
                 if (spec.isFlowStep(
-                        DataFlowNode.of(previousCursor),
-                        DataFlowNode.of(ancestorCursor)
+                        DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                        ancestorNode
                 )) {
-                    nextFlowGraph = nextFlowGraph.addEdge(ancestorCursor);
+                    nextFlowGraph = nextFlowGraph.addEdge(ancestorNode);
                     J ancestorParent = ancestorCursor.getParentTreeCursor().getValue();
                     if (ancestorParent instanceof J.Block || ancestorParent instanceof J.Case) {
                         // If the ancestor is a block or a case, then we've reached the end of the flow.
@@ -421,31 +441,35 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                         continue;
                     }
                 }
+
+                if (ancestor instanceof J.Ternary) {
+                    J.Ternary ternary = (J.Ternary) ancestor;
+                    Object previousCursorValue = nextFlowGraph.getNode().getCursor().getValue();
+                    if (ternary.getTruePart() == previousCursorValue ||
+                            ternary.getFalsePart() == previousCursorValue) {
+                        nextFlowGraph = nextFlowGraph.addEdge(ancestorNode);
+                        continue;
+                    } else {
+                        // Data flow does not occur from the ternary conditional part
+                        break;
+                    }
+                } else if (ancestor instanceof J.TypeCast ||
+                        ancestor instanceof J.Parentheses ||
+                        ancestor instanceof J.ControlParentheses) {
+                    Cursor parent = ancestorCursor.getParentOrThrow();
+                    if (parent.getValue() instanceof J.Switch || parent.getValue() instanceof J.SwitchExpression) {
+                        // Don't add control flow to control parentheses in switch statements
+                        break;
+                    }
+                    nextFlowGraph = nextFlowGraph.addEdge(ancestorNode);
+                    continue;
+                }
             }
 
             if (ancestor instanceof J.Binary) {
                 break;
             } else if (ancestor instanceof J.MethodInvocation) {
                 break;
-            } else if (ancestor instanceof J.Ternary) {
-                J.Ternary ternary = (J.Ternary) ancestor;
-                Object previousCursorValue = nextFlowGraph.getCursor().getValue();
-                if (ternary.getTruePart() == previousCursorValue ||
-                        ternary.getFalsePart() == previousCursorValue) {
-                    nextFlowGraph = nextFlowGraph.addEdge(ancestorCursor);
-                } else {
-                    // Data flow does not occur from the ternary conditional part
-                    break;
-                }
-            } else if (ancestor instanceof J.TypeCast ||
-                    ancestor instanceof J.Parentheses ||
-                    ancestor instanceof J.ControlParentheses) {
-                Cursor parent = ancestorCursor.getParentOrThrow();
-                if (parent.getValue() instanceof J.Switch || parent.getValue() instanceof J.SwitchExpression) {
-                    // Don't add control flow to control parentheses in switch statements
-                    break;
-                }
-                nextFlowGraph = nextFlowGraph.addEdge(ancestorCursor);
             } else if (ancestor instanceof J.NewClass) {
                 break;
             } else if (ancestor instanceof J.Assignment ||

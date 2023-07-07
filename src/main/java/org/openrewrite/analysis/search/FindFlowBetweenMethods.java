@@ -20,15 +20,14 @@ import lombok.Value;
 import org.openrewrite.*;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
-import org.openrewrite.analysis.dataflow.LocalFlowSpec;
-import org.openrewrite.analysis.dataflow.LocalTaintFlowSpec;
+import org.openrewrite.analysis.dataflow.TaintFlowSpec;
 import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesAllMethods;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 /**
@@ -117,11 +116,11 @@ public class FindFlowBetweenMethods extends Recipe {
                 }
             }
 
-            private LocalFlowSpec<Expression, Expression> getFlowSpec(Cursor srcCursor, MethodMatcher sink) {
+            private DataFlowSpec getFlowSpec(Cursor srcCursor, MethodMatcher sink) {
                 final InvocationMatcher sinkMatcher = InvocationMatcher.fromMethodMatcher(sink);
                 switch (flow) {
                     case "Data":
-                        return new LocalFlowSpec<Expression, Expression>() {
+                        return new DataFlowSpec() {
 
                             @Override
                             public boolean isSource(DataFlowNode srcNode) {
@@ -131,7 +130,7 @@ public class FindFlowBetweenMethods extends Recipe {
                                                 .map(s -> s.equals(src))
                                                 .toOption()
                                                 .orSome(false))
-                                        .orElse(false);
+                                        .orSome(false);
                             }
 
                             @Override
@@ -140,7 +139,7 @@ public class FindFlowBetweenMethods extends Recipe {
                             }
                         };
                     case "Taint":
-                        return new LocalTaintFlowSpec<Expression, Expression>() {
+                        return new TaintFlowSpec() {
                             @Override
                             public boolean isSource(DataFlowNode srcNode) {
                                 return srcNode
@@ -149,7 +148,7 @@ public class FindFlowBetweenMethods extends Recipe {
                                                 .map(s -> s.equals(src))
                                                 .toOption()
                                                 .orSome(false))
-                                        .orElse(false);
+                                        .orSome(false);
                             }
 
                             @Override

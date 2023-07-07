@@ -144,7 +144,7 @@ public final class ExternalSinkModels {
                 Collection<? extends InvocationMatcher> methodMatchers
         ) {
             InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
-            return sinkNode -> sinkNode.asExprParent(Call.class).map(call -> call.matches(invocationMatcher)).orElse(false);
+            return sinkNode -> sinkNode.asExprParent(Call.class).map(call -> call.matches(invocationMatcher)).orSome(false);
         }
 
         private Set<PredicateToSinkModels> optimize(Collection<SinkModel> models) {

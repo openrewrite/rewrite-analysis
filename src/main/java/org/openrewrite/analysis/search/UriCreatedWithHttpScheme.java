@@ -15,19 +15,20 @@
  */
 package org.openrewrite.analysis.search;
 
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Preconditions;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.controlflow.Guard;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.analysis.dataflow.DataFlowSpec;
+import org.openrewrite.analysis.dataflow.Dataflow;
 import org.openrewrite.analysis.trait.expr.BinaryExpr;
 import org.openrewrite.analysis.trait.expr.Literal;
-import org.openrewrite.analysis.trait.expr.MethodAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.analysis.dataflow.Dataflow;
-import org.openrewrite.analysis.dataflow.LocalFlowSpec;
-import org.openrewrite.analysis.controlflow.Guard;
 import org.openrewrite.java.search.UsesMethod;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 public class UriCreatedWithHttpScheme extends Recipe {
@@ -35,14 +36,14 @@ public class UriCreatedWithHttpScheme extends Recipe {
     private static final InvocationMatcher URI_CREATE = InvocationMatcher.fromMethodMatcher(URI_CREATE_METHOD_MATCHER);
     private static final MethodMatcher STRING_REPLACE = new MethodMatcher("java.lang.String replace(..)");
 
-    private static final LocalFlowSpec<J.Literal, Expression> INSECURE_URI_CREATE = new LocalFlowSpec<J.Literal, Expression>() {
+    private static final DataFlowSpec INSECURE_URI_CREATE = new DataFlowSpec() {
         @Override
         public boolean isSource(DataFlowNode srcNode) {
             return srcNode
                     .asExpr(Literal.class)
-                    .flatMap(Literal::getValue)
+                    .bind(Literal::getValue)
                     .map(v -> v.toString().startsWith("http://"))
-                    .orElse(false);
+                    .orSome(false);
         }
 
         @Override
@@ -54,10 +55,8 @@ public class UriCreatedWithHttpScheme extends Recipe {
         public boolean isAdditionalFlowStep(DataFlowNode srcNode, DataFlowNode sinkNode) {
             return sinkNode
                     .asExpr(BinaryExpr.class)
-                    .flatMap(binary -> srcNode
-                            .asExpr()
-                            .map(src -> binary.getLeft().equals(src)))
-                    .orElse(false);
+                    .bind(srcNode.asExpr(), binary -> src -> binary.getLeft().equals(src))
+                    .orSome(false);
         }
 
         @Override
@@ -82,7 +81,7 @@ public class UriCreatedWithHttpScheme extends Recipe {
             @Override
             public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                 J.Literal l = super.visitLiteral(literal, ctx);
-                if (Dataflow.startingAt(getCursor()).findSinks(INSECURE_URI_CREATE).isPresent()) {
+                if (Dataflow.startingAt(getCursor()).findSinks(INSECURE_URI_CREATE).isSome()) {
                     //noinspection ConstantConditions
                     return l.withValue(l.getValue().toString().replace("http://", "https://"))
                             .withValueSource(l.getValueSource().replace("http://", "https://"));

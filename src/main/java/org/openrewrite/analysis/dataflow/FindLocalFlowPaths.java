@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 @RequiredArgsConstructor
 public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
     private static final String FLOW_GRAPHS = "flowGraphs";
-    private final LocalFlowSpec<?, ?> spec;
+    private final DataFlowSpec spec;
 
     @Override
     public @Nullable J visit(@Nullable Tree tree, P p) {
@@ -43,9 +43,9 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
             getCursor().putMessage(FLOW_GRAPHS, new ArrayList<>());
             JavaSourceFile c = (JavaSourceFile) super.visit(tree, p);
 
-            Set<Expression> flowSteps = Collections.newSetFromMap(new IdentityHashMap<>());
-            List<SinkFlowSummary<?, ?>> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
-            for (SinkFlowSummary<?, ?> flowGraphSummary : requireNonNull(sinkFlows)) {
+            Set<J> flowSteps = Collections.newSetFromMap(new IdentityHashMap<>());
+            List<SinkFlowSummary> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
+            for (SinkFlowSummary flowGraphSummary : requireNonNull(sinkFlows)) {
                 flowSteps.addAll(flowGraphSummary.getFlowParticipants());
             }
 
@@ -57,6 +57,13 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
                                 SearchResult.found(expression) :
                                 expression;
                     }
+
+                    @Override
+                    public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, P p) {
+                        return flowSteps.contains(variable) ?
+                                SearchResult.found(super.visitVariable(variable, p)) :
+                                super.visitVariable(variable, p);
+                    }
                 }.visit(c, p);
             }
             return c;
@@ -66,9 +73,9 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
 
     @Override
     public Expression visitExpression(Expression expression, P p) {
-        Dataflow.startingAt(getCursor()).findSinks(spec).ifPresent(flow -> {
+        Dataflow.startingAt(getCursor()).findSinks(spec).forEach(flow -> {
             if (flow.isNotEmpty()) {
-                List<SinkFlowSummary<?, ?>> flowGraphs = getCursor().getNearestMessage(FLOW_GRAPHS);
+                List<SinkFlowSummary> flowGraphs = getCursor().getNearestMessage(FLOW_GRAPHS);
                 assert flowGraphs != null;
                 flowGraphs.add(flow);
             }
@@ -76,12 +83,24 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
         return expression;
     }
 
-    public static boolean anyMatch(Cursor cursor, LocalFlowSpec<?, ?> spec) {
+    @Override
+    public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, P p) {
+        Dataflow.startingAt(getCursor()).findSinks(spec).forEach(flow -> {
+            if (flow.isNotEmpty()) {
+                List<SinkFlowSummary> flowGraphs = getCursor().getNearestMessage(FLOW_GRAPHS);
+                assert flowGraphs != null;
+                flowGraphs.add(flow);
+            }
+        });
+        return super.visitVariable(variable, p);
+    }
+
+    public static boolean anyMatch(Cursor cursor, DataFlowSpec spec) {
         JavaSourceFile enclosing = cursor.firstEnclosingOrThrow(JavaSourceFile.class);
         return new FindLocalFlowPaths<Integer>(spec).visit(enclosing, 0) != enclosing;
     }
 
-    public static boolean noneMatch(Cursor cursor, LocalFlowSpec<?, ?> spec) {
+    public static boolean noneMatch(Cursor cursor, DataFlowSpec spec) {
         return !anyMatch(cursor, spec);
     }
 }

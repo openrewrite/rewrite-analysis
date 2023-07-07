@@ -48,18 +48,18 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new LocalFlowSpec<>() {
+        spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new DataFlowSpec() {
             @Override
             public boolean isSource(DataFlowNode srcNode) {
                 return srcNode
                   .asExpr(Literal.class)
-                  .flatMap(Literal::getValue)
+                  .bind(Literal::getValue)
                   .map("42"::equals)
-                  .orElseGet(() -> srcNode
+                  .orSome(() -> srcNode
                     .asExpr(MethodAccess.class)
                     .map(ma -> ma.getSimpleName()
                       .equals("source"))
-                    .orElse(false));
+                    .orSome(false));
             }
 
             @Override
@@ -1268,7 +1268,6 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
         );
     }
 
-    // currently giving "java.lang.AssertionError: The recipe must make changes"
     @Test
     void switchWithMultipleCases() {
         rewriteRun(

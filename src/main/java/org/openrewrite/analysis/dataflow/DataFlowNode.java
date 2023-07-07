@@ -15,18 +15,17 @@
  */
 package org.openrewrite.analysis.dataflow;
 
+import fj.data.Option;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.ExprParent;
-import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -36,28 +35,36 @@ public abstract class DataFlowNode {
     @Getter
     final Cursor cursor;
 
-    public abstract Optional<Expr> asExpr();
+    public abstract Option<Expr> asExpr();
 
-    public <E extends Expr> Optional<E> asExpr(Class<E> clazz) {
+    public <E extends Expr> Option<E> asExpr(Class<E> clazz) {
         return asExpr().filter(clazz::isInstance).map(clazz::cast);
     }
 
-    public <E extends ExprParent> Optional<E> asExprParent(Class<E> clazz) {
+    public <E extends ExprParent> Option<E> asExprParent(Class<E> clazz) {
         return asExpr().filter(clazz::isInstance).map(clazz::cast);
     }
 
-    abstract Optional<Parameter> asParameter();
+    public abstract Option<Parameter> asParameter();
 
     abstract <T> T map(Function<Expr, T> whenExpression, Function<Parameter, T> whenParameter);
 
-    public static DataFlowNode of(Cursor cursor) {
+    public static Option<DataFlowNode> of(Cursor cursor) {
         if (cursor.getValue() instanceof Expression) {
-            return new ExpressionDataFlowNode(cursor, Expr.viewOf(cursor).on(TraitErrors::doThrow));
+            return Expr.viewOf(cursor).map(expr -> (DataFlowNode) new ExpressionDataFlowNode(cursor, expr)).toOption();
         } else if (cursor.getValue() instanceof J.VariableDeclarations.NamedVariable) {
-            return new ParameterDataFlowNode(cursor, Parameter.viewOf(cursor).on(TraitErrors::doThrow));
+            return Parameter.viewOf(cursor).map(parameter -> (DataFlowNode) new ParameterDataFlowNode(cursor, parameter)).toOption();
         } else {
-            throw new IllegalArgumentException("DataFlowNode can not be of type: " + cursor.getValue().getClass());
+            return Option.none();
         }
+    }
+
+    public static DataFlowNode ofOrThrow(Cursor cursor, String message) {
+        Option<DataFlowNode> maybeNode = of(cursor);
+        if (maybeNode.isNone()) {
+            throw new RuntimeException(message);
+        }
+        return maybeNode.some();
     }
 }
 
@@ -69,13 +76,13 @@ class ExpressionDataFlowNode extends DataFlowNode {
     }
 
     @Override
-    public Optional<Expr> asExpr() {
-        return Optional.of(expression);
+    public Option<Expr> asExpr() {
+        return Option.some(expression);
     }
 
     @Override
-    Optional<Parameter> asParameter() {
-        return Optional.empty();
+    public Option<Parameter> asParameter() {
+        return Option.none();
     }
 
     @Override
@@ -94,13 +101,13 @@ class ParameterDataFlowNode extends DataFlowNode {
     }
 
     @Override
-    public Optional<Expr> asExpr() {
-        return Optional.empty();
+    public Option<Expr> asExpr() {
+        return Option.none();
     }
 
     @Override
-    Optional<Parameter> asParameter() {
-        return Optional.of(parameter);
+    public Option<Parameter> asParameter() {
+        return Option.some(parameter);
     }
 
     @Override
