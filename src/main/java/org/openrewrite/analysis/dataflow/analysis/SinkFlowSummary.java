@@ -55,6 +55,19 @@ public class SinkFlowSummary {
                     .map(Cursor::<J>getValue)
                     .collect(Collectors.toList());
 
+    /**
+     * A restricted set of sinks that are always {@link Expression}s.
+     * <p>
+     * In a majority of cases, this will be the same as {@link #getSinks()}.
+     */
+    @Getter(lazy = true)
+    private final List<Expression> expressionSinks =
+            getSinks()
+                    .stream()
+                    .filter(Expression.class::isInstance)
+                    .map(Expression.class::cast)
+                    .collect(Collectors.toList());
+
     @Getter(lazy = true)
     private final Set<Cursor> flowCursorParticipants =
             getFlows()
@@ -112,9 +125,9 @@ public class SinkFlowSummary {
         }
 
         private void recurseGetFlows(
-          FlowGraph flowGraph,
-          Deque<Cursor> pathToHere,
-          List<List<Cursor>> pathsToSinks
+                FlowGraph flowGraph,
+                Deque<Cursor> pathToHere,
+                List<List<Cursor>> pathsToSinks
         ) {
             Cursor cursor = flowGraph.getNode().getCursor();
             if (cursor.getValue() instanceof Expression && !reachable.contains(cursor.<Expression>getValue())) {
