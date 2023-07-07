@@ -55,9 +55,7 @@ public class UriCreatedWithHttpScheme extends Recipe {
         public boolean isAdditionalFlowStep(DataFlowNode srcNode, DataFlowNode sinkNode) {
             return sinkNode
                     .asExpr(BinaryExpr.class)
-                    .bind(binary -> srcNode
-                            .asExpr()
-                            .map(src -> binary.getLeft().equals(src)))
+                    .bind(srcNode.asExpr(), binary -> src -> binary.getLeft().equals(src))
                     .orSome(false);
         }
 
