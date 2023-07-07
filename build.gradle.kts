@@ -14,6 +14,8 @@ dependencies {
     compileOnly("org.projectlombok:lombok:latest.release")
     annotationProcessor("org.projectlombok:lombok:latest.release")
 
+    api("org.functionaljava:functionaljava:latest.release")
+
     implementation(platform("org.openrewrite:rewrite-bom:${rewriteVersion}"))
     implementation("org.openrewrite:rewrite-java")
     implementation("org.openrewrite:rewrite-maven")
@@ -21,7 +23,6 @@ dependencies {
     implementation("org.openrewrite:rewrite-xml")
 
     implementation("io.github.classgraph:classgraph:latest.release")
-    implementation("org.functionaljava:functionaljava:latest.release")
 
     testImplementation("org.openrewrite:rewrite-test:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-java-tck:${rewriteVersion}")
