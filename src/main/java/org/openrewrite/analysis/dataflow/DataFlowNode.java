@@ -47,6 +47,14 @@ public abstract class DataFlowNode {
 
     public abstract Option<Parameter> asParameter();
 
+    public boolean isParameter() {
+        return asParameter().isSome();
+    }
+
+    public boolean isExpr() {
+        return asExpr().isSome();
+    }
+
     abstract <T> T map(Function<Expr, T> whenExpression, Function<Parameter, T> whenParameter);
 
     public static Option<DataFlowNode> of(Cursor cursor) {

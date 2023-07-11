@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.trait.expr;
 
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
@@ -24,6 +25,7 @@ import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +43,7 @@ public interface MethodAccess extends Expr, Call {
 
     enum Factory implements TraitFactory<MethodAccess> {
         F;
+
         @Override
         public Validation<TraitErrors, MethodAccess> viewOf(Cursor cursor) {
             if (cursor.getValue() instanceof J.MethodInvocation) {
@@ -70,6 +73,11 @@ class MethodAccessBase extends Top.Base implements MethodAccess {
 
     public boolean matches(InvocationMatcher callMatcher) {
         return callMatcher.matches(methodInvocation);
+    }
+
+    @Override
+    public Option<JavaType.Method> getMethodType() {
+        return Option.fromNull(methodInvocation.getMethodType());
     }
 
     static Validation<TraitErrors, MethodAccessBase> viewOf(Cursor cursor) {

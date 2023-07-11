@@ -24,6 +24,7 @@ import org.openrewrite.analysis.dataflow.DataFlowNode;
 
 import javax.annotation.CheckReturnValue;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -36,6 +37,13 @@ public class FlowGraph {
     private final DataFlowNode node;
     private List<FlowGraph> edges = emptyList();
 
+    public List<FlowGraph> getEdges() {
+        if (edges.isEmpty()) {
+            return emptyList();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(edges));
+    }
+
     /**
      * Add an edge to the graph returning the newly added {@link FlowGraph} leaf.
      *
@@ -43,7 +51,7 @@ public class FlowGraph {
      * @return The newly added {@link FlowGraph} leaf.
      */
     @CheckReturnValue
-    FlowGraph addEdge(DataFlowNode node) {
+    public FlowGraph addEdge(DataFlowNode node) {
         if (edges.isEmpty()) {
             edges = new ArrayList<>(2);
         }
@@ -55,7 +63,7 @@ public class FlowGraph {
     /**
      * @return The edge argument.
      */
-    FlowGraph addEdge(FlowGraph edge) {
+    public FlowGraph addEdge(FlowGraph edge) {
         if (edges.isEmpty()) {
             edges = new ArrayList<>(2);
         }
@@ -66,5 +74,9 @@ public class FlowGraph {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + "edges=" + edges.size() + ", cursor=" + node.getCursor() + '}';
+    }
+
+    public void removeEdge(FlowGraph edge) {
+        edges.remove(edge);
     }
 }

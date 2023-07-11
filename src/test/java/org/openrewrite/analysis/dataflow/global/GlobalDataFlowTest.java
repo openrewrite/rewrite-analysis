@@ -1,3 +1,18 @@
+/*
+ * Copyright 2023 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * https://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.openrewrite.analysis.dataflow.global;
 
 import org.junit.jupiter.api.Test;
@@ -73,7 +88,7 @@ public class GlobalDataFlowTest implements RewriteTest {
     }
 
     @Test
-    void multiMethodDataFlowThroughIdentityFunction() {
+    void identityFunction() {
         rewriteRun(
           java(
             """
@@ -109,8 +124,45 @@ public class GlobalDataFlowTest implements RewriteTest {
     }
 
     @Test
-    void multiMethodDataFlowThroughNoOpFunction() {
+    void identityFunctionReversedOrder() {
         rewriteRun(
+          java(
+            """
+                class Test {
+                    
+                    void test() {
+                        String s = "42";
+                        String t = identity(s);
+                        System.out.println(t);
+                    }
+                    
+                    String identity(String s) {
+                        return s;
+                    }
+                }
+              """,
+            """
+                class Test {
+                    
+                    void test() {
+                        String s = /*~~(source)~~>*/"42";
+                        String t = /*~~>*/identity(/*~~>*/s);
+                        System.out.println(/*~~(sink)~~>*/t);
+                    }
+                    
+                    String identity(String /*~~>*/s) {
+                        return /*~~>*/s;
+                    }
+                }
+              """
+          )
+        );
+    }
+
+    @Test
+    void noOpFunction() {
+        rewriteRun(
+          spec -> spec.expectedCyclesThatMakeChanges(0),
           java(
             """
                 class Test {
@@ -123,6 +175,40 @@ public class GlobalDataFlowTest implements RewriteTest {
                         String s = "42";
                         String t = noOp(s);
                         System.out.println(t);
+                    }
+                }
+              """
+          )
+        );
+    }
+
+    @Test
+    void printFunction() {
+        rewriteRun(
+          java(
+            """
+                class Test {
+                
+                    void print(String s) {
+                        System.out.println(s);
+                    }
+                    
+                    void test() {
+                        String s = "42";
+                        print(s);
+                    }
+                }
+              """,
+            """
+                class Test {
+                
+                    void print(String /*~~>*/s) {
+                        System.out.println(/*~~(sink)~~>*/s);
+                    }
+                    
+                    void test() {
+                        String s = /*~~(source)~~>*/"42";
+                        print(/*~~>*/s);
                     }
                 }
               """

@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.trait.member;
 
 import fj.F0;
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -63,6 +64,11 @@ class MethodDeclarationMethod extends Top.Base implements Method {
             return JavaType.Primitive.Void;
         }
         return methodDeclaration.getReturnTypeExpression().getType();
+    }
+
+    @Override
+    public Option<JavaType.Method> getMethodType() {
+        return Option.fromNull(methodDeclaration.getMethodType());
     }
 
     @Override

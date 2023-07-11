@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow;
 
 import fj.data.Option;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
@@ -31,31 +32,36 @@ import java.util.Set;
  * <a href="https://en.wikipedia.org/wiki/Dataflow_programming">Dataflow</a>.
  */
 @Incubating(since = "7.24.0")
-@RequiredArgsConstructor(staticName = "startingAt")
+@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class Dataflow {
     @Nullable
-    private final Cursor start;
+    private final DataFlowNode n;
 
     public Option<SinkFlowSummary> findSinks(DataFlowSpec spec) {
-        if (start == null) {
+        if (n == null) {
             return Option.none();
         }
-        return DataFlowNode.of(start).bind(n -> {
-            if (!spec.isSource(n)) {
-                return Option.none();
-            }
-            return ControlFlow.startingAt(start).findControlFlow().bind(summary -> {
-                Set<Expression> reachable = summary.computeReachableExpressions(spec::isBarrierGuard);
+        if (!spec.isSource(n)) {
+            return Option.none();
+        }
+        return ControlFlow.startingAt(n.getCursor()).findControlFlow().bind(summary -> {
+            Set<Expression> reachable = summary.computeReachableExpressions(spec::isBarrierGuard);
 
-                FlowGraph flow = new SinkFlow(n);
-                ForwardFlow.findSinks(flow, spec);
-                SinkFlowSummary sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
-                return sinkFlowSummary.isNotEmpty() ? Option.some(sinkFlowSummary) : Option.none();
-            });
+            FlowGraph flow = ForwardFlow.findSinks(n, spec);
+            SinkFlowSummary sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
+            return sinkFlowSummary.isNotEmpty() ? Option.some(sinkFlowSummary) : Option.none();
         });
     }
 
     public <E extends Expression> Optional<SourceFlow> findSources(DataFlowSpec spec) {
         throw new UnsupportedOperationException("Not yet implemented.");
+    }
+
+    public static Dataflow startingAt(Cursor start) {
+        return startingAt(DataFlowNode.of(start).toNull());
+    }
+
+    public static Dataflow startingAt(@Nullable DataFlowNode node) {
+        return new Dataflow(node);
     }
 }

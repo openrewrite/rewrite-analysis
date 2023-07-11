@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.trait.member;
 
+import fj.data.Option;
 import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.JavaType;
@@ -30,7 +31,7 @@ public interface Callable extends Member {
     @Nullable
     JavaType getReturnType();
 
+    Option<JavaType.Method> getMethodType();
+
     List<Parameter> getParameters();
 }
-
-

@@ -35,6 +35,12 @@ import java.util.stream.Stream;
 @Incubating(since = "7.24.0")
 public class ForwardFlow extends JavaVisitor<Integer> {
 
+    public static FlowGraph findSinks(DataFlowNode node, DataFlowSpec spec) {
+        FlowGraph graph = new FlowGraph(node);
+        findSinks(graph, spec);
+        return graph;
+    }
+
     public static void findSinks(FlowGraph root, DataFlowSpec spec) {
         VariableNameToFlowGraph variableNameToFlowGraph =
                 computeVariableAssignment(root.getNode().getCursor(), root, spec);
@@ -43,20 +49,23 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
         // The parent statement of the source. Data flow can not start before the source.
         Object taintStmt = null;
+        Cursor taintStmtCursorParentParent = null;
         Cursor taintStmtCursorParent = null;
         if (variableNameToFlowGraph.currentCursor != null && variableNameToFlowGraph.currentCursor.getValue() instanceof J) {
             taintStmt = variableNameToFlowGraph.currentCursor.getValue();
-            taintStmtCursorParent = variableNameToFlowGraph.currentCursor.getParent();
+            taintStmtCursorParentParent = variableNameToFlowGraph.currentCursor.getParent();
+            taintStmtCursorParent = variableNameToFlowGraph.currentCursor;
         }
         Iterator<Cursor> remainingPath = variableNameToFlowGraph.remainingCursorPath;
         while (remainingPath.hasNext()) {
-            taintStmtCursorParent = remainingPath.next();
-            Object next = taintStmtCursorParent.getValue();
+            taintStmtCursorParentParent = remainingPath.next();
+            Object next = taintStmtCursorParentParent.getValue();
             if (next instanceof J.Block) {
                 break;
             }
             if (next instanceof J) {
                 taintStmt = next;
+                taintStmtCursorParent = taintStmtCursorParentParent;
             }
         }
 
@@ -65,15 +74,18 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             throw new IllegalStateException("`taintStmtCursorParent` is null. Computing flow starting at " + root.getNode().getCursor().getValue());
         }
         if (taintStmt instanceof J.WhileLoop ||
-                taintStmt instanceof J.DoWhileLoop ||
-                taintStmt instanceof J.ForLoop) {
+            taintStmt instanceof J.DoWhileLoop ||
+            taintStmt instanceof J.ForLoop) {
             // This occurs when an assignment occurs within the control parenthesis of a loop
             Statement body;
             if (taintStmt instanceof J.WhileLoop) {
+                assert taintStmtCursorParent.getValue() instanceof J.WhileLoop : "taintStmtCursorParent is not a while loop";
                 body = ((J.WhileLoop) taintStmt).getBody();
             } else if (taintStmt instanceof J.DoWhileLoop) {
+                assert taintStmtCursorParent.getValue() instanceof J.DoWhileLoop : "taintStmtCursorParent is not a do while loop";
                 body = ((J.DoWhileLoop) taintStmt).getBody();
             } else {
+                assert taintStmtCursorParent.getValue() instanceof J.ForLoop : "taintStmtCursorParent is not a for loop";
                 body = ((J.ForLoop) taintStmt).getBody();
             }
             analysis.visit(body, 0, taintStmtCursorParent);
@@ -83,6 +95,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             analysis.visit(_try.getFinally(), 0, taintStmtCursorParent);
         } else if (taintStmt instanceof J.MethodDeclaration) {
             J.MethodDeclaration methodDeclaration = (J.MethodDeclaration) taintStmt;
+            assert taintStmtCursorParent.getValue() instanceof J.MethodDeclaration : "taintStmtCursorParent is not a method declaration";
             analysis.visit(methodDeclaration.getBody(), 0, taintStmtCursorParent);
         } else {
             // This is when assignment occurs within the body of a block
@@ -121,7 +134,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
         J.Block parentBlock = blockCursor.getParentOrThrow().firstEnclosing(J.Block.class);
         if (parentBlock != null && parentBlock.getStatements().contains(block) &&
-                J.Block.isStaticOrInitBlock(blockCursor)) {
+            J.Block.isStaticOrInitBlock(blockCursor)) {
             // This block is the body of a static block or an init block, so we don't need to visit any higher
             return;
         }
@@ -302,7 +315,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             if (left instanceof J.Identifier) {
                 String variableName = ((J.Identifier) left).getSimpleName();
                 if (flowsByIdentifier.peek().hasFlows(variableName) &&
-                        flowsByIdentifier.peek().get(variableName).stream().allMatch(v -> v.getNode().getCursor().getValue() != a.getAssignment())) {
+                    flowsByIdentifier.peek().get(variableName).stream().allMatch(v -> v.getNode().getCursor().getValue() != a.getAssignment())) {
                     flowsByIdentifier.peek().remove(variableName);
                 }
             }
@@ -396,7 +409,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
 
                     // Flow from one argument or the select to another argument
                     if (methodInvocation.getArguments().contains(previousCursor.getValue()) ||
-                            methodInvocation.getSelect() == previousCursor.getValue()) {
+                        methodInvocation.getSelect() == previousCursor.getValue()) {
                         for (Expression expr : methodInvocation.getArguments()) {
                             if (expr.equals(previousCursor.getValue())) {
                                 // There is no flow to itself
@@ -446,7 +459,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     J.Ternary ternary = (J.Ternary) ancestor;
                     Object previousCursorValue = nextFlowGraph.getNode().getCursor().getValue();
                     if (ternary.getTruePart() == previousCursorValue ||
-                            ternary.getFalsePart() == previousCursorValue) {
+                        ternary.getFalsePart() == previousCursorValue) {
                         nextFlowGraph = nextFlowGraph.addEdge(ancestorNode);
                         continue;
                     } else {
@@ -454,8 +467,8 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                         break;
                     }
                 } else if (ancestor instanceof J.TypeCast ||
-                        ancestor instanceof J.Parentheses ||
-                        ancestor instanceof J.ControlParentheses) {
+                           ancestor instanceof J.Parentheses ||
+                           ancestor instanceof J.ControlParentheses) {
                     Cursor parent = ancestorCursor.getParentOrThrow();
                     if (parent.getValue() instanceof J.Switch || parent.getValue() instanceof J.SwitchExpression) {
                         // Don't add control flow to control parentheses in switch statements
@@ -473,8 +486,8 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             } else if (ancestor instanceof J.NewClass) {
                 break;
             } else if (ancestor instanceof J.Assignment ||
-                    ancestor instanceof J.AssignmentOperation ||
-                    ancestor instanceof J.VariableDeclarations.NamedVariable
+                       ancestor instanceof J.AssignmentOperation ||
+                       ancestor instanceof J.VariableDeclarations.NamedVariable
             ) {
                 Expression variable;
                 if (ancestor instanceof J.Assignment) {
