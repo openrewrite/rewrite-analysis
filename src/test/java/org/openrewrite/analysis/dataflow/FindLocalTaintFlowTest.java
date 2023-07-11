@@ -730,6 +730,36 @@ class FindLocalTaintFlowTest implements RewriteTest {
         );
     }
 
+    @Test
+    void taintTrackingThroughMethodCallArgument() {
+        rewriteRun(
+          java(
+            """
+              import java.util.Objects;
+              
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      String str = Objects.requireNonNull(source());
+                      System.out.println(str);
+                  }
+              }
+              """,
+            """
+              import java.util.Objects;
+              
+              class Test {
+                  String source() { return null; }
+                  void test() {
+                      String str = /*~~>*/Objects.requireNonNull(/*~~>*/source());
+                      System.out.println(/*~~>*/str);
+                  }
+              }
+              """
+          )
+        );
+    }
+
     static Stream<TestCase> fileProvider() {
         try (ScanResult scanResult = new ClassGraph().acceptPaths("/find-local-taint-flow-tests").scan()) {
             return scanResult
