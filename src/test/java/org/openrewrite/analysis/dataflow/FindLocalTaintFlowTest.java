@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.analysis.trait.expr.BinaryExpr;
 import org.openrewrite.analysis.trait.expr.Literal;
 import org.openrewrite.analysis.trait.expr.MethodAccess;

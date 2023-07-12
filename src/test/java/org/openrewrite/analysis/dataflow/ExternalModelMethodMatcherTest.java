@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.ExecutionContext;
-import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.analysis.FindJavaTypeMethodsVisitor;
 import org.openrewrite.java.JavaParser;
@@ -27,8 +26,8 @@ import org.openrewrite.test.RewriteTest;
 
 import java.util.function.Supplier;
 
-import static org.openrewrite.test.RewriteTest.toRecipe;
 import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.test.RewriteTest.toRecipe;
 
 public class ExternalModelMethodMatcherTest implements RewriteTest {
     static Supplier<TreeVisitor<?, ExecutionContext>>  fromModel(

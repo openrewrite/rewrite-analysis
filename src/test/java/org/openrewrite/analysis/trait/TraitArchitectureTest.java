@@ -23,7 +23,6 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
-import org.openrewrite.analysis.trait.Top;
 
 import java.util.Optional;
 import java.util.function.Function;
