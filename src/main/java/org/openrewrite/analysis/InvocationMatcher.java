@@ -84,12 +84,12 @@ public interface InvocationMatcher {
         return from(matchers.stream().map(InvocationMatcher::fromMethodMatcher).collect(Collectors.toSet()));
     }
 
-    default Advanced advanced() {
-        return new Advanced(this);
+    default AdvancedInvocationMatcher advanced() {
+        return new AdvancedInvocationMatcher(this);
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    final class Advanced {
+    final class AdvancedInvocationMatcher {
         private InvocationMatcher matcher;
 
         public boolean isSelect(Cursor cursor) {

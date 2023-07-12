@@ -135,7 +135,7 @@ final class ExternalFlowModels {
      * <p>
      * These can be merged into a single {@link InvocationMatcher} that matches all these methods.
      * <p>
-     * From there, a single {@link InvocationMatcher.Advanced} can be called by the
+     * From there, a single {@link InvocationMatcher.AdvancedInvocationMatcher} can be called by the
      * {@link AdditionalFlowStepPredicate}.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
