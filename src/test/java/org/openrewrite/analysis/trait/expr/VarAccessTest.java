@@ -17,7 +17,6 @@ package org.openrewrite.analysis.trait.expr;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ExecutionContext;
-import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;

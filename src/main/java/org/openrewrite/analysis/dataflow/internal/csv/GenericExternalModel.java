@@ -17,7 +17,7 @@ package org.openrewrite.analysis.dataflow.internal.csv;
 
 import lombok.Data;
 import lombok.Getter;
-import org.openrewrite.analysis.BasicJavaTypeMethodMatcher;
+import org.openrewrite.analysis.BasicInvocationMatcher;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.JavaType;
 
@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-public interface GenericExternalModel extends BasicJavaTypeMethodMatcher {
+public interface GenericExternalModel extends BasicInvocationMatcher {
 
     String getNamespace();
     String getType();

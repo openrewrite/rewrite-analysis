@@ -22,7 +22,7 @@ import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.List;
 
-public interface BasicJavaTypeMethodMatcher extends JavaTypeMethodMatcher {
+public interface BasicInvocationMatcher extends InvocationMatcher {
 
     @Override
     default boolean matches(@Nullable JavaType.Method type) {

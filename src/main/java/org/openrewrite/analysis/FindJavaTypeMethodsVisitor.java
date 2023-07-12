@@ -23,13 +23,13 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 
 /**
- * This visitor is used to find method invocations that match a given method pattern as defined by {@link JavaTypeMethodMatcher}.
+ * This visitor is used to find method invocations that match a given method pattern as defined by {@link InvocationMatcher}.
  * <p/>
- * This visitor is most often useful for testing custom implementations of {@link JavaTypeMethodMatcher}.
+ * This visitor is most often useful for testing custom implementations of {@link InvocationMatcher}.
  */
 @AllArgsConstructor
 public class FindJavaTypeMethodsVisitor extends JavaIsoVisitor<ExecutionContext> {
-    private final JavaTypeMethodMatcher methodMatcher;
+    private final InvocationMatcher methodMatcher;
 
     @Override
     public J.@NotNull MethodInvocation visitMethodInvocation(J.@NotNull MethodInvocation method, @NotNull ExecutionContext ctx) {

@@ -17,9 +17,6 @@ package org.openrewrite.analysis.trait.member;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ExecutionContext;
-import org.openrewrite.analysis.trait.member.InstanceInitializer;
-import org.openrewrite.analysis.trait.member.Method;
-import org.openrewrite.analysis.trait.member.StaticInitializerMethod;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;

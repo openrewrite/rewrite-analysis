@@ -19,9 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.TreeVisitor;
-import org.openrewrite.analysis.trait.variable.LocalVariableDecl;
-import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
@@ -30,7 +29,8 @@ import org.openrewrite.test.RewriteTest;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
