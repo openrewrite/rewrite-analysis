@@ -35,13 +35,13 @@ import java.util.stream.Stream;
 @Incubating(since = "7.24.0")
 public class ForwardFlow extends JavaVisitor<Integer> {
 
-    public static FlowGraph findSinks(DataFlowNode node, DataFlowSpec spec) {
+    public static FlowGraph findAllFlows(DataFlowNode node, DataFlowSpec spec) {
         FlowGraph graph = new FlowGraph(node);
-        findSinks(graph, spec);
+        findAllFlows(graph, spec);
         return graph;
     }
 
-    public static void findSinks(FlowGraph root, DataFlowSpec spec) {
+    public static void findAllFlows(FlowGraph root, DataFlowSpec spec) {
         VariableNameToFlowGraph variableNameToFlowGraph =
                 computeVariableAssignment(root.getNode().getCursor(), root, spec);
         if (variableNameToFlowGraph.identifierToFlow.isEmpty()) {

@@ -32,8 +32,13 @@ public interface Call extends ExprParent {
 
     Option<JavaType.Method> getMethodType();
 
+    default InvocationMatcher methodTypeMatcher() {
+        return getMethodType().option(__ -> false, methodType -> methodType::equals);
+    }
+
     enum Factory implements TraitFactory<Call> {
         F;
+
         @Override
         public Validation<TraitErrors, Call> viewOf(Cursor cursor) {
             // TODO: Missing method reference

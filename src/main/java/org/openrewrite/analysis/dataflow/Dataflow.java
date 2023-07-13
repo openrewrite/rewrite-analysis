@@ -17,7 +17,6 @@ package org.openrewrite.analysis.dataflow;
 
 import fj.data.Option;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.ControlFlow;
@@ -47,7 +46,7 @@ public class Dataflow {
         return ControlFlow.startingAt(n.getCursor()).findControlFlow().bind(summary -> {
             Set<Expression> reachable = summary.computeReachableExpressions(spec::isBarrierGuard);
 
-            FlowGraph flow = ForwardFlow.findSinks(n, spec);
+            FlowGraph flow = ForwardFlow.findAllFlows(n, spec);
             SinkFlowSummary sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
             return sinkFlowSummary.isNotEmpty() ? Option.some(sinkFlowSummary) : Option.none();
         });

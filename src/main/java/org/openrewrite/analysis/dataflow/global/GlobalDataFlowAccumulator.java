@@ -61,7 +61,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                     if (!spec.isSource(n)) {
                         return;
                     }
-                    FlowGraph source = ForwardFlow.findSinks(n, globalDataFlowSpec);
+                    FlowGraph source = ForwardFlow.findAllFlows(n, globalDataFlowSpec);
                     sourceFlowGraphs.add(source);
                     walkFlowGraphConnecting(source);
                 });
@@ -74,7 +74,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                         .of(getCursor())
                         .forEach(n -> n.asParameter().forEach(p -> {
                             p.getCallable().getMethodType().forEach(m -> {
-                                FlowGraph g = ForwardFlow.findSinks(n, globalDataFlowSpec);
+                                FlowGraph g = ForwardFlow.findAllFlows(n, globalDataFlowSpec);
                                 parameterFlowGraphs.computeIfAbsent(m, __ -> nulledFlowGraphList(p.getCallable().getParameters().size()))
                                         .set(p.getPosition(), g);
                                 if (argumentFlowGraphs.containsKey(m)) {
@@ -155,19 +155,12 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
             Set<FlowGraph> visited
     ) {
         for (FlowGraph flowGraph : toVisit) {
-            visitDepthFirstAndPruneFlowGraphRecursive(flowGraph, visited);
+            if (!visited.add(flowGraph)) {
+                return;
+            }
+            pruneFlowGraph(flowGraph);
+            visitDepthFirstAndPruneFlowGraphRecursive(flowGraph.getEdges(), visited);
         }
-    }
-
-    private void visitDepthFirstAndPruneFlowGraphRecursive(
-            FlowGraph flowGraph,
-            Set<FlowGraph> visited
-    ) {
-        if (!visited.add(flowGraph)) {
-            return;
-        }
-        pruneFlowGraph(flowGraph);
-        visitDepthFirstAndPruneFlowGraphRecursive(flowGraph.getEdges(), visited);
     }
 
     private void pruneFlowGraph(FlowGraph flowGraph) {
@@ -176,11 +169,11 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         if (isAnyMethodArgument(flowGraph.getNode())) {
             // Find the edge that connects from this argument to the method call, and prune that edge
             for (FlowGraph edge : flowGraph.getEdges()) {
-                if (!edge
-                        .getNode()
-                        .asExprParent(Call.class)
-                        .map(c -> spec.isFlowStep(flowGraph.getNode(), edge.getNode()))
-                        .orSome(true) && !edge.getNode().isParameter()) {
+                // If this is a connection we added to the graph purely for the purposes of Global Data Flow Analysis,
+                // then we can remove it, as long as it was not an additional flow step already
+                if (GlobalDataFlowSpec.isAdditionalGlobalDataFlowStep(flowGraph.getNode(), edge.getNode()) &&
+                    !spec.isFlowStep(flowGraph.getNode(), edge.getNode())
+                ) {
                     flowGraph.removeEdge(edge);
                 }
             }
@@ -220,7 +213,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         }
 
         private boolean isSinkReachable(FlowGraph flowGraph, Set<FlowGraph> visited) {
-            if (spec.isSink(flowGraph.getNode())) {
+            if (reachable.getOrDefault(flowGraph, false) || spec.isSink(flowGraph.getNode())) {
                 return true;
             }
             if (!visited.add(flowGraph)) {
@@ -281,25 +274,19 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
 
         @Override
         public boolean isSource(DataFlowNode srcNode) {
-            return decorated.isSource(srcNode) || srcNode.asParameter().isSome();
+            return decorated.isSource(srcNode);
         }
 
         @Override
         public boolean isSink(DataFlowNode sinkNode) {
-            return decorated.isSink(sinkNode) || sinkNode.asExpr().map(__ -> {
-                J.Return returnn = sinkNode.getCursor().firstEnclosing(J.Return.class);
-                if (returnn != null && Expression.unwrap(returnn.getExpression()) == sinkNode.getCursor().getValue()) {
-                    return true;
-                }
-                return MATCHES_ALL.advanced().isAnyArgument(sinkNode.getCursor());
-            }).orSome(false);
+            // This is never used in FindFlow, as we only care about sources for Global Data Flow Analysis
+            return false;
         }
 
         @Override
         public boolean isAdditionalFlowStep(DataFlowNode srcNode, DataFlowNode sinkNode) {
             return decorated.isAdditionalFlowStep(srcNode, sinkNode) ||
-                   MATCHES_ALL.advanced().isAnyArgument(srcNode.getCursor()) &&
-                   sinkNode.asExprParent(Call.class).map(call -> call.matches(MATCHES_ALL)).orSome(false);
+                   isAdditionalGlobalDataFlowStep(srcNode, sinkNode);
         }
 
         @Override
@@ -310,6 +297,13 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         @Override
         public boolean isBarrierGuard(Guard guard, boolean branch) {
             return decorated.isBarrierGuard(guard, branch);
+        }
+
+        static boolean isAdditionalGlobalDataFlowStep(DataFlowNode srcNode, DataFlowNode sinkNode) {
+            return sinkNode
+                    .asExprParent(Call.class)
+                    .map(call -> call.methodTypeMatcher().advanced().isAnyArgument(srcNode.getCursor()))
+                    .orSome(false);
         }
     }
 
