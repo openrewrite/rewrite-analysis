@@ -23,13 +23,13 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * A method access is an invocation of a method with a list of arguments.
@@ -37,7 +37,7 @@ import java.util.UUID;
 public interface MethodAccess extends Expr, Call {
     String getSimpleName();
 
-    List<Expression> getArguments();
+    List<Expr> getArguments();
 
     boolean matches(InvocationMatcher callMatcher);
 
@@ -67,8 +67,12 @@ class MethodAccessBase extends Top.Base implements MethodAccess {
         return methodInvocation.getSimpleName();
     }
 
-    public List<Expression> getArguments() {
-        return methodInvocation.getArguments();
+    public List<Expr> getArguments() {
+        return methodInvocation
+                .getArguments()
+                .stream()
+                .map(e -> Expr.viewOf(new Cursor(cursor, e)).on(TraitErrors::doThrow))
+                .collect(Collectors.toList());
     }
 
     public boolean matches(InvocationMatcher callMatcher) {
