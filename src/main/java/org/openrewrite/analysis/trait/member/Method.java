@@ -14,35 +14,45 @@
  * limitations under the License.
  */
 package org.openrewrite.analysis.trait.member;
-
-import fj.F0;
 import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
+import org.openrewrite.analysis.trait.Top;
+import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.analysis.trait.Top;
-import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 /** A method is a particular kind of callable. */
 public interface Method extends Callable {
 
-    static Validation<TraitErrors, Method> viewOf(Cursor cursor) {
-        if (cursor.getValue() instanceof J.MethodDeclaration) {
-            return Validation.success(new MethodDeclarationMethod(
-                    cursor,
-                    cursor.getValue()
-            ));
+    enum Factory implements TraitFactory<Method> {
+        F;
+
+        @Override
+        public Validation<TraitErrors, Method> viewOf(Cursor cursor) {
+            if (cursor.getValue() instanceof J.MethodDeclaration) {
+                return Validation.success(new MethodDeclarationMethod(
+                        cursor,
+                        cursor.getValue()
+                ));
+            }
+            return TraitErrors.invalidTraitCreationType(Callable.class, cursor, J.MethodDeclaration.class);
         }
-        return TraitErrors.invalidTraitCreationType(Callable.class, cursor, J.MethodDeclaration.class);
     }
 
+    static Validation<TraitErrors, Method> viewOf(Cursor cursor) {
+        return Factory.F.viewOf(cursor);
+    }
 }
 @AllArgsConstructor
 class MethodDeclarationMethod extends Top.Base implements Method {
@@ -59,11 +69,11 @@ class MethodDeclarationMethod extends Top.Base implements Method {
     }
 
     @Override
-    public JavaType getReturnType() {
+    public Option<JavaType> getReturnType() {
         if (methodDeclaration.getReturnTypeExpression() == null) {
-            return JavaType.Primitive.Void;
+            return Option.some(JavaType.Primitive.Void);
         }
-        return methodDeclaration.getReturnTypeExpression().getType();
+        return Option.fromNull(methodDeclaration.getReturnTypeExpression().getType());
     }
 
     @Override

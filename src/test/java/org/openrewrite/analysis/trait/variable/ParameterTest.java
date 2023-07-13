@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
@@ -57,6 +58,8 @@ public class ParameterTest implements RewriteTest {
                 assertFalse(p.isVarArgs(), "Parameter isVarArgs is incorrect");
                 assertEquals("i", p.getName(), "Parameter name is incorrect");
                 assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
+                Method method = Method.Factory.F.firstEnclosingViewOf(cursor).on(TraitErrors::doThrow);
+                assertEquals(p.getCallable(), method, "Parameter callable is incorrect");
                 return SearchResult.found(variable);
             }
           ))),

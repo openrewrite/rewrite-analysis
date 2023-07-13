@@ -15,9 +15,9 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Option;
 import fj.data.Validation;
 import org.openrewrite.Cursor;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.analysis.trait.Element;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.expr.VarAccess;
@@ -31,8 +31,7 @@ import java.util.Collection;
  */
 public interface Variable extends Element {
 
-    @Nullable
-    JavaType getType();
+    Option<JavaType> getType();
 
     /**
      * Gets all access to this variable.

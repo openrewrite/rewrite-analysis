@@ -20,19 +20,21 @@ import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
-import org.openrewrite.analysis.trait.internal.MaybeParenthesesPair;
-import org.openrewrite.analysis.trait.member.FieldDeclaration;
-import org.openrewrite.analysis.trait.variable.Field;
-import org.openrewrite.analysis.trait.variable.Variable;
-import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.internal.MaybeParenthesesPair;
+import org.openrewrite.analysis.trait.member.FieldDeclaration;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.analysis.trait.variable.Field;
+import org.openrewrite.analysis.trait.variable.Variable;
+import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -324,13 +326,13 @@ class FieldFromJavaTypeVariable extends Top.Base implements Field {
     }
 
     @Override
-    public Optional<FieldDeclaration> getDeclaration() {
-        return Optional.empty();
+    public Option<FieldDeclaration> getDeclaration() {
+        return Option.none();
     }
 
     @Override
-    public @Nullable JavaType getType() {
-        return variable.getType();
+    public Option<JavaType> getType() {
+        return Option.fromNull(variable.getType());
     }
 
     @Override

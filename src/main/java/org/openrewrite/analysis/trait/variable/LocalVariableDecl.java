@@ -15,12 +15,12 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
 import org.openrewrite.Tree;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.expr.VarAccess;
@@ -78,8 +78,8 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
     }
 
     @Override
-    public @Nullable JavaType getType() {
-        return variable.getType();
+    public Option<JavaType> getType() {
+        return Option.fromNull(variable.getType());
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,20 +25,24 @@ import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.expr.VarAccess;
-import org.openrewrite.analysis.trait.member.Callable;
 import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.UUID;
 
 /**
  * Represents a parameter in a {@link org.openrewrite.java.tree.J.MethodDeclaration} or
  * {@link org.openrewrite.java.tree.J.NewClass}.
  */
 public interface Parameter extends LocalScopeVariable {
+
+    @Override
+    Method getCallable();
 
     /**
      * The zero indexed position of the parameter in the method declaration.
@@ -76,7 +81,7 @@ class ParameterBase extends Top.Base implements Parameter {
     Cursor cursor;
     J.VariableDeclarations.NamedVariable namedVariable;
     @Getter(onMethod = @__(@Override))
-    Callable callable;
+    Method callable;
     Cursor methodDeclarationCursor;
     J.MethodDeclaration methodDeclaration;
 
@@ -104,8 +109,8 @@ class ParameterBase extends Top.Base implements Parameter {
     }
 
     @Override
-    public JavaType getType() {
-        return namedVariable.getType();
+    public Option<JavaType> getType() {
+        return Option.fromNull(namedVariable.getType());
     }
 
     @Override

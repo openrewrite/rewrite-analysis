@@ -17,19 +17,15 @@ package org.openrewrite.analysis.trait.member;
 
 import fj.data.Option;
 import org.openrewrite.analysis.trait.variable.Parameter;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.List;
-
-import static java.util.stream.StreamSupport.stream;
 
 /**
  * A method or constructor.
  */
 public interface Callable extends Member {
-    @Nullable
-    JavaType getReturnType();
+    Option<JavaType> getReturnType();
 
     Option<JavaType.Method> getMethodType();
 

@@ -15,10 +15,10 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.expr.VarAccess;
@@ -29,7 +29,6 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -41,7 +40,7 @@ public interface Field extends Member, Variable {
      * <p/>
      * Note that this declaration is only available if the field occurs in source code.
      */
-    Optional<FieldDeclaration> getDeclaration();
+    Option<FieldDeclaration> getDeclaration();
 
     enum Factory implements TraitFactory<Field> {
         F;
@@ -83,13 +82,13 @@ class FieldFromCursor extends Top.Base implements Field {
     }
 
     @Override
-    public Optional<FieldDeclaration> getDeclaration() {
-        return Optional.empty();
+    public Option<FieldDeclaration> getDeclaration() {
+        return Option.none();
     }
 
     @Override
-    public @Nullable JavaType getType() {
-        return variable.getType();
+    public Option<JavaType> getType() {
+        return Option.fromNull(variable.getType());
     }
 
     @Override

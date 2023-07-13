@@ -21,8 +21,36 @@ import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
+import java.util.Iterator;
+
 public interface TraitFactory<T extends Top> {
     Validation<TraitErrors, T> viewOf(Cursor cursor);
+
+    default Validation<TraitErrors, T> firstEnclosingViewOf(Cursor cursor) {
+        Iterator<Cursor> cursors = cursor.getPathAsCursors();
+        TraitErrors errors = null;
+        while (cursors.hasNext()) {
+            Cursor c = cursors.next();
+            Validation<TraitErrors, T> view = viewOf(c);
+            if (view.isSuccess()) {
+                return view;
+            } else {
+                if (errors == null) {
+                    errors = view.fail();
+                } else {
+                    errors = TraitErrors.semigroup.sum(errors, view.fail());
+                }
+            }
+        }
+        if (errors != null) {
+            return Validation.fail(errors);
+        }
+        return Validation.fail(
+                TraitErrors.fromSingleError(
+                        "No view found for cursor " + cursor
+                )
+        );
+    }
 
     /**
      * Find the first view of a given type that matches a cursor.
