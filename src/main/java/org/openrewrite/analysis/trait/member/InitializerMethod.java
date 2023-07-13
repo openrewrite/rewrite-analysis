@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.trait.member;
 
+import fj.data.Option;
 import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
@@ -64,6 +65,11 @@ abstract class InitializerMethodBase extends Top.Base implements InitializerMeth
     @Override
     public UUID getId() {
         return cursor.<Tree>getValue().getId();
+    }
+
+    @Override
+    public Option<JavaType.Method> getMethodType() {
+        return Option.none();
     }
 
     static <V extends InitializerMethodBase> Validation<TraitErrors, V> genericViewOf(Cursor cursor, Function<Cursor, V> initializer, Class<V> clazz) {

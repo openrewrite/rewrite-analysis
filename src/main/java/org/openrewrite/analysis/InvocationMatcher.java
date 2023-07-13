@@ -98,8 +98,8 @@ public interface InvocationMatcher {
                 J.MethodInvocation maybeMethodInvocation =
                         cursor.getParentOrThrow().firstEnclosing(J.MethodInvocation.class);
                 return maybeMethodInvocation != null &&
-                        maybeMethodInvocation.getSelect() == expression &&
-                        matcher.matches(maybeMethodInvocation); // Do the matcher.matches(...) last as this can be expensive
+                       maybeMethodInvocation.getSelect() == expression &&
+                       matcher.matches(maybeMethodInvocation); // Do the matcher.matches(...) last as this can be expensive
             });
         }
 
@@ -108,7 +108,7 @@ public interface InvocationMatcher {
                     cursor,
                     expression -> nearestMethodCall(cursor).map(call -> {
                         return call.getArguments().contains(expression)
-                                && matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
+                               && matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
                     }).orElse(false)
             );
         }

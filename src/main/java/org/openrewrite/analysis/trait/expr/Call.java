@@ -15,11 +15,13 @@
  */
 package org.openrewrite.analysis.trait.expr;
 
+import fj.data.Option;
 import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.java.tree.JavaType;
 
 /**
  * Any call to a callable. This includes method calls, constructor and super
@@ -28,8 +30,15 @@ import org.openrewrite.analysis.trait.util.TraitErrors;
 public interface Call extends ExprParent {
     boolean matches(InvocationMatcher callMatcher);
 
+    Option<JavaType.Method> getMethodType();
+
+    default InvocationMatcher methodTypeMatcher() {
+        return getMethodType().option(__ -> false, methodType -> methodType::equals);
+    }
+
     enum Factory implements TraitFactory<Call> {
         F;
+
         @Override
         public Validation<TraitErrors, Call> viewOf(Cursor cursor) {
             // TODO: Missing method reference

@@ -76,10 +76,10 @@ public class SinkFlowSummary {
                     .collect(Collectors.toCollection(() -> Collections.newSetFromMap(new IdentityHashMap<>())));
 
     @Getter(lazy = true)
-    private final Set<Expression> flowParticipants =
+    private final Set<J> flowParticipants =
             getFlowCursorParticipants()
                     .stream()
-                    .map(Cursor::<Expression>getValue)
+                    .map(Cursor::<J>getValue)
                     .collect(Collectors.toCollection(() -> Collections.newSetFromMap(new IdentityHashMap<>())));
 
     public J getSource() {

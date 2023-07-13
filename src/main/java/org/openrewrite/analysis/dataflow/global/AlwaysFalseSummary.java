@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2023 the original author or authors.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.dataflow.analysis;
+package org.openrewrite.analysis.dataflow.global;
 
-import org.openrewrite.Incubating;
-import org.openrewrite.analysis.dataflow.DataFlowNode;
+enum AlwaysFalseSummary implements GlobalDataFlow.Summary {
+    INSTANCE;
 
-@Incubating(since = "7.24.0")
-public class SinkFlow extends FlowGraph {
-    private final DataFlowNode node;
+    @Override
+    public boolean isSource() {
+        return false;
+    }
 
-    public SinkFlow(DataFlowNode node) {
-        super(node);
-        this.node = node;
+    @Override
+    public boolean isSink() {
+        return false;
+    }
+
+    @Override
+    public boolean isFlowParticipant() {
+        return false;
     }
 }

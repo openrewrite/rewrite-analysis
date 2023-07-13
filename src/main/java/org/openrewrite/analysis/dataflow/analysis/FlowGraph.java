@@ -15,26 +15,29 @@
  */
 package org.openrewrite.analysis.dataflow.analysis;
 
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
+import org.openrewrite.java.tree.J;
 
 import javax.annotation.CheckReturnValue;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static java.util.Collections.emptyList;
 
 @Incubating(since = "7.24.0")
-@Data
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-@Setter(AccessLevel.PACKAGE)
 public class FlowGraph {
+    @Getter
     private final DataFlowNode node;
-    private List<FlowGraph> edges = emptyList();
+    private Map<J, FlowGraph> edges = Collections.emptyMap();
+
+    public List<FlowGraph> getEdges() {
+        if (edges.isEmpty()) {
+            return emptyList();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(edges.values()));
+    }
 
     /**
      * Add an edge to the graph returning the newly added {@link FlowGraph} leaf.
@@ -43,28 +46,30 @@ public class FlowGraph {
      * @return The newly added {@link FlowGraph} leaf.
      */
     @CheckReturnValue
-    FlowGraph addEdge(DataFlowNode node) {
+    public FlowGraph addEdge(DataFlowNode node) {
         if (edges.isEmpty()) {
-            edges = new ArrayList<>(2);
+            edges = new IdentityHashMap<>(1);
         }
-        FlowGraph edge = new FlowGraph(node);
-        edges.add(edge);
-        return edge;
+        return edges.computeIfAbsent(node.getCursor().getValue(), __ -> new FlowGraph(node));
     }
 
     /**
      * @return The edge argument.
      */
-    FlowGraph addEdge(FlowGraph edge) {
+    public FlowGraph addEdge(FlowGraph edge) {
         if (edges.isEmpty()) {
-            edges = new ArrayList<>(2);
+            edges = new IdentityHashMap<>(1);
         }
-        edges.add(edge);
+        edges.put(edge.getNode().getCursor().getValue(), edge);
         return edge;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + "edges=" + edges.size() + ", cursor=" + node.getCursor() + '}';
+    }
+
+    public void removeEdge(FlowGraph edge) {
+        edges.remove(edge.getNode().getCursor().<J>getValue(), edge);
     }
 }

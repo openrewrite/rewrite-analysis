@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 the original author or authors.
+ * Copyright 2020 the original author or authors.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.trait.member;
+@NonNullApi
+package org.openrewrite.analysis.dataflow.global;
 
-import fj.data.Option;
-import org.openrewrite.analysis.trait.variable.Parameter;
-import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.tree.JavaType;
-
-import java.util.List;
-
-import static java.util.stream.StreamSupport.stream;
-
-/**
- * A method or constructor.
- */
-public interface Callable extends Member {
-    @Nullable
-    JavaType getReturnType();
-
-    Option<JavaType.Method> getMethodType();
-
-    List<Parameter> getParameters();
-}
+import org.openrewrite.internal.lang.NonNullApi;

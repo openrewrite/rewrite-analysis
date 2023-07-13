@@ -22,6 +22,7 @@ import lombok.Value;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
+import org.openrewrite.analysis.util.CursorUtil;
 import org.openrewrite.internal.SelfLoathing;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -73,24 +74,7 @@ public final class ControlFlow {
     }
 
     public static ControlFlow startingAt(Cursor start) {
-        Iterator<Cursor> cursorPath = start.getPathAsCursors();
-        Cursor methodDeclarationBlockCursor = null;
-        while (cursorPath.hasNext()) {
-            Cursor nextCursor = cursorPath.next();
-            Object next = nextCursor.getValue();
-            if (next instanceof J.Block) {
-                methodDeclarationBlockCursor = nextCursor;
-                if (J.Block.isStaticOrInitBlock(nextCursor)) {
-                    return new ControlFlow(nextCursor);
-                }
-            } else if (next instanceof J.MethodDeclaration) {
-                if (methodDeclarationBlockCursor == null && ((J.MethodDeclaration) next).getBody() != null) {
-                    methodDeclarationBlockCursor = new Cursor(nextCursor, ((J.MethodDeclaration) next).getBody());
-                }
-                return new ControlFlow(methodDeclarationBlockCursor);
-            }
-        }
-        return new ControlFlow(null);
+        return new ControlFlow(CursorUtil.findCallableBlockCursor(start).toNull());
     }
 
     private static class ControlFlowAnalysis<P> extends JavaIsoVisitor<P> {
