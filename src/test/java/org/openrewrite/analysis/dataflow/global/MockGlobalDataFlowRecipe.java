@@ -57,6 +57,6 @@ public class MockGlobalDataFlowRecipe extends ScanningRecipe<GlobalDataFlow.Accu
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor(GlobalDataFlow.Accumulator acc) {
-        return new RenderGlobalFlowPaths<>(acc);
+        return acc.renderer();
     }
 }

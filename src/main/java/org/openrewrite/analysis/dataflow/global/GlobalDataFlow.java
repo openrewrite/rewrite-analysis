@@ -52,6 +52,10 @@ public class GlobalDataFlow {
 
         Summary summary(Cursor cursor);
 
+        default TreeVisitor<?, ExecutionContext> renderer() {
+            return new RenderGlobalFlowPaths<>(this);
+        }
+
         default boolean isSource(Cursor cursor) {
             return summary(cursor).isSource();
         }

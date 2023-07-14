@@ -21,21 +21,20 @@ import org.openrewrite.*;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.DataFlowSpec;
-import org.openrewrite.analysis.dataflow.FindLocalFlowPaths;
 import org.openrewrite.analysis.dataflow.TaintFlowSpec;
-import org.openrewrite.analysis.trait.expr.Expr;
+import org.openrewrite.analysis.dataflow.global.GlobalDataFlow;
+import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.java.search.UsesAllMethods;
-import org.openrewrite.java.tree.J;
+
+import java.util.function.Predicate;
 
 /**
  * Finds either Taint or Data flow between specified start and end methods.
  */
-@EqualsAndHashCode(callSuper = true)
 @Value
-public class FindFlowBetweenMethods extends Recipe {
+@EqualsAndHashCode(callSuper = true)
+public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumulator> {
 
     /**
      * A method pattern that is used to find matching method invocations.
@@ -70,96 +69,76 @@ public class FindFlowBetweenMethods extends Recipe {
     }
 
     @Override
-    public TreeVisitor<?, ExecutionContext> getVisitor() {
-        MethodMatcher startMethodMatcher = new MethodMatcher(startMethodPattern, startMatchOverrides);
-        MethodMatcher endMethodMatcher = new MethodMatcher(endMethodPattern, endMatchOverrides);
+    public GlobalDataFlow.Accumulator getInitialValue(ExecutionContext ctx) {
+        InvocationMatcher startMatcher = InvocationMatcher.fromMethodMatcher(
+                new MethodMatcher(startMethodPattern, startMatchOverrides)
+        );
+        InvocationMatcher endMatcher = InvocationMatcher.fromMethodMatcher(
+                new MethodMatcher(endMethodPattern, endMatchOverrides)
+        );
 
-        return Preconditions.check(new UsesAllMethods<>(new MethodMatcher(startMethodPattern, startMatchOverrides), new MethodMatcher(endMethodPattern, endMatchOverrides)), new JavaIsoVisitor<ExecutionContext>() {
+        final Predicate<Cursor> sinkMatcher;
+
+        switch (target) {
+            case "Select":
+                sinkMatcher = endMatcher.advanced()::isSelect;
+                break;
+            case "Arguments":
+                sinkMatcher = endMatcher.advanced()::isAnyArgument;
+                break;
+            case "Both":
+                sinkMatcher = cursor -> endMatcher.advanced().isAnyArgument(cursor) ||
+                                        endMatcher.advanced().isSelect(cursor);
+                break;
+            default:
+                throw new IllegalStateException("Unknown target: " + target);
+        }
+
+
+        String flow = this.flow == null ? "Data" : this.flow;
+        if (flow.equals("Taint")) {
+            return GlobalDataFlow.accumulator(new TaintFlowSpec() {
+
+                @Override
+                public boolean isSource(DataFlowNode srcNode) {
+                    return FindFlowBetweenMethods.isSource(srcNode, startMatcher);
+                }
+
+                @Override
+                public boolean isSink(DataFlowNode sinkNode) {
+                    return sinkMatcher.test(sinkNode.getCursor());
+                }
+            });
+        }
+        return GlobalDataFlow.accumulator(new DataFlowSpec() {
+
             @Override
-            public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
-                if (startMethodMatcher.matches(method)) {
-                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(getCursor(), endMethodMatcher)));
-                }
-                return m;
+            public boolean isSource(DataFlowNode srcNode) {
+                return FindFlowBetweenMethods.isSource(srcNode, startMatcher);
             }
 
             @Override
-            public J.MemberReference visitMemberReference(J.MemberReference memberRef, ExecutionContext ctx) {
-                J.MemberReference m = super.visitMemberReference(memberRef, ctx);
-                if (startMethodMatcher.matches(m.getMethodType())) {
-                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(getCursor(), endMethodMatcher)));
-                }
-                return m;
-            }
-
-            @Override
-            public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext ctx) {
-                J.NewClass n = super.visitNewClass(newClass, ctx);
-                if (startMethodMatcher.matches(newClass)) {
-                    doAfterVisit(new FindLocalFlowPaths(getFlowSpec(getCursor(), endMethodMatcher)));
-                }
-                return n;
-            }
-
-            private boolean conditional(InvocationMatcher sinkMatcher, Cursor cursor) {
-                switch (target) {
-                    case "Select":
-                        return sinkMatcher.advanced().isSelect(cursor);
-                    case "Arguments":
-                        return sinkMatcher.advanced().isAnyArgument(cursor);
-                    case "Both":
-                        return sinkMatcher.advanced().isAnyArgument(cursor) || sinkMatcher.advanced().isSelect(cursor);
-                    default:
-                        throw new IllegalStateException("Unknown target: " + target);
-
-                }
-            }
-
-            private DataFlowSpec getFlowSpec(Cursor srcCursor, MethodMatcher sink) {
-                final InvocationMatcher sinkMatcher = InvocationMatcher.fromMethodMatcher(sink);
-                switch (flow) {
-                    case "Data":
-                        return new DataFlowSpec() {
-
-                            @Override
-                            public boolean isSource(DataFlowNode srcNode) {
-                                return srcNode
-                                        .asExpr()
-                                        .map(src -> Expr.viewOf(srcCursor)
-                                                .map(s -> s.equals(src))
-                                                .toOption()
-                                                .orSome(false))
-                                        .orSome(false);
-                            }
-
-                            @Override
-                            public boolean isSink(DataFlowNode sinkNode) {
-                                return conditional(sinkMatcher, sinkNode.getCursor());
-                            }
-                        };
-                    case "Taint":
-                        return new TaintFlowSpec() {
-                            @Override
-                            public boolean isSource(DataFlowNode srcNode) {
-                                return srcNode
-                                        .asExpr()
-                                        .map(src -> Expr.viewOf(srcCursor)
-                                                .map(s -> s.equals(src))
-                                                .toOption()
-                                                .orSome(false))
-                                        .orSome(false);
-                            }
-
-                            @Override
-                            public boolean isSink(DataFlowNode sinkNode) {
-                                return conditional(sinkMatcher, sinkNode.getCursor());
-                            }
-                        };
-                    default:
-                        throw new IllegalStateException("Unknown flow: " + flow);
-                }
+            public boolean isSink(DataFlowNode sinkNode) {
+                return sinkMatcher.test(sinkNode.getCursor());
             }
         });
+    }
+
+    private static boolean isSource(DataFlowNode srcNode, InvocationMatcher startMatcher) {
+        return srcNode
+                .asExprParent(Call.class)
+                .bind(Call::getMethodType)
+                .filter(startMatcher::matches)
+                .isSome();
+    }
+
+    @Override
+    public TreeVisitor<?, ExecutionContext> getScanner(GlobalDataFlow.Accumulator acc) {
+        return acc.scanner();
+    }
+
+    @Override
+    public TreeVisitor<?, ExecutionContext> getVisitor(GlobalDataFlow.Accumulator acc) {
+        return acc.renderer();
     }
 }

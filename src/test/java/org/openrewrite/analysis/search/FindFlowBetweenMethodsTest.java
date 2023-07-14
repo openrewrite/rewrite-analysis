@@ -15,8 +15,10 @@
  */
 package org.openrewrite.analysis.search;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
@@ -28,7 +30,16 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
     @Test
     void taintFlowBetweenSubjectOnly() {
         rewriteRun(
-          spec -> spec.recipe(new FindFlowBetweenMethods("java.util.LinkedList <constructor>()", true, "java.util.LinkedList remove()", true, "Select", "Taint")),
+          spec -> spec.recipe(
+            new FindFlowBetweenMethods(
+              "java.util.LinkedList <constructor>()",
+              true,
+              "java.util.LinkedList remove()",
+              true,
+              "Select",
+              "Taint"
+            )
+          ),
           java(
             """
               import java.util.LinkedList;
@@ -45,10 +56,10 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               import java.util.LinkedList;
               class Test {
                   void test() {
-                      LinkedList<Integer> l = /*~~>*/new LinkedList<>();
+                      LinkedList<Integer> l = /*~~(source)~~>*/new LinkedList<>();
                       /*~~>*/l.add(5);
                       System.out.println(/*~~>*/l);
-                      /*~~>*/l.remove();
+                      /*~~(sink)~~>*/l.remove();
                   }
               }
               """
@@ -59,7 +70,15 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
     @Test
     void taintFlowBetweenArgumentsOnly() {
         rewriteRun(
-          spec -> spec.recipe(new FindFlowBetweenMethods("java.lang.Integer parseInt(String)", true, "java.util.LinkedList remove(..)", true, "Arguments", "Taint")),
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.lang.Integer parseInt(String)",
+              true,
+              "java.util.LinkedList remove(..)",
+              true,
+              "Arguments",
+              "Taint"
+            )
+          ),
           java(
             """
               import java.util.LinkedList;
@@ -76,10 +95,10 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               import java.util.LinkedList;
               class Test {
                   void test() {
-                      Integer x = /*~~>*/Integer.parseInt("10");
+                      Integer x = /*~~(source)~~>*/Integer.parseInt("10");
                       LinkedList<Integer> l = new LinkedList<>();
                       l.add(/*~~>*/x);
-                      l.remove(/*~~>*/x);
+                      l.remove(/*~~(sink)~~>*/x);
                   }
               }
               """
@@ -91,7 +110,15 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
     @Test
     void taintFlowThroughMultipleSubjectsIntegerSourceAndSinkMethodsSpecified() {
         rewriteRun(
-          spec -> spec.recipe(new FindFlowBetweenMethods("java.lang.Integer parseInt(String)", true, "java.lang.Integer equals(..)", true, "Both", "Taint")),
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.lang.Integer parseInt(String)",
+              true,
+              "java.lang.Integer equals(..)",
+              true,
+              "Both",
+              "Taint"
+            )
+          ),
           java(
             """
               import java.util.LinkedList;
@@ -109,11 +136,11 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               import java.util.LinkedList;
               class Test {
                   void test() {
-                      Integer x = /*~~>*/Integer.parseInt("10");
+                      Integer x = /*~~(source)~~>*/Integer.parseInt("10");
                       LinkedList<Integer> l = new LinkedList<>();
                       l.add(/*~~>*/x);
                       System.out.println(l);
-                      /*~~>*/x.equals(10);
+                      /*~~(sink)~~>*/x.equals(10);
                   }
               }
               """
@@ -125,7 +152,15 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
     @Test
     void noTaintFlowThroughArguments() {
         rewriteRun(
-          spec -> spec.recipe(new FindFlowBetweenMethods("java.lang.Integer parseInt(String)", true, "java.lang.Integer equals(..)", true, "Arguments", "Taint")),
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.lang.Integer parseInt(String)",
+              true,
+              "java.lang.Integer equals(..)",
+              true,
+              "Arguments",
+              "Taint"
+            )
+          ),
           java(
             """
               import java.util.LinkedList;
@@ -143,7 +178,15 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
     @Test
     void taintFlowBetweenArgumentsAndSubject() {
         rewriteRun(
-          spec -> spec.recipe(new FindFlowBetweenMethods("java.util.LinkedList <constructor>()", true, "java.util.LinkedList remove()", true, "Both", "Taint")),
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.util.LinkedList <constructor>()",
+              true,
+              "java.util.LinkedList remove()",
+              true,
+              "Both",
+              "Taint"
+            )
+          ),
           java(
             """
               import java.util.LinkedList;
@@ -162,10 +205,61 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               class Test {
                   void test() {
                       Integer x = Integer.parseInt("10");
-                      LinkedList<Integer> l = /*~~>*/new LinkedList<>();
+                      LinkedList<Integer> l = /*~~(source)~~>*/new LinkedList<>();
                       System.out.println(x);
                       System.out.println(/*~~>*/l);
-                      /*~~>*/l.remove();
+                      /*~~(sink)~~>*/l.remove();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    @Disabled("TODO: Figure out what's wrong here")
+    void dataFlowBetweenFiles() {
+        rewriteRun(
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.lang.Integer parseInt(String)",
+              true,
+              "java.io.PrintStream println(..)",
+              true,
+              "Both",
+              "Value"
+            )
+          ),
+          java(
+            """
+              class Test {
+                  void test() {
+                      Integer x = Provider.provide();
+                      System.out.println(x);
+                  }
+              }
+              """,
+
+            """
+                class Test {
+                    void test() {
+                        Integer x = /*~~(source)~~>*/Provider.provide();
+                        System.out.println(/*~~(sink)~~>*/x);
+                    }
+                }
+              """
+          ),
+          java(
+            """
+              class Provider {
+                  Integer provide() {
+                      return Integer.parseInt("42");
+                  }
+              }
+              """,
+            """
+              class Provider {
+                  static Integer provide() {
+                      return /*~~(source)~~>*/Integer.parseInt("42");
                   }
               }
               """
