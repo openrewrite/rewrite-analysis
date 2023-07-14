@@ -27,6 +27,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
+@SuppressWarnings("ObviousNullCheck")
 public class GlobalDataFlowTest implements RewriteTest {
 
     static final DataFlowSpec DATA_FLOW_SPEC = new DataFlowSpec() {
@@ -85,6 +86,42 @@ public class GlobalDataFlowTest implements RewriteTest {
                     void test() {
                         String s = /*~~(source)~~>*/"42";
                         String t = /*~~>*/identity(/*~~>*/s);
+                        System.out.println(/*~~(sink)~~>*/t);
+                    }
+                }
+              """
+          )
+        );
+    }
+
+    @Test
+    void polymorphicIdentityFunction() {
+        rewriteRun(
+          java(
+            """
+                class Test {
+                
+                    Object identity(Object s) {
+                        return s;
+                    }
+                    
+                    void test() {
+                        String s = "42";
+                        Object t = identity(s);
+                        System.out.println(t);
+                    }
+                }
+              """,
+            """
+                class Test {
+                
+                    Object identity(Object /*~~>*/s) {
+                        return /*~~>*/s;
+                    }
+                    
+                    void test() {
+                        String s = /*~~(source)~~>*/"42";
+                        Object t = /*~~>*/identity(/*~~>*/s);
                         System.out.println(/*~~(sink)~~>*/t);
                     }
                 }
@@ -361,6 +398,161 @@ public class GlobalDataFlowTest implements RewriteTest {
                         return /*~~>*/obj;
                     }
                 }
+              """
+          )
+        );
+    }
+
+    @Test
+    void polymorphicDataFlowThroughSuperclasses() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  abstract static class Abstract {
+                      String identity(String obj) {
+                          return obj;
+                      }
+                  }
+                  
+                  static class Concrete extends Abstract { }
+                  
+                  void test() {
+                      Abstract a = new Concrete();
+                      String s = a.identity("42");
+                      System.out.println(s);
+                      Concrete c = new Concrete();
+                      String t = c.identity("42");
+                      System.out.println(t);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  abstract static class Abstract {
+                      String identity(String /*~~>*/obj) {
+                          return /*~~>*/obj;
+                      }
+                  }
+                  
+                  static class Concrete extends Abstract { }
+                  
+                  void test() {
+                      Abstract a = new Concrete();
+                      String s = /*~~>*/a.identity(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/s);
+                      Concrete c = new Concrete();
+                      String t = /*~~>*/c.identity(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void polymorphicDataFlowThroughSuperclassesWithOverride() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  abstract static class Abstract {
+                      String identity(String obj) {
+                          return obj;
+                      }
+                  }
+                  
+                  static class Concrete extends Abstract {
+                      @Override
+                      String identity(String obj) {
+                          return super.identity(obj);
+                      }
+                  }
+                  
+                  void test() {
+                      Abstract a = new Concrete();
+                      String s = a.identity("42");
+                      System.out.println(s);
+                      Concrete c = new Concrete();
+                      String t = c.identity("42");
+                      System.out.println(t);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  abstract static class Abstract {
+                      String identity(String /*~~>*/obj) {
+                          return /*~~>*/obj;
+                      }
+                  }
+                  
+                  static class Concrete extends Abstract {
+                      @Override
+                      String identity(String /*~~>*/obj) {
+                          return /*~~>*/super.identity(/*~~>*/obj);
+                      }
+                  }
+                  
+                  void test() {
+                      Abstract a = new Concrete();
+                      String s = /*~~>*/a.identity(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/s);
+                      Concrete c = new Concrete();
+                      String t = /*~~>*/c.identity(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    @Disabled("Need to support resolving the correct JavaType.Method for the given call site")
+    void polymorphicDataFlowThroughSuperclassesWithOverrideCalledOnSubtype() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  abstract static class Abstract {
+                      abstract String identity(String obj);
+                  }
+                  
+                  static class Concrete extends Abstract {
+                      @Override
+                      String identity(String obj) {
+                          return obj;
+                      }
+                  }
+                  
+                  void test() {
+                      Abstract a = new Concrete();
+                      String s = a.identity("42");
+                      System.out.println(s);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  abstract static class Abstract {
+                      abstract String identity(String obj);
+                  }
+                  
+                  static class Concrete extends Abstract {
+                      @Override
+                      String identity(String /*~~>*/obj) {
+                          return /*~~>*/obj;
+                      }
+                  }
+                  
+                  void test() {
+                      Abstract a = new Concrete();
+                      String s = /*~~>*/a.identity(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/s);
+                  }
+              }
               """
           )
         );

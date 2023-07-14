@@ -96,7 +96,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
             private void walkFlowGraphConnectingRecursive(FlowGraph flowGraph, Set<FlowGraph> visited) {
                 DataFlowNode n = flowGraph.getNode();
                 n.asExprParent(Call.class).bind(Call::getMethodType).forEach(methodType -> {
-                    JavaType.Method declaredMethodType = getDeclarationJavaTypeMethod(methodType);
+                    JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
                     methodCallFlowGraphs
                             .computeIfAbsent(declaredMethodType, __ -> new ArrayList<>())
                             .add(flowGraph);
@@ -110,7 +110,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                     JavaType.Method methodType = methodCall.getMethodType();
                     if (methodType != null) {
                         int argumentIndex = methodCall.getArguments().indexOf(n.getCursor().<Expression>getValue());
-                        JavaType.Method declaredMethodType = getDeclarationJavaTypeMethod(methodType);
+                        JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
                         argumentFlowGraphs
                                 .computeIfAbsent(declaredMethodType, __ -> nulledFlowGraphList(methodCall.getArguments().size()))
                                 .set(argumentIndex, flowGraph);
@@ -319,51 +319,4 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         return IntStream.range(0, size).mapToObj(__ -> (FlowGraph) null).collect(Collectors.toList());
     }
 
-    private static JavaType.Method getDeclarationJavaTypeMethod(JavaType.Method method) {
-        // Look into the method's declaring class to check and see if there is an equivalent generic method declaration
-        for (JavaType.Method declaredMethod : method.getDeclaringType().getMethods()) {
-            // If we find an exact match, return that immediately.
-            if (method.equals(declaredMethod)) {
-                return declaredMethod;
-            }
-
-            // Compare components that will not be different between the two methods, regardless of generics
-            if (!declaredMethod.getName().equals(method.getName()) ||
-                declaredMethod.getParameterTypes().size() != method.getParameterTypes().size() ||
-                !declaredMethod.getFlags().equals(method.getFlags())) {
-                continue;
-            }
-            // Try to convert the declared generic method
-            JavaTypeGenericTypeSolver solver = new JavaTypeGenericTypeSolver();
-
-            // Solve for the return value, in case that's a generic type
-            JavaType solvedReturnType = solver.solve(method.getReturnType(), declaredMethod.getReturnType());
-            if (!solvedReturnType.equals(method.getReturnType())) {
-                continue;
-            }
-            // Now solve for each parameter
-            fj.data.List<JavaType> declaredParameters = fj.data.List.iterableList(declaredMethod.getParameterTypes());
-            fj.data.List<JavaType> parameters = fj.data.List.iterableList(method.getParameterTypes());
-            fj.data.List<JavaType> solved = parameters.zipWith(declaredParameters, solver::solve);
-            // If the solved parameters are the same as the method's parameters, then we have a match
-            if (solved.toJavaList().equals(method.getParameterTypes())) {
-                return declaredMethod;
-            }
-            // Otherwise, keep looking
-        }
-        // If we can't find a match, just return the original method
-        return method;
-    }
-
-    private static class JavaTypeGenericTypeSolver {
-        private final Map<JavaType.GenericTypeVariable, JavaType> typeVariableMap = new HashMap<>();
-
-        JavaType solve(JavaType accessType, JavaType declaredType) {
-            if (declaredType instanceof JavaType.GenericTypeVariable) {
-                return typeVariableMap.computeIfAbsent((JavaType.GenericTypeVariable) declaredType, __ -> accessType);
-            } else {
-                return accessType;
-            }
-        }
-    }
 }
