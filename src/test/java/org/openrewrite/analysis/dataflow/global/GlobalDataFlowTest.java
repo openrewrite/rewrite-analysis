@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.dataflow.global;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
@@ -220,6 +221,144 @@ public class GlobalDataFlowTest implements RewriteTest {
                         String s = /*~~(source)~~>*/"42";
                         String t = /*~~>*/recursive(/*~~>*/s);
                         System.out.println(/*~~(sink)~~>*/t);
+                    }
+                }
+              """
+          )
+        );
+    }
+
+    @Test
+    void stringNullCheck() {
+        rewriteRun(
+          java("""
+              class Test {
+                  static String requireNonNull(String obj) {
+                      if (obj == null)
+                          throw new NullPointerException();
+                      return obj;
+                  }
+                  
+                  void test() {
+                      String s = requireNonNull("0");
+                      System.out.println(s);
+                      String t = requireNonNull("42");
+                      System.out.println(t);
+                      String u = requireNonNull("0");
+                      System.out.println(u);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  static String requireNonNull(String /*~~>*/obj) {
+                      if (/*~~>*/obj == null)
+                          throw new NullPointerException();
+                      return /*~~>*/obj;
+                  }
+                  
+                  void test() {
+                      String s = requireNonNull("0");
+                      System.out.println(s);
+                      String t = /*~~>*/requireNonNull(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/t);
+                      String u = requireNonNull("0");
+                      System.out.println(u);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void genericNullCheck() {
+        rewriteRun(
+          java("""
+              class Test {
+                  static <T> T requireNonNull(T obj) {
+                      if (obj == null)
+                          throw new NullPointerException();
+                      return obj;
+                  }
+                  
+                  void test() {
+                      String s = requireNonNull("0");
+                      System.out.println(s);
+                      String t = requireNonNull("42");
+                      System.out.println(t);
+                      String u = requireNonNull("0");
+                      System.out.println(u);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  static <T> T requireNonNull(T /*~~>*/obj) {
+                      if (/*~~>*/obj == null)
+                          throw new NullPointerException();
+                      return /*~~>*/obj;
+                  }
+                  
+                  void test() {
+                      String s = requireNonNull("0");
+                      System.out.println(s);
+                      String t = /*~~>*/requireNonNull(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/t);
+                      String u = requireNonNull("0");
+                      System.out.println(u);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void multiFileNullCheck() {
+        rewriteRun(
+          java(
+            """
+                class Test {
+                    void test() {
+                        String s = Util.requireNonNull("0");
+                        System.out.println(s);
+                        String t = Util.requireNonNull("42");
+                        System.out.println(t);
+                        String u = Util.requireNonNull("0");
+                        System.out.println(u);
+                    }
+                }
+              """,
+            """
+                  class Test {
+                      void test() {
+                          String s = Util.requireNonNull("0");
+                          System.out.println(s);
+                          String t = /*~~>*/Util.requireNonNull(/*~~(source)~~>*/"42");
+                          System.out.println(/*~~(sink)~~>*/t);
+                          String u = Util.requireNonNull("0");
+                          System.out.println(u);
+                      }
+                  }
+              """
+          ),
+          java(
+            """
+                class Util {
+                    static String requireNonNull(String obj) {
+                        if (obj == null)
+                            throw new NullPointerException();
+                        return obj;
+                    }
+                }
+              """,
+            """
+                class Util {
+                    static String requireNonNull(String /*~~>*/obj) {
+                        if (/*~~>*/obj == null)
+                            throw new NullPointerException();
+                        return /*~~>*/obj;
                     }
                 }
               """
