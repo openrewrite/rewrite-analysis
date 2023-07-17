@@ -35,8 +35,8 @@ import java.util.stream.Stream;
 @Incubating(since = "7.24.0")
 public class ForwardFlow extends JavaVisitor<Integer> {
 
-    public static FlowGraph findAllFlows(DataFlowNode node, DataFlowSpec spec) {
-        FlowGraph graph = new FlowGraph(node);
+    public static FlowGraph findAllFlows(DataFlowNode node, DataFlowSpec spec, FlowGraph.Factory factory) {
+        FlowGraph graph = factory.create(node);
         findAllFlows(graph, spec);
         return graph;
     }
@@ -389,12 +389,13 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     // Support flow from any argument to the subject of a method invocation
                     if (methodInvocation.getSelect() != null && methodInvocation.getArguments().contains(previousCursor.getValue())) {
                         Cursor selectCursor = new Cursor(methodInvocationCursor, methodInvocation.getSelect());
-                        DataFlowNode selectNode = DataFlowNode.ofOrThrow(selectCursor, "Unable to create DataFlowNode for " + selectCursor);
-                        if (spec.isFlowStep(
+                        // Select may not be a data flow node if it's a static access
+                        Option<DataFlowNode> selectNode = DataFlowNode.of(selectCursor);
+                        if (selectNode.isSome() && spec.isFlowStep(
                                 DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
-                                selectNode
+                                selectNode.some()
                         )) {
-                            nextFlowGraph = nextFlowGraph.addEdge(selectNode);
+                            nextFlowGraph = nextFlowGraph.addEdge(selectNode.some());
                             Expression unwrappedSelect = methodInvocation.getSelect().unwrap();
                             VariableNameToFlowGraph variableNameToFlowGraph =
                                     computeVariableAssignment(selectCursor, nextFlowGraph, spec);

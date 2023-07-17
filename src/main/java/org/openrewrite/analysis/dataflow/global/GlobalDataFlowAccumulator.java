@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow.global;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Value;
 import org.openrewrite.Cursor;
@@ -36,7 +37,6 @@ import org.openrewrite.java.tree.MethodCall;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Value
 @AllArgsConstructor(access = lombok.AccessLevel.PACKAGE)
@@ -45,11 +45,21 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
 
     DataFlowSpec spec;
 
+    FlowGraph.Factory flowGraphFactory = new JMappedFlowGraphFactory();
     Set<FlowGraph> sourceFlowGraphs = new HashSet<>();
-    Map<JavaType.Method, List<FlowGraph>> methodCallFlowGraphs = new HashMap<>();
-    Map<JavaType.Method, List<FlowGraph>> parameterFlowGraphs = new HashMap<>();
-    Map<JavaType.Method, List<FlowGraph>> argumentFlowGraphs = new HashMap<>();
-    Map<JavaType.Method, List<FlowGraph>> methodReturnFlowGraphs = new HashMap<>();
+    Map<JavaType.Method, Set<FlowGraph>> methodCallFlowGraphs = new HashMap<>();
+    Map<JavaType.Method, List<Set<FlowGraph>>> parameterFlowGraphs = new HashMap<>();
+    Map<JavaType.Method, List<Set<FlowGraph>>> argumentFlowGraphs = new HashMap<>();
+    Map<JavaType.Method, Set<FlowGraph>> methodReturnFlowGraphs = new HashMap<>();
+
+    static class JMappedFlowGraphFactory implements FlowGraph.Factory {
+        Map<J, FlowGraph> flowGraphs = new IdentityHashMap<>();
+
+        @Override
+        public FlowGraph create(DataFlowNode node) {
+            return flowGraphs.computeIfAbsent(node.getCursor().getValue(), t -> new FlowGraph(this, node));
+        }
+    }
 
     @Override
     public TreeVisitor<?, ExecutionContext> scanner() {
@@ -58,11 +68,10 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
             @Override
             public J visitExpression(Expression expression, ExecutionContext e) {
                 DataFlowNode.of(getCursor()).forEach(n -> {
-                    if (!spec.isSource(n)) {
-                        return;
+                    FlowGraph source = ForwardFlow.findAllFlows(n, globalDataFlowSpec, flowGraphFactory);
+                    if (spec.isSource(n)) {
+                        sourceFlowGraphs.add(source);
                     }
-                    FlowGraph source = ForwardFlow.findAllFlows(n, globalDataFlowSpec);
-                    sourceFlowGraphs.add(source);
                     walkFlowGraphConnecting(source);
                 });
                 return expression;
@@ -74,11 +83,14 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                         .of(getCursor())
                         .forEach(n -> n.asParameter().forEach(p -> {
                             p.getCallable().getMethodType().forEach(m -> {
-                                FlowGraph g = ForwardFlow.findAllFlows(n, globalDataFlowSpec);
-                                parameterFlowGraphs.computeIfAbsent(m, __ -> nulledFlowGraphList(p.getCallable().getParameters().size()))
-                                        .set(p.getPosition(), g);
+                                FlowGraph g = ForwardFlow.findAllFlows(n, globalDataFlowSpec, flowGraphFactory);
+                                parameterFlowGraphs.computeIfAbsent(m, __ -> flowGraphList(p.getCallable().getParameters().size()))
+                                        .get(p.getPosition())
+                                        .add(g);
                                 if (argumentFlowGraphs.containsKey(m)) {
-                                    argumentFlowGraphs.get(m).get(p.getPosition()).addEdge(g);
+                                    for (FlowGraph parameterFlowGraph : argumentFlowGraphs.get(m).get(p.getPosition())) {
+                                        parameterFlowGraph.addEdge(g);
+                                    }
                                 }
                                 if (spec.isSource(n)) {
                                     sourceFlowGraphs.add(g);
@@ -98,7 +110,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                 n.asExprParent(Call.class).bind(Call::getMethodType).forEach(methodType -> {
                     JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
                     methodCallFlowGraphs
-                            .computeIfAbsent(declaredMethodType, __ -> new ArrayList<>())
+                            .computeIfAbsent(declaredMethodType, __ -> Collections.newSetFromMap(new IdentityHashMap<>()))
                             .add(flowGraph);
                     if (methodReturnFlowGraphs.containsKey(declaredMethodType)) {
                         methodReturnFlowGraphs.get(declaredMethodType).forEach(returnGraph -> returnGraph.addEdge(flowGraph));
@@ -112,10 +124,13 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                         int argumentIndex = methodCall.getArguments().indexOf(n.getCursor().<Expression>getValue());
                         JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
                         argumentFlowGraphs
-                                .computeIfAbsent(declaredMethodType, __ -> nulledFlowGraphList(methodCall.getArguments().size()))
-                                .set(argumentIndex, flowGraph);
+                                .computeIfAbsent(declaredMethodType, __ -> flowGraphList(methodCall.getArguments().size()))
+                                .get(argumentIndex)
+                                .add(flowGraph);
                         if (parameterFlowGraphs.containsKey(declaredMethodType)) {
-                            flowGraph.addEdge(parameterFlowGraphs.get(declaredMethodType).get(argumentIndex));
+                            for (FlowGraph argumentFlow : parameterFlowGraphs.get(declaredMethodType).get(argumentIndex)) {
+                                flowGraph.addEdge(argumentFlow);
+                            }
                         }
                     }
                 }
@@ -127,7 +142,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                     JavaType.Method methodType = methodDeclaration.getMethodType();
                     if (methodType != null) {
                         methodReturnFlowGraphs
-                                .computeIfAbsent(methodType, __ -> new ArrayList<>())
+                                .computeIfAbsent(methodType, __ -> Collections.newSetFromMap(new IdentityHashMap<>()))
                                 .add(flowGraph);
                         if (methodCallFlowGraphs.containsKey(methodType)) {
                             methodCallFlowGraphs.get(methodType).forEach(flowGraph::addEdge);
@@ -142,11 +157,21 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
     }
 
     private Set<Cursor> pruneFlowGraphs() {
-        visitDepthFirstAndPruneFlowGraphRecursive(
-                sourceFlowGraphs,
-                new HashSet<>()
-        );
-        Set<FlowGraph> foundParticipants = findParticipantsBreadthFirst(sourceFlowGraphs);
+        Set<FlowGraph> copiedSourceFlowGraphs = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (FlowGraph source : sourceFlowGraphs) {
+            firstPassPruneDepthFirst(
+                    source,
+                    new HashSet<>()
+            );
+            FlowGraph copy = copy(source);
+            secondPassPruneDepthFirst(
+                    copy,
+                    new ArrayDeque<>(),
+                    new HashSet<>()
+            );
+            copiedSourceFlowGraphs.add(copy);
+        }
+        Set<FlowGraph> foundParticipants = findParticipantsBreadthFirst(copiedSourceFlowGraphs);
         return foundParticipants
                 .stream()
                 .map(FlowGraph::getNode)
@@ -154,20 +179,47 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                 .collect(Collectors.toSet());
     }
 
-    private void visitDepthFirstAndPruneFlowGraphRecursive(
-            Collection<FlowGraph> toVisit,
+    private static FlowGraph copy(FlowGraph flowGraph) {
+        return copy(flowGraph, new IdentityHashMap<>());
+    }
+
+    private static FlowGraph copy(FlowGraph oldFlowGraph, Map<FlowGraph, FlowGraph> oldToNew) {
+        FlowGraph newFlowGraph = oldToNew.computeIfAbsent(
+                oldFlowGraph,
+                __ -> new FlowGraph(FlowGraph.Factory.throwing(), oldFlowGraph.getNode())
+        );
+        for (FlowGraph oldEdge : oldFlowGraph.getEdges()) {
+            if (oldToNew.containsKey(oldEdge)) {
+                newFlowGraph.addEdge(oldToNew.get(oldEdge));
+                continue;
+            }
+            FlowGraph newEdge = oldToNew.computeIfAbsent(
+                    oldEdge,
+                    __ -> new FlowGraph(FlowGraph.Factory.throwing(), oldEdge.getNode())
+            );
+            newFlowGraph.addEdge(newEdge);
+            copy(oldEdge, oldToNew);
+        }
+        return newFlowGraph;
+    }
+
+    private void firstPassPruneDepthFirst(
+            FlowGraph flowGraph,
             Set<FlowGraph> visited
     ) {
-        for (FlowGraph flowGraph : toVisit) {
-            if (!visited.add(flowGraph)) {
-                return;
-            }
-            pruneFlowGraph(flowGraph);
-            visitDepthFirstAndPruneFlowGraphRecursive(flowGraph.getEdges(), visited);
+        if (!visited.add(flowGraph)) {
+            return;
+        }
+        firstPassPruneFlowGraph(flowGraph);
+        for (FlowGraph toVisit : flowGraph.getEdges()) {
+            firstPassPruneDepthFirst(toVisit, visited);
         }
     }
 
-    private void pruneFlowGraph(FlowGraph flowGraph) {
+    /**
+     * Any pruning occurring here, must be applicable to the entire graph, regardless of the source.
+     */
+    private void firstPassPruneFlowGraph(FlowGraph flowGraph) {
         // If this is a method argument, and it is connected to a parameter, then prune the edge that connects,
         // as long as it was not an additional flow step already
         if (isAnyMethodArgument(flowGraph.getNode())) {
@@ -180,6 +232,61 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                 ) {
                     flowGraph.removeEdge(edge);
                 }
+            }
+        }
+    }
+
+    private void secondPassPruneDepthFirst(
+            FlowGraph flowGraph,
+            Deque<MethodCall> stack,
+            Set<FlowGraph> visited
+    ) {
+        secondPassPruneFlowGraph(flowGraph, stack);
+        if (!visited.add(flowGraph)) {
+            return;
+        }
+        boolean pushedMethodCall = false;
+        if (MATCHES_ALL.advanced().isAnyArgument(flowGraph.getNode().getCursor())) {
+            MethodCall methodCall = flowGraph.getNode().getCursor().getParentTreeCursor().firstEnclosing(MethodCall.class);
+            assert methodCall != null;
+            assert methodCall.getArguments().contains(flowGraph.getNode().getCursor().<Expression>getValue());
+            stack.push(methodCall);
+            pushedMethodCall = true;
+        }
+        for (FlowGraph toVisit : flowGraph.getEdges()) {
+            secondPassPruneDepthFirst(
+                    toVisit,
+                    stack,
+                    visited
+            );
+        }
+        if (pushedMethodCall) {
+            stack.pop();
+        }
+    }
+
+
+    /**
+     * This allows us to perform a second pass of pruning on a flow graph that is unique to our a single particular
+     * source.
+     */
+    private void secondPassPruneFlowGraph(
+            FlowGraph flowGraph,
+            Deque<MethodCall> stack
+    ) {
+        J.Return aReturn = flowGraph.getNode().getCursor().firstEnclosing(J.Return.class);
+        if (aReturn != null &&
+            Expression.unwrap(aReturn.getExpression()) == flowGraph.getNode().getCursor().getValue()) {
+            for (FlowGraph edge : flowGraph.getEdges()) {
+                edge.getNode().asExprParent(Call.class).forEach(call -> {
+                    Object value = edge.getNode().getCursor().getValue();
+                    if (value instanceof MethodCall) {
+                        // TODO: !stack.isEmpty() is wrong... We need to do something better here
+                        if (!stack.contains(value) && !stack.isEmpty()) {
+                            flowGraph.removeEdge(edge);
+                        }
+                    }
+                });
             }
         }
     }
@@ -315,8 +422,12 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         return node.asExpr().map(e -> MATCHES_ALL.advanced().isAnyArgument(node.getCursor())).orSome(false);
     }
 
-    private static List<FlowGraph> nulledFlowGraphList(int size) {
-        return IntStream.range(0, size).mapToObj(__ -> (FlowGraph) null).collect(Collectors.toList());
+    private static List<Set<FlowGraph>> flowGraphList(int size) {
+        List<Set<FlowGraph>> flowGraphs = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            flowGraphs.add(Collections.newSetFromMap(new IdentityHashMap<>()));
+        }
+        return flowGraphs;
     }
 
 }

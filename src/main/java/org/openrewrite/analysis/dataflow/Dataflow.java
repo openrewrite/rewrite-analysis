@@ -46,14 +46,10 @@ public class Dataflow {
         return ControlFlow.startingAt(n.getCursor()).findControlFlow().bind(summary -> {
             Set<Expression> reachable = summary.computeReachableExpressions(spec::isBarrierGuard);
 
-            FlowGraph flow = ForwardFlow.findAllFlows(n, spec);
+            FlowGraph flow = ForwardFlow.findAllFlows(n, spec, FlowGraph.Factory.defaultFactory());
             SinkFlowSummary sinkFlowSummary = SinkFlowSummary.create(flow, spec, reachable);
             return sinkFlowSummary.isNotEmpty() ? Option.some(sinkFlowSummary) : Option.none();
         });
-    }
-
-    public <E extends Expression> Optional<SourceFlow> findSources(DataFlowSpec spec) {
-        throw new UnsupportedOperationException("Not yet implemented.");
     }
 
     public static Dataflow startingAt(Cursor start) {
