@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.trait.expr;
+package org.openrewrite.analysis.trait.stmt;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ExecutionContext;
@@ -26,13 +26,13 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-public class ClassInstanceExprTest implements RewriteTest {
+public class TryStmtTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {
             @Override
             public J preVisit(J tree, ExecutionContext executionContext) {
-                return ClassInstanceExpr.viewOf(getCursor())
+                return TryStmt.viewOf(getCursor())
                   .map(__ -> SearchResult.found(tree))
                   .orSuccess(tree);
             }
@@ -40,26 +40,28 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNewClassInstance() {
+    void correctlyLabelsTryStatement() {
         rewriteRun(
           java(
             """
-              class Foo {
-              }
-              
               class Test {
                   void test() {
-                      Foo foo = new Foo();
+                      try {
+                          int i = 1 / 0;
+                      } catch (Exception e) {
+                          // no-op
+                      }
                   }
               }
               """,
             """
-              class Foo {
-              }
-              
               class Test {
                   void test() {
-                      Foo foo = /*~~>*/new Foo();
+                      /*~~>*/try {
+                          int i = 1 / 0;
+                      } catch (Exception e) {
+                          // no-op
+                      }
                   }
               }
               """
@@ -68,74 +70,34 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNewClassInstanceInConstructor() {
+    void correctlyLabelsTryStatementInDifferentMethod() {
         rewriteRun(
           java(
             """
-              class Foo {
-              }
-              
-              class Bar {
-                  Foo foo;
-                  Bar(Foo foo) {
-                      this.foo = foo;
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Bar bar = new Bar(new Foo());
+                  double division(double i, double j) {
+                      try {
+                          return i / j;
+                      } catch (Exception e) {
+                          // no-op
+                      }
+                  }
+                  void test(double i, double j) {
+                      System.out.println(division(i, j));
                   }
               }
               """,
             """
-              class Foo {
-              }
-              
-              class Bar {
-                  Foo foo;
-                  Bar(Foo foo) {
-                      this.foo = foo;
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Bar bar = /*~~>*/new Bar(/*~~>*/new Foo());
+                  double division(double i, double j) {
+                      /*~~>*/try {
+                          return i / j;
+                      } catch (Exception e) {
+                          // no-op
+                      }
                   }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
-    void correctlyLabelsNestedNewClassInstance() {
-        rewriteRun(
-          java(
-            """
-              class Foo {
-                  class Bar {
-                  }
-              }
-              
-              class Test {
-                  void test() {
-                      Foo foo = new Foo();
-                      Foo.Bar bar = foo.new Bar();
-                  }
-              }
-              """,
-            """
-              class Foo {
-                  class Bar {
-                  }
-              }
-              
-              class Test {
-                  void test() {
-                      Foo foo = /*~~>*/new Foo();
-                      Foo.Bar bar = /*~~>*/foo.new Bar();
+                  void test(double i, double j) {
+                      System.out.println(division(i, j));
                   }
               }
               """

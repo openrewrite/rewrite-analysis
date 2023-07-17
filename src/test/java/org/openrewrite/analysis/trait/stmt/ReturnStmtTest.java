@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.trait.expr;
+package org.openrewrite.analysis.trait.stmt;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ExecutionContext;
@@ -26,13 +26,13 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-public class ClassInstanceExprTest implements RewriteTest {
+public class ReturnStmtTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {
             @Override
             public J preVisit(J tree, ExecutionContext executionContext) {
-                return ClassInstanceExpr.viewOf(getCursor())
+                return ReturnStmt.viewOf(getCursor())
                   .map(__ -> SearchResult.found(tree))
                   .orSuccess(tree);
             }
@@ -40,26 +40,22 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNewClassInstance() {
+    void correctlyLabelsReturnStatement() {
         rewriteRun(
           java(
             """
-              class Foo {
-              }
-              
               class Test {
-                  void test() {
-                      Foo foo = new Foo();
+                  int test() {
+                      int i = 16 + 4;
+                      return i;
                   }
               }
               """,
             """
-              class Foo {
-              }
-              
               class Test {
-                  void test() {
-                      Foo foo = /*~~>*/new Foo();
+                  int test() {
+                      int i = 16 + 4;
+                      /*~~>*/return i;
                   }
               }
               """
@@ -68,40 +64,20 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNewClassInstanceInConstructor() {
+    void correctlyLabelsReturnStatementWithLiteral() {
         rewriteRun(
           java(
             """
-              class Foo {
-              }
-              
-              class Bar {
-                  Foo foo;
-                  Bar(Foo foo) {
-                      this.foo = foo;
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Bar bar = new Bar(new Foo());
+                  boolean test() {
+                      return true;
                   }
               }
               """,
             """
-              class Foo {
-              }
-              
-              class Bar {
-                  Foo foo;
-                  Bar(Foo foo) {
-                      this.foo = foo;
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Bar bar = /*~~>*/new Bar(/*~~>*/new Foo());
+                  boolean test() {
+                      /*~~>*/return true;
                   }
               }
               """
@@ -110,32 +86,80 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNestedNewClassInstance() {
+    void correctlyLabelsReturnStatementDifferentMethods() {
         rewriteRun(
           java(
             """
-              class Foo {
-                  class Bar {
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Foo foo = new Foo();
-                      Foo.Bar bar = foo.new Bar();
+                  int foo(String s) {
+                      return s.length();
+                  }
+                  boolean test() {
+                      String s = "string";
+                      return foo(s) > 3;
                   }
               }
               """,
             """
-              class Foo {
-                  class Bar {
+              class Test {
+                  int foo(String s) {
+                      /*~~>*/return s.length();
+                  }
+                  boolean test() {
+                      String s = "string";
+                      /*~~>*/return foo(s) > 3;
                   }
               }
-              
+              """
+          )
+        );
+    }
+
+    @Test
+    void tagsAllPossibleReturns() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  int unused() {
+                      return 1;
+                  }
+                  int test() {
+                      if (false) {
+                          return 1;
+                      }
+                      return 2;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  int unused() {
+                      /*~~>*/return 1;
+                  }
+                  int test() {
+                      if (false) {
+                          /*~~>*/return 1;
+                      }
+                      /*~~>*/return 2;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void noReturn() {
+        rewriteRun(
+          spec -> spec.expectedCyclesThatMakeChanges(0),
+          java(
+            """
               class Test {
                   void test() {
-                      Foo foo = /*~~>*/new Foo();
-                      Foo.Bar bar = /*~~>*/foo.new Bar();
+                      float f = 1.0 + 2.0;
+                      System.out.println(f);
+                      char a = 'a';
                   }
               }
               """

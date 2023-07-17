@@ -13,46 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.trait.variable;
+package org.openrewrite.analysis.trait.stmt;
 
-import fj.data.Option;
 import fj.data.Validation;
 import org.openrewrite.Cursor;
-import org.openrewrite.analysis.trait.Element;
+import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
-import org.openrewrite.analysis.trait.expr.VarAccess;
+import org.openrewrite.analysis.trait.member.Callable;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.java.tree.JavaType;
-
-import java.util.Collection;
 
 /**
- * A variable is a field, a local variable or a parameter.
+ * A statement parent is any element that can have a statement as its child.
  */
-public interface Variable extends Element {
-
-    Option<JavaType> getType();
-
-    /**
-     * Gets all access to this variable.
-     */
-    Collection<VarAccess> getVarAccesses();
-
-    enum Factory implements TraitFactory<Variable> {
+public interface StmtParent extends Top {
+    enum Factory implements TraitFactory<StmtParent> {
         F;
 
         @Override
-        public Validation<TraitErrors, Variable> viewOf(Cursor cursor) {
+        public Validation<TraitErrors, StmtParent> viewOf(Cursor cursor) {
             return TraitFactory.findFirstViewOf(
                     cursor,
-                    LocalScopeVariable.Factory.F,
-                    Field.Factory.F
+                    Stmt.Factory.F,
+                    Callable.Factory.F
             );
         }
     }
 
-    static Validation<TraitErrors, Variable> viewOf(Cursor cursor) {
-        return Factory.F.viewOf(cursor);
+    static Validation<TraitErrors, StmtParent> viewOf(Cursor cursor) {
+        return StmtParent.Factory.F.viewOf(cursor);
     }
-
 }

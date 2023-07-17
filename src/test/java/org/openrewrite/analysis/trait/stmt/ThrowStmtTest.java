@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.trait.expr;
+package org.openrewrite.analysis.trait.stmt;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.ExecutionContext;
@@ -26,13 +26,13 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-public class ClassInstanceExprTest implements RewriteTest {
+public class ThrowStmtTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {
             @Override
             public J preVisit(J tree, ExecutionContext executionContext) {
-                return ClassInstanceExpr.viewOf(getCursor())
+                return ThrowStmt.viewOf(getCursor())
                   .map(__ -> SearchResult.found(tree))
                   .orSuccess(tree);
             }
@@ -40,26 +40,26 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNewClassInstance() {
+    void correctlyLabelsThrowStatement() {
         rewriteRun(
           java(
             """
-              class Foo {
-              }
-              
               class Test {
-                  void test() {
-                      Foo foo = new Foo();
+                  void test(String s) {
+                      if (s == null) {
+                          throw new NullPointerException();
+                      }
+                      System.out.println(s);
                   }
               }
               """,
             """
-              class Foo {
-              }
-              
               class Test {
-                  void test() {
-                      Foo foo = /*~~>*/new Foo();
+                  void test(String s) {
+                      if (s == null) {
+                          /*~~>*/throw new NullPointerException();
+                      }
+                      System.out.println(s);
                   }
               }
               """
@@ -68,74 +68,44 @@ public class ClassInstanceExprTest implements RewriteTest {
     }
 
     @Test
-    void correctlyLabelsNewClassInstanceInConstructor() {
+    void correctlyLabelsThrowStatementsDifferentMethods() {
         rewriteRun(
           java(
             """
-              class Foo {
-              }
-              
-              class Bar {
-                  Foo foo;
-                  Bar(Foo foo) {
-                      this.foo = foo;
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Bar bar = new Bar(new Foo());
+                  void nullCheck(String s) {
+                      if (s == null) {
+                          throw new NullPointerException();
+                      }
+                  }
+                  void lenCheck(String s) {
+                      if (s.length() == 0) {
+                          throw new IllegalArgumentException();
+                      }
+                  }
+                  void test(String s) {
+                      nullCheck(s);
+                      lenCheck(s);
+                      System.out.println(s);
                   }
               }
               """,
             """
-              class Foo {
-              }
-              
-              class Bar {
-                  Foo foo;
-                  Bar(Foo foo) {
-                      this.foo = foo;
-                  }
-              }
-              
               class Test {
-                  void test() {
-                      Bar bar = /*~~>*/new Bar(/*~~>*/new Foo());
+                  void nullCheck(String s) {
+                      if (s == null) {
+                          /*~~>*/throw new NullPointerException();
+                      }
                   }
-              }
-              """
-          )
-        );
-    }
-
-    @Test
-    void correctlyLabelsNestedNewClassInstance() {
-        rewriteRun(
-          java(
-            """
-              class Foo {
-                  class Bar {
+                  void lenCheck(String s) {
+                      if (s.length() == 0) {
+                          /*~~>*/throw new IllegalArgumentException();
+                      }
                   }
-              }
-              
-              class Test {
-                  void test() {
-                      Foo foo = new Foo();
-                      Foo.Bar bar = foo.new Bar();
-                  }
-              }
-              """,
-            """
-              class Foo {
-                  class Bar {
-                  }
-              }
-              
-              class Test {
-                  void test() {
-                      Foo foo = /*~~>*/new Foo();
-                      Foo.Bar bar = /*~~>*/foo.new Bar();
+                  void test(String s) {
+                      nullCheck(s);
+                      lenCheck(s);
+                      System.out.println(s);
                   }
               }
               """

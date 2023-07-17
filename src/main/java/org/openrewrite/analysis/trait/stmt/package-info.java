@@ -13,22 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.openrewrite.analysis.trait.member;
+@NonNullApi
+package org.openrewrite.analysis.trait.stmt;
 
-import fj.data.Option;
-import org.openrewrite.analysis.trait.stmt.StmtParent;
-import org.openrewrite.analysis.trait.variable.Parameter;
-import org.openrewrite.java.tree.JavaType;
-
-import java.util.List;
-
-/**
- * A method or constructor.
- */
-public interface Callable extends Member, StmtParent {
-    Option<JavaType> getReturnType();
-
-    Option<JavaType.Method> getMethodType();
-
-    List<Parameter> getParameters();
-}
+import org.openrewrite.internal.lang.NonNullApi;

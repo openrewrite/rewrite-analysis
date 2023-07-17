@@ -20,10 +20,9 @@ import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Tree;
-import org.openrewrite.analysis.trait.variable.Parameter;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
@@ -41,8 +40,8 @@ import java.util.function.Function;
 public interface InitializerMethod extends Callable {
 
     @Override
-    default @Nullable JavaType getReturnType() {
-        return JavaType.Primitive.Void;
+    default Option<JavaType> getReturnType() {
+        return Option.some(JavaType.Primitive.Void);
     }
 
     /**
