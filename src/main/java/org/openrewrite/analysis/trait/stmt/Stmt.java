@@ -25,6 +25,9 @@ import org.openrewrite.java.tree.Statement;
 
 import java.util.UUID;
 
+/**
+ * A common super-class of all statements.
+ */
 public interface Stmt extends StmtParent {
     enum Factory implements TraitFactory<Stmt> {
         F;

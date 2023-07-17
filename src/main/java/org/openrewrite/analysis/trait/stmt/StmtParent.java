@@ -22,6 +22,9 @@ import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.member.Callable;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
+/**
+ * A statement parent is any element that can have a statement as its child.
+ */
 public interface StmtParent extends Top {
     enum Factory implements TraitFactory<StmtParent> {
         F;

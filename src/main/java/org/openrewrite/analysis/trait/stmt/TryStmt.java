@@ -26,36 +26,36 @@ import org.openrewrite.java.tree.J;
 import java.util.UUID;
 
 /**
- * A throw statement.
+ * A try statement.
  */
-public interface ThrowStmt extends Stmt {
-    enum Factory implements TraitFactory<ThrowStmt> {
+public interface TryStmt extends Stmt {
+    enum Factory implements TraitFactory<TryStmt> {
         F;
         @Override
-        public Validation<TraitErrors, ThrowStmt> viewOf(Cursor cursor) {
-            if (cursor.getValue() instanceof J.Throw) {
-                return ThrowStmtBase.viewOf(cursor).map(b -> b);
+        public Validation<TraitErrors, TryStmt> viewOf(Cursor cursor) {
+            if (cursor.getValue() instanceof J.Try) {
+                return TryStmtBase.viewOf(cursor).map(b -> b);
             }
-            return TraitErrors.invalidTraitCreationType(ThrowStmt.class, cursor, J.Throw.class);
+            return TraitErrors.invalidTraitCreationType(TryStmt.class, cursor, J.Try.class);
         }
     }
 
-    static Validation<TraitErrors, ThrowStmt> viewOf(Cursor cursor) {
-        return ThrowStmt.Factory.F.viewOf(cursor);
+    static Validation<TraitErrors, TryStmt> viewOf(Cursor cursor) {
+        return TryStmt.Factory.F.viewOf(cursor);
     }
 }
 
 @AllArgsConstructor
-class ThrowStmtBase extends Top.Base implements ThrowStmt {
+class TryStmtBase extends Top.Base implements TryStmt {
     private final Cursor cursor;
-    private final J.Throw throwStmt;
+    private final J.Try tryStmt;
 
-    static Validation<TraitErrors, ThrowStmtBase> viewOf(Cursor cursor) {
-        return Validation.success(new ThrowStmtBase(cursor, cursor.getValue()));
+    static Validation<TraitErrors, TryStmtBase> viewOf(Cursor cursor) {
+        return Validation.success(new TryStmtBase(cursor, cursor.getValue()));
     }
 
     @Override
     public UUID getId() {
-        return throwStmt.getId();
+        return tryStmt.getId();
     }
 }

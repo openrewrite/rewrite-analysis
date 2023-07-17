@@ -25,6 +25,9 @@ import org.openrewrite.java.tree.J;
 
 import java.util.UUID;
 
+/**
+ * A return statement.
+ */
 public interface ReturnStmt extends Stmt {
     enum Factory implements TraitFactory<ReturnStmt> {
         F;
