@@ -250,4 +250,34 @@ public class VarAccessValuesTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void correctlyLabelsParenthesizedVariableValuesThis() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  String s = "abc";
+                  void test() {
+                      s = "def";
+                      this.s = "ghi";
+                      (this.s) = "jkl";
+                      ((s)) = "mno";
+                  }
+              }
+              """,
+            """
+              class Test {
+                  String s = "abc";
+                  void test() {
+                      /*~~(abc def ghi jkl mno)~~>*/s = "def";
+                      this./*~~(abc def ghi jkl mno)~~>*/s = "ghi";
+                      (this./*~~(abc def ghi jkl mno)~~>*/s) = "jkl";
+                      ((/*~~(abc def ghi jkl mno)~~>*/s)) = "mno";
+                  }
+              }
+              """
+          )
+        );
+    }
 }
