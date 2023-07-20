@@ -20,6 +20,7 @@ import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Element;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.JavaType;
@@ -37,6 +38,8 @@ public interface Variable extends Element {
      * Gets all access to this variable.
      */
     Collection<VarAccess> getVarAccesses();
+
+    Collection<Expr> getAssignedValues();
 
     enum Factory implements TraitFactory<Variable> {
         F;

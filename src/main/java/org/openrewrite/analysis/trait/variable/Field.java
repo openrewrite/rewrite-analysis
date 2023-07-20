@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.member.FieldDeclaration;
 import org.openrewrite.analysis.trait.member.Member;
@@ -97,5 +98,10 @@ class FieldFromCursor extends Top.Base implements Field {
         // not just within the class (which may contain multiple classes).
         Cursor searchScope = parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance);
         return VarAccess.findAllInScope(searchScope, this);
+    }
+
+    @Override
+    public Collection<Expr> getAssignedValues() {
+        return VarAccess.findAllValues(parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance), this);
     }
 }
