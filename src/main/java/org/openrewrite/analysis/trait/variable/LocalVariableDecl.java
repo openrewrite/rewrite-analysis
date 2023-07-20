@@ -23,6 +23,7 @@ import org.openrewrite.Cursor;
 import org.openrewrite.Tree;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.member.Callable;
 import org.openrewrite.analysis.trait.member.InstanceInitializer;
@@ -85,6 +86,11 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
     @Override
     public Collection<VarAccess> getVarAccesses() {
         return VarAccess.findAllInScope(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+    }
+
+    @Override
+    public Collection<Expr> getAssignedValues() {
+        return VariableUtil.findAssignedValues(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
     }
 
     static Validation<TraitErrors, Callable> findNearestParentCallable(Cursor cursor) {

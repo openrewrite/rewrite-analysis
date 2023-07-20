@@ -24,6 +24,7 @@ import lombok.experimental.FieldDefaults;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
@@ -119,5 +120,13 @@ class ParameterBase extends Top.Base implements Parameter {
             return Collections.emptySet();
         }
         return VarAccess.findAllInScope(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
+    }
+
+    @Override
+    public Collection<Expr> getAssignedValues() {
+        if (methodDeclaration.getBody() == null) {
+            return Collections.emptySet();
+        }
+        return VariableUtil.findAssignedValues(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
     }
 }

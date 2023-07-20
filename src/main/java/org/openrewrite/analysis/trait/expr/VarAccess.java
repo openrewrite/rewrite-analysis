@@ -27,6 +27,7 @@ import org.openrewrite.analysis.trait.member.FieldDeclaration;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.trait.variable.Field;
 import org.openrewrite.analysis.trait.variable.Variable;
+import org.openrewrite.analysis.trait.variable.VariableUtil;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -338,6 +339,11 @@ class FieldFromJavaTypeVariable extends Top.Base implements Field {
     @Override
     public Collection<VarAccess> getVarAccesses() {
         return VarAccess.findAllInScope(compilationUnitCursor, this);
+    }
+
+    @Override
+    public Collection<Expr> getAssignedValues() {
+        return VariableUtil.findAssignedValues(compilationUnitCursor, this);
     }
 
     static Field create(JavaType.Variable variable, Cursor anyCursor) {
