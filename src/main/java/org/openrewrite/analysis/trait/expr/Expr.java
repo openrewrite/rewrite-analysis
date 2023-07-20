@@ -22,6 +22,7 @@ import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.Expression;
+import org.openrewrite.java.tree.J;
 
 import java.util.UUID;
 
@@ -61,6 +62,9 @@ class ExprFallback extends Top.Base implements Expr {
     }
 
     static Validation<TraitErrors, ExprFallback> viewOf(Cursor cursor) {
+        if (cursor.getValue() instanceof J.Identifier) {
+            return TraitErrors.invalidTraitCreationType(ExprFallback.class, cursor, J.Identifier.class);
+        }
         if (cursor.getValue() instanceof Expression) {
             return Validation.success(new ExprFallback(cursor, cursor.getValue()));
         }

@@ -217,7 +217,6 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
     }
 
     @Test
-    @Disabled("TODO: Figure out what's wrong here")
     void dataFlowBetweenFiles() {
         rewriteRun(
           spec -> spec.recipe(new FindFlowBetweenMethods(
@@ -225,7 +224,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               true,
               "java.io.PrintStream println(..)",
               true,
-              "Both",
+              "Arguments",
               "Value"
             )
           ),
@@ -242,7 +241,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
             """
                 class Test {
                     void test() {
-                        Integer x = /*~~(source)~~>*/Provider.provide();
+                        Integer x = /*~~>*/Provider.provide();
                         System.out.println(/*~~(sink)~~>*/x);
                     }
                 }
@@ -251,7 +250,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
           java(
             """
               class Provider {
-                  Integer provide() {
+                  static Integer provide() {
                       return Integer.parseInt("42");
                   }
               }

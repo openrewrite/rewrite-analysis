@@ -26,8 +26,9 @@ import java.util.*;
 import static java.util.Collections.emptyList;
 
 @Incubating(since = "7.24.0")
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
 public class FlowGraph {
+    private final Factory factory;
     @Getter
     private final DataFlowNode node;
     private Map<J, FlowGraph> edges = Collections.emptyMap();
@@ -50,7 +51,7 @@ public class FlowGraph {
         if (edges.isEmpty()) {
             edges = new IdentityHashMap<>(1);
         }
-        return edges.computeIfAbsent(node.getCursor().getValue(), __ -> new FlowGraph(node));
+        return edges.computeIfAbsent(node.getCursor().getValue(), __ -> factory.create(node));
     }
 
     /**
@@ -60,7 +61,10 @@ public class FlowGraph {
         if (edges.isEmpty()) {
             edges = new IdentityHashMap<>(1);
         }
-        edges.put(edge.getNode().getCursor().getValue(), edge);
+        FlowGraph previous = edges.put(edge.getNode().getCursor().getValue(), edge);
+        if (previous != null && !previous.equals(edge)) {
+            throw new IllegalStateException("Edge already exists!");
+        }
         return edge;
     }
 
@@ -71,5 +75,24 @@ public class FlowGraph {
 
     public void removeEdge(FlowGraph edge) {
         edges.remove(edge.getNode().getCursor().<J>getValue(), edge);
+    }
+
+    public interface Factory {
+        FlowGraph create(DataFlowNode node);
+
+        static Factory defaultFactory() {
+            return new Factory() {
+                @Override
+                public FlowGraph create(DataFlowNode node) {
+                    return new FlowGraph(this, node);
+                }
+            };
+        }
+
+        static Factory throwing() {
+            return node -> {
+                throw new UnsupportedOperationException();
+            };
+        }
     }
 }

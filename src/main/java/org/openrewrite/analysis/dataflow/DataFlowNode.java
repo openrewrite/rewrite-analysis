@@ -22,6 +22,7 @@ import lombok.Getter;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.ExprParent;
+import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
@@ -59,7 +60,10 @@ public abstract class DataFlowNode {
 
     public static Option<DataFlowNode> of(Cursor cursor) {
         if (cursor.getValue() instanceof Expression) {
-            return Expr.viewOf(cursor).map(expr -> (DataFlowNode) new ExpressionDataFlowNode(cursor, expr)).toOption();
+            return Expr
+                    .viewOf(cursor)
+                    .toOption()
+                    .map(expr -> new ExpressionDataFlowNode(cursor, expr));
         } else if (cursor.getValue() instanceof J.VariableDeclarations.NamedVariable) {
             return Parameter.viewOf(cursor).map(parameter -> (DataFlowNode) new ParameterDataFlowNode(cursor, parameter)).toOption();
         } else {
@@ -78,6 +82,7 @@ public abstract class DataFlowNode {
 
 class ExpressionDataFlowNode extends DataFlowNode {
     private final Expr expression;
+
     ExpressionDataFlowNode(Cursor cursor, Expr expression) {
         super(cursor);
         this.expression = requireNonNull(expression, "expression");
@@ -103,6 +108,7 @@ class ExpressionDataFlowNode extends DataFlowNode {
 
 class ParameterDataFlowNode extends DataFlowNode {
     private final Parameter parameter;
+
     ParameterDataFlowNode(Cursor cursor, Parameter parameter) {
         super(cursor);
         this.parameter = requireNonNull(parameter, "parameter");
