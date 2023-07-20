@@ -127,6 +127,6 @@ class ParameterBase extends Top.Base implements Parameter {
         if (methodDeclaration.getBody() == null) {
             return Collections.emptySet();
         }
-        return VarAccess.findAllValues(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
+        return VariableUtil.findAssignedValues(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
     }
 }

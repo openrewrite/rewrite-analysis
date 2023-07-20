@@ -102,6 +102,6 @@ class FieldFromCursor extends Top.Base implements Field {
 
     @Override
     public Collection<Expr> getAssignedValues() {
-        return VarAccess.findAllValues(parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+        return VariableUtil.findAssignedValues(parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance), this);
     }
 }

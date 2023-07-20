@@ -20,7 +20,6 @@ import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.openrewrite.Cursor;
-import org.openrewrite.Tree;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.internal.MaybeParenthesesPair;
@@ -28,14 +27,15 @@ import org.openrewrite.analysis.trait.member.FieldDeclaration;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.trait.variable.Field;
 import org.openrewrite.analysis.trait.variable.Variable;
-import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.analysis.trait.variable.VariableUtil;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -110,50 +110,6 @@ public interface VarAccess extends Expr {
             }
         }.visit(scope.getValue(), varAccesses, scope.getParentOrThrow());
         return varAccesses;
-    }
-
-    static Collection<Expr> findAllValues(Cursor scope, Variable variable) {
-        List<Expr> values = new ArrayList<>();
-        new JavaVisitor<List<Expr>>() {
-            @Override
-            public J visitVariable(J.VariableDeclarations.NamedVariable var, List<Expr> exprs) {
-                if (var.getInitializer() == null) {
-                    return super.visitVariable(var, exprs);
-                }
-                Validation<TraitErrors, Variable> varDecl = Variable.viewOf(getCursor());
-                Validation<TraitErrors, Expr> expr = Expr.viewOf(new Cursor(getCursor(), var.getInitializer()));
-                if (varDecl.map(v -> v.equals(variable)).orSuccess(false)) {
-                    exprs.add(expr.success());
-                }
-                return super.visitVariable(var, exprs);
-            }
-
-            @Override
-            public J visitAssignment(J.Assignment assignment, List<Expr> exprs) {
-                Validation<TraitErrors, VarAccess>[] varAccess = new Validation[]{VarAccess.viewOf(
-                        new Cursor(getCursor(), Objects.requireNonNull(Expression.unwrap(assignment.getVariable())))
-                )};
-                Validation<TraitErrors, Expr> expr = Expr.viewOf(new Cursor(getCursor(), assignment.getAssignment()));
-
-                if (!varAccess[0].isSuccess()) {
-                    new JavaIsoVisitor<List<Expr>>() {
-                        @Override
-                        public @Nullable J visit(@Nullable Tree tree, List<Expr> exprs, Cursor parent) {
-                            if (tree instanceof J.FieldAccess) {
-                                varAccess[0] = VarAccess.viewOf(new Cursor(parent, ((J.FieldAccess) tree).getName()));
-                            }
-                            return super.visit(tree, exprs, parent);
-                        }
-                    }.visit(assignment.getVariable(), exprs, getCursor());
-                }
-
-                if (varAccess[0].map(v -> v.getVariable().equals(variable)).orSuccess(false)) {
-                    exprs.add(expr.success());
-                }
-                return super.visitAssignment(assignment, exprs);
-            }
-        }.visit(scope.getValue(), values, scope.getParentOrThrow());
-        return values;
     }
 }
 
@@ -387,7 +343,7 @@ class FieldFromJavaTypeVariable extends Top.Base implements Field {
 
     @Override
     public Collection<Expr> getAssignedValues() {
-        return VarAccess.findAllValues(compilationUnitCursor, this);
+        return VariableUtil.findAssignedValues(compilationUnitCursor, this);
     }
 
     static Field create(JavaType.Variable variable, Cursor anyCursor) {

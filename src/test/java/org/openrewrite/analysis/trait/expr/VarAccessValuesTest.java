@@ -214,4 +214,40 @@ public class VarAccessValuesTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void correctlyLabelsDuplicateVariableValuesThisNoInstantiation() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  int i;
+                  void test1(int i) {
+                      this.i = 1;
+                      i = 2;
+                  }
+                  void test2() {
+                      this.i = 3;
+                      int i = 4;
+                      i = 5;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  int i;
+                  void test1(int i) {
+                      this./*~~(1 3)~~>*/i = 1;
+                      /*~~(2)~~>*/i = 2;
+                  }
+                  void test2() {
+                      this./*~~(1 3)~~>*/i = 3;
+                      int i = 4;
+                      /*~~(4 5)~~>*/i = 5;
+                  }
+              }
+              """
+          )
+        );
+    }
 }

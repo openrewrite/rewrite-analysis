@@ -90,7 +90,7 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
 
     @Override
     public Collection<Expr> getAssignedValues() {
-        return VarAccess.findAllValues(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+        return VariableUtil.findAssignedValues(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
     }
 
     static Validation<TraitErrors, Callable> findNearestParentCallable(Cursor cursor) {
