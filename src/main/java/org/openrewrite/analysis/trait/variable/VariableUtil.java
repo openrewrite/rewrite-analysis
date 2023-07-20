@@ -59,7 +59,7 @@ public class VariableUtil {
                         @Override
                         public J.FieldAccess visitFieldAccess(J.FieldAccess fieldAccess, Integer x) {
                             varAccess[0] = VarAccess.viewOf(new Cursor(getCursor(), fieldAccess.getName()));
-                            return fieldAccess;
+                            return super.visitFieldAccess(fieldAccess, x);
                         }
                     }.visit(assignment.getVariable(), 0, getCursor());
                 }
