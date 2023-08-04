@@ -45,7 +45,7 @@ public interface BinaryExpr extends Expr {
             if (cursor.getValue() instanceof J.Binary) {
                 return BinaryExprBase.viewOf(cursor).map(b -> b);
             }
-            return TraitErrors.invalidTraitCreationType(Literal.class, cursor, J.Binary.class);
+            return TraitErrors.invalidTraitCreationType(BinaryExpr.class, cursor, J.Binary.class);
         }
     }
 

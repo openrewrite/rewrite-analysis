@@ -46,7 +46,7 @@ public interface Method extends Callable {
                         cursor.getValue()
                 ));
             }
-            return TraitErrors.invalidTraitCreationType(Callable.class, cursor, J.MethodDeclaration.class);
+            return TraitErrors.invalidTraitCreationType(Method.class, cursor, J.MethodDeclaration.class);
         }
     }
 

@@ -63,7 +63,13 @@ class ExprFallback extends Top.Base implements Expr {
 
     static Validation<TraitErrors, ExprFallback> viewOf(Cursor cursor) {
         if (cursor.getValue() instanceof J.Identifier) {
-            return TraitErrors.invalidTraitCreationType(ExprFallback.class, cursor, J.Identifier.class);
+            return TraitErrors.invalidTraitCreation(ExprFallback.class, "Identifiers are only Expr when they are VarAccess");
+        }
+        if (cursor.getValue() instanceof J.FieldAccess && cursor.firstEnclosing(J.Import.class) != null) {
+            return TraitErrors.invalidTraitCreation(ExprFallback.class, "FieldAccess is in an import statement");
+        }
+        if (cursor.getValue() instanceof J.Primitive) {
+            return TraitErrors.invalidTraitCreation(ExprFallback.class, "Primitives are only Expr when they are Literal");
         }
         if (cursor.getValue() instanceof Expression) {
             return Validation.success(new ExprFallback(cursor, cursor.getValue()));

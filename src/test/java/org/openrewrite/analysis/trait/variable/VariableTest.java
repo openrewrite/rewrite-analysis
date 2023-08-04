@@ -242,4 +242,30 @@ public class VariableTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void correctlyLabelsVarAccessOnReturn() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  
+                  int test(int i) {
+                      i++;
+                      return i;
+                  }
+              }
+              """,
+            """
+              class Test {
+              
+                  int test(int /*~~(i: 0)~~>*/i) {
+                      /*~~(i: 0)~~>*/i++;
+                      return /*~~(i: 0)~~>*/i;
+                  }
+              }
+              """
+          )
+        );
+    }
 }
