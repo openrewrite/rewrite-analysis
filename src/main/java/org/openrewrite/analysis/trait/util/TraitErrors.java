@@ -61,15 +61,21 @@ public final class TraitErrors implements Iterable<TraitError> {
         return Validation.fail(TraitErrors.fromSingleError(error));
     }
 
-    public static <V> Validation<TraitErrors, V> invalidTraitCreationType(Class<?> traitType, Cursor cursor, Class<?> expectedType) {
+    public static <V extends U, U> Validation<TraitErrors, V> invalidTraitCreationType(Class<U> traitType, Cursor cursor, Class<?> expectedType) {
         return Validation.fail(TraitErrors.fromSingleError(
                 traitType.getSimpleName() + " must be created from " + expectedType + " but was " + cursor.getValue().getClass()
         ));
     }
 
-    public static <V> Validation<TraitErrors, V> invalidTraitCreationType(Class<?> traitType, Cursor cursor, Class<?> expectedTypeFirst, Class<?> expectedTypeSecond) {
+    public static <V extends U, U> Validation<TraitErrors, V> invalidTraitCreationType(Class<U> traitType, Cursor cursor, Class<?> expectedTypeFirst, Class<?> expectedTypeSecond) {
         return Validation.fail(TraitErrors.fromSingleError(
                 traitType.getSimpleName() + " must be created from " + expectedTypeFirst + " or " + expectedTypeSecond + " but was " + cursor.getValue().getClass()
+        ));
+    }
+
+    public static <V extends U, U> Validation<TraitErrors, V> invalidTraitCreation(Class<U> traitType, String error) {
+        return Validation.fail(TraitErrors.fromSingleError(
+                traitType.getSimpleName() + " could not be created: " + error
         ));
     }
 
