@@ -137,7 +137,7 @@ class VarAccessBase extends Top.Base implements VarAccess {
 
     @Override
     public Option<Expr> getQualifier() {
-        return InstanceAccess.viewOf(cursor.getParentTreeCursor()).map(e -> (Expr) e).toOption();
+        return InstanceAccess.viewOf(cursor.getParentTreeCursor()).map(Expr.class::cast).toOption();
     }
 
     @Override
