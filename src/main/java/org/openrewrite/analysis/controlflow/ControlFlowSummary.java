@@ -59,16 +59,16 @@ public final class ControlFlowSummary {
     public Set<ControlFlowNode.BasicBlock> getBasicBlocks() {
         return getAllNodes()
                 .stream()
-                .filter(node -> node instanceof ControlFlowNode.BasicBlock)
-                .map(node -> (ControlFlowNode.BasicBlock) node)
+                .filter(org.openrewrite.analysis.controlflow.ControlFlowNode.BasicBlock.class::isInstance)
+                .map(org.openrewrite.analysis.controlflow.ControlFlowNode.BasicBlock.class::cast)
                 .collect(Collectors.toSet());
     }
 
     public Set<ControlFlowNode.ConditionNode> getConditionNodes() {
         return getAllNodes()
                 .stream()
-                .filter(node -> node instanceof ControlFlowNode.ConditionNode)
-                .map(node -> (ControlFlowNode.ConditionNode) node)
+                .filter(org.openrewrite.analysis.controlflow.ControlFlowNode.ConditionNode.class::isInstance)
+                .map(org.openrewrite.analysis.controlflow.ControlFlowNode.ConditionNode.class::cast)
                 .collect(Collectors.toSet());
     }
 
@@ -92,8 +92,8 @@ public final class ControlFlowSummary {
         recurseComputeReachableBasicBlock(start, predicate, reachable);
         return reachable
                 .stream()
-                .filter(cfn -> cfn instanceof ControlFlowNode.BasicBlock)
-                .map(cfn -> (ControlFlowNode.BasicBlock) cfn)
+                .filter(org.openrewrite.analysis.controlflow.ControlFlowNode.BasicBlock.class::isInstance)
+                .map(org.openrewrite.analysis.controlflow.ControlFlowNode.BasicBlock.class::cast)
                 .collect(Collectors.toSet());
     }
 
