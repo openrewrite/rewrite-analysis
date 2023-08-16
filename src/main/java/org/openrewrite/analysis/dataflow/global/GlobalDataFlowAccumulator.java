@@ -346,7 +346,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         }
         return DataFlowNode
                 .of(cursor)
-                .map(n -> (GlobalDataFlow.Summary) new ResultSummary(n, prunedParticipatingNodes))
+                .map(org.openrewrite.analysis.dataflow.global.GlobalDataFlow.Summary.class::cast)
                 .orSome(AlwaysFalseSummary.INSTANCE);
     }
 

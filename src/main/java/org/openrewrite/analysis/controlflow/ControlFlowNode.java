@@ -242,11 +242,10 @@ public abstract class ControlFlowNode {
                 // Self loathing
                 J.Case caseStatement = (J.Case) condition;
                 String caseString = caseStatement.toString();
-                switch (caseStatement.getType()) {
-                    case Statement:
-                        return caseString.substring(0, caseString.indexOf(":") + 1);
-                    case Rule:
-                        return caseString.substring(0, caseString.indexOf("->") + 2);
+                if (caseStatement.getType() == J.Case.Type.Statement) {
+                    return caseString.substring(0, caseString.indexOf(":") + 1);
+                } else if (caseStatement.getType() == J.Case.Type.Rule) {
+                    return caseString.substring(0, caseString.indexOf("->") + 2);
                 }
             }
             return condition.toString();
@@ -424,7 +423,7 @@ public abstract class ControlFlowNode {
         @Getter
         private final GraphType graphType;
 
-        private ControlFlowNode successor = null;
+        private ControlFlowNode successor;
 
         @Override
         protected void _addSuccessorInternal(ControlFlowNode successor) {
@@ -470,7 +469,7 @@ public abstract class ControlFlowNode {
     static final class End extends ControlFlowNode implements GraphTerminator {
         @Getter
         private final GraphType graphType;
-        private ControlFlowNode successor = null;
+        private ControlFlowNode successor;
 
         @Override
         Set<ControlFlowNode> getSuccessors() {

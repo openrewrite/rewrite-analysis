@@ -98,7 +98,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
     private static class ControlFlowMarkingVisitor<P> extends JavaIsoVisitor<P> {
         private final String label;
         private final Map<J, ? extends ControlFlowNode> nodeToBlock;
-        private int nodeNumber = 0;
+        private int nodeNumber;
         private final Map<ControlFlowNode, Integer> nodeNumbers = new HashMap<>();
 
         @Override
@@ -128,7 +128,9 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                 } else {
                     return SearchResult.found(statement, "" + number + label);
                 }
-            } else return statement;
+            } else {
+                return statement;
+            }
         }
 
         @Override

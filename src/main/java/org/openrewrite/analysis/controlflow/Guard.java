@@ -161,7 +161,7 @@ public final class Guard {
             }
         } else if (e instanceof J.MethodInvocation) {
             J.MethodInvocation methodInvocation = (J.MethodInvocation) e;
-            if (methodInvocation.getSimpleName().equals("equals")) {
+            if ("equals".equals(methodInvocation.getSimpleName())) {
                 return Optional.of(JavaType.Primitive.Boolean);
             }
         }

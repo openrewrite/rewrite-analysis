@@ -65,7 +65,7 @@ public abstract class DataFlowNode {
                     .toOption()
                     .map(expr -> new ExpressionDataFlowNode(cursor, expr));
         } else if (cursor.getValue() instanceof J.VariableDeclarations.NamedVariable) {
-            return Parameter.viewOf(cursor).map(parameter -> (DataFlowNode) new ParameterDataFlowNode(cursor, parameter)).toOption();
+            return Parameter.viewOf(cursor).map(DataFlowNode.class::cast).toOption();
         } else {
             return Option.none();
         }

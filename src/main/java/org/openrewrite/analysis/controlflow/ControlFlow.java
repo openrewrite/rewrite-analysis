@@ -234,11 +234,11 @@ public final class ControlFlow {
         }
 
         @Override
-        public J.Synchronized visitSynchronized(J.Synchronized _sync, P p) {
+        public J.Synchronized visitSynchronized(J.Synchronized sync, P p) {
             addCursorToBasicBlock();
-            visit(_sync.getLock(), p);
-            visit(_sync.getBody(), p);
-            return _sync;
+            visit(sync.getLock(), p);
+            visit(sync.getBody(), p);
+            return sync;
         }
 
         @Override
@@ -353,20 +353,17 @@ public final class ControlFlow {
                             ControlFlowNode.ConditionNode conditionNode = currentAsBasicBlock().addConditionNodeTruthFirst();
                             current = Stream.concat(Stream.of(conditionNode), caseFlow.stream()).collect(Collectors.toSet());
                             caseFlow.clear();
-                            switch (_case.getType()) {
-                                case Statement:
-                                    if (_case.getStatements().isEmpty()) {
-                                        // Visit a fake empty statement to ensure that the ConditionNode has a true successor
-                                        visit(new J.Empty(randomId(), Space.EMPTY, Markers.EMPTY), p);
-                                    } else {
-                                        visitStatementList(_case.getStatements(), p);
-                                    }
-                                    break;
-                                case Rule:
-                                    visit(_case.getBody(), p);
-                                    breakFlow.add(currentAsBasicBlock());
-                                    current = Collections.emptySet();
-                                    break;
+                            if (_case.getType() == J.Case.Type.Statement) {
+                                if (_case.getStatements().isEmpty()) {
+                                    // Visit a fake empty statement to ensure that the ConditionNode has a true successor
+                                    visit(new J.Empty(randomId(), Space.EMPTY, Markers.EMPTY), p);
+                                } else {
+                                    visitStatementList(_case.getStatements(), p);
+                                }
+                            } else if (_case.getType() == J.Case.Type.Rule) {
+                                visit(_case.getBody(), p);
+                                breakFlow.add(currentAsBasicBlock());
+                                current = Collections.emptySet();
                             }
                             caseFlow.addAll(current);
                             current = Collections.singleton(conditionNode);
@@ -393,7 +390,7 @@ public final class ControlFlow {
         private static Set<ControlFlowNode.ConditionNode> allAsConditionNodesMissingTruthFirst(Set<? extends ControlFlowNode> nodes) {
             return nodes.stream().map(controlFlowNode -> {
                 if (controlFlowNode instanceof ControlFlowNode.ConditionNode) {
-                    return ((ControlFlowNode.ConditionNode) controlFlowNode);
+                    return (ControlFlowNode.ConditionNode) controlFlowNode;
                 } else {
                     return controlFlowNode.addConditionNodeTruthFirst();
                 }
@@ -403,7 +400,7 @@ public final class ControlFlow {
         private static Set<ControlFlowNode.ConditionNode> allAsConditionNodesMissingFalseFirst(Set<? extends ControlFlowNode> nodes) {
             return nodes.stream().map(controlFlowNode -> {
                 if (controlFlowNode instanceof ControlFlowNode.ConditionNode) {
-                    return ((ControlFlowNode.ConditionNode) controlFlowNode);
+                    return (ControlFlowNode.ConditionNode) controlFlowNode;
                 } else {
                     return controlFlowNode.addConditionNodeFalseFirst();
                 }
