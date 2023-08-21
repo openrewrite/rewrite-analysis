@@ -29,6 +29,7 @@ import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.table.MethodCalls;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.marker.SearchResult;
@@ -93,7 +94,13 @@ public class FindMethods extends Recipe {
                         if (javaSourceFile != null) {
                             methodCalls.insertRow(ctx, new MethodCalls.Row(
                                     javaSourceFile.getSourcePath().toString(),
-                                    method.printTrimmed(getCursor())
+                                    method.printTrimmed(getCursor()),
+                                    method.getMethodType().getDeclaringType().getFullyQualifiedName(),
+                                    method.getSimpleName(),
+                                    method.getArguments().stream()
+                                            .map(Expression::getType)
+                                            .map(String::valueOf)
+                                            .collect(Collectors.joining(", "))
                             ));
                         }
                         m = SearchResult.found(m);
@@ -113,7 +120,13 @@ public class FindMethods extends Recipe {
                         if (javaSourceFile != null) {
                             methodCalls.insertRow(ctx, new MethodCalls.Row(
                                     javaSourceFile.getSourcePath().toString(),
-                                    memberRef.printTrimmed(getCursor())
+                                    memberRef.printTrimmed(getCursor()),
+                                    memberRef.getMethodType().getDeclaringType().getFullyQualifiedName(),
+                                    memberRef.getMethodType().getName(),
+                                    memberRef.getArguments().stream()
+                                            .map(Expression::getType)
+                                            .map(String::valueOf)
+                                            .collect(Collectors.joining(", "))
                             ));
                         }
                         m = m.withReference(SearchResult.found(m.getReference()));
@@ -133,7 +146,13 @@ public class FindMethods extends Recipe {
                         if (javaSourceFile != null) {
                             methodCalls.insertRow(ctx, new MethodCalls.Row(
                                     javaSourceFile.getSourcePath().toString(),
-                                    newClass.printTrimmed(getCursor())
+                                    newClass.printTrimmed(getCursor()),
+                                    newClass.getType().toString(),
+                                    "<constructor>",
+                                    newClass.getArguments().stream()
+                                            .map(Expression::getType)
+                                            .map(String::valueOf)
+                                            .collect(Collectors.joining(", "))
                             ));
                         }
                         n = SearchResult.found(n);
