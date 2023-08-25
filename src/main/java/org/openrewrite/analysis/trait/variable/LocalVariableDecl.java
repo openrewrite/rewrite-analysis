@@ -30,6 +30,8 @@ import org.openrewrite.analysis.trait.member.InstanceInitializer;
 import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.member.StaticInitializerMethod;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.analysis.util.FlagUtil;
+import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
@@ -49,8 +51,9 @@ public interface LocalVariableDecl extends LocalScopeVariable {
         @Override
         public Validation<TraitErrors, LocalVariableDecl> viewOf(Cursor cursor) {
             if (cursor.getValue() instanceof J.VariableDeclarations.NamedVariable) {
+                Cursor maybeVariableDecl = cursor.getParentTreeCursor();
                 return LocalVariableDeclBase.findNearestParentCallable(cursor)
-                        .map(callable -> new LocalVariableDeclBase(cursor, cursor.getValue(), callable));
+                        .map(callable -> new LocalVariableDeclBase(cursor, cursor.getValue(), maybeVariableDecl.getValue(), callable));
             }
             return TraitErrors.invalidTraitCreationType(LocalVariableDecl.class, cursor, J.VariableDeclarations.class);
         }
@@ -65,6 +68,7 @@ public interface LocalVariableDecl extends LocalScopeVariable {
 class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
     final Cursor cursor;
     final J.VariableDeclarations.NamedVariable variable;
+    final J.VariableDeclarations variableDeclarations;
     @Getter(onMethod = @__(@Override))
     final Callable callable;
 
@@ -91,6 +95,11 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
     @Override
     public Collection<Expr> getAssignedValues() {
         return VariableUtil.findAssignedValues(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+    }
+
+    @Override
+    public Collection<Flag> getFlags() {
+        return FlagUtil.fromModifiers(variableDeclarations.getModifiers());
     }
 
     static Validation<TraitErrors, Callable> findNearestParentCallable(Cursor cursor) {

@@ -28,6 +28,7 @@ import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.analysis.util.FlagUtil;
 import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -62,6 +63,7 @@ public interface Parameter extends LocalScopeVariable {
                 return Method.viewOf(methodDeclarationCursor).map(callable ->  new ParameterBase(
                         c,
                         c.getValue(),
+                        variableDeclarationsCursor.getValue(),
                         callable,
                         methodDeclarationCursor,
                         methodDeclarationCursor.getValue()
@@ -81,6 +83,7 @@ public interface Parameter extends LocalScopeVariable {
 class ParameterBase extends Top.Base implements Parameter {
     Cursor cursor;
     J.VariableDeclarations.NamedVariable namedVariable;
+    J.VariableDeclarations variableDeclarations;
     @Getter(onMethod = @__(@Override))
     Method callable;
     Cursor methodDeclarationCursor;
@@ -128,5 +131,10 @@ class ParameterBase extends Top.Base implements Parameter {
             return Collections.emptySet();
         }
         return VariableUtil.findAssignedValues(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
+    }
+
+    @Override
+    public Collection<Flag> getFlags() {
+        return FlagUtil.fromModifiers(variableDeclarations.getModifiers());
     }
 }

@@ -23,6 +23,7 @@ import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.Collection;
@@ -40,6 +41,8 @@ public interface Variable extends Element {
     Collection<VarAccess> getVarAccesses();
 
     Collection<Expr> getAssignedValues();
+
+    Collection<Flag> getFlags();
 
     enum Factory implements TraitFactory<Variable> {
         F;

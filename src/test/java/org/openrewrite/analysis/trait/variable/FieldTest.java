@@ -20,14 +20,17 @@ import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
+import java.util.Collections;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
@@ -50,8 +53,8 @@ public class FieldTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
-        spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(localVariableDecl -> {
-            assertNotNull(localVariableDecl.getName(), "LocalVariableDecl callable is null");
+        spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(field -> {
+            assertNotNull(field.getName(), "LocalVariableDecl callable is null");
             return SearchResult.found(variable);
         }).orSuccess(variable))));
     }
@@ -120,6 +123,37 @@ public class FieldTest implements RewriteTest {
                       class Potato {
                           static int /*~~>*/i = 0;
                           int /*~~>*/j = 0;
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void findsStaticField() {
+        rewriteRun(
+          spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(field -> {
+              assertNotNull(field.getName(), "Field callable is null");
+              assertEquals(Collections.singleton(Flag.Static), field.getFlags(), "Field should be static");
+              return SearchResult.found(variable);
+          }).orSuccess(variable)))),
+          java(
+            """
+              class Test {
+                  void test() {
+                      class Potato {
+                          static int i = 0;
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() {
+                      class Potato {
+                          static int /*~~>*/i = 0;
                       }
                   }
               }
