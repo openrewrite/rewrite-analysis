@@ -26,6 +26,8 @@ import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.member.FieldDeclaration;
 import org.openrewrite.analysis.trait.member.Member;
 import org.openrewrite.analysis.trait.util.TraitErrors;
+import org.openrewrite.analysis.util.FlagUtil;
+import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
@@ -53,7 +55,7 @@ public interface Field extends Member, Variable {
                 Cursor maybeBlock = maybeVariableDecl.getParentTreeCursor();
                 Cursor maybeClassDecl = maybeBlock.getParentTreeCursor();
                 if (maybeClassDecl.getValue() instanceof J.ClassDeclaration || maybeClassDecl.getValue() instanceof J.NewClass) {
-                    return Validation.success(new FieldFromCursor(cursor, cursor.getValue(), maybeBlock));
+                    return Validation.success(new FieldFromCursor(cursor, cursor.getValue(), maybeVariableDecl.getValue(), maybeBlock));
                 }
                 return TraitErrors.invalidTraitCreationError("Field must be declared in a class, interface, or anonymous class");
             }
@@ -70,6 +72,7 @@ public interface Field extends Member, Variable {
 class FieldFromCursor extends Top.Base implements Field {
     Cursor cursor;
     J.VariableDeclarations.NamedVariable variable;
+    J.VariableDeclarations variableDeclarations;
     Cursor parentBlock;
 
     @Override
@@ -103,5 +106,10 @@ class FieldFromCursor extends Top.Base implements Field {
     @Override
     public Collection<Expr> getAssignedValues() {
         return VariableUtil.findAssignedValues(parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+    }
+
+    @Override
+    public Collection<Flag> getFlags() {
+        return FlagUtil.fromModifiers(variableDeclarations.getModifiers());
     }
 }
