@@ -54,7 +54,7 @@ public class FieldTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(field -> {
-            assertNotNull(field.getName(), "LocalVariableDecl callable is null");
+            assertNotNull(field.getName(), "Field callable is null");
             return SearchResult.found(variable);
         }).orSuccess(variable))));
     }
