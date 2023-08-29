@@ -23,6 +23,7 @@ import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.Javadoc;
 
 import java.util.UUID;
 
@@ -62,7 +63,7 @@ class ExprFallback extends Top.Base implements Expr {
     }
 
     static Validation<TraitErrors, ExprFallback> viewOf(Cursor cursor) {
-        if (cursor.getValue() instanceof J.Identifier) {
+        if (cursor.getValue() instanceof J.Identifier && cursor.firstEnclosing(Javadoc.class) == null) {
             return TraitErrors.invalidTraitCreation(ExprFallback.class, "Identifiers are only Expr when they are VarAccess");
         }
         if (cursor.getValue() instanceof J.FieldAccess && cursor.firstEnclosing(J.Import.class) != null) {

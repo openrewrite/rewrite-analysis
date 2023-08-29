@@ -32,6 +32,7 @@ import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.Javadoc;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -236,6 +237,9 @@ class VarAccessBase extends Top.Base implements VarAccess {
         if (checkType(parent, J.MethodInvocation.class, parentMethodInvocation -> parentMethodInvocation.getName() == ident)) {
             assert ident.getFieldType() == null;
             return TraitErrors.invalidTraitCreationError("J.Identifier within a method invocation name is not a variable access");
+        }
+        if (cursor.firstEnclosing(Javadoc.class) != null) {
+            return TraitErrors.invalidTraitCreationError("J.Identifier as an argument in a method call directly only appears in Javadoc comments");
         }
         if (checkType(parent, J.MethodDeclaration.class, parentMethodDeclaration -> parentMethodDeclaration.getName() == ident)) {
             assert ident.getFieldType() == null;
