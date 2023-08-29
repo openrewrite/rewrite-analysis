@@ -19,6 +19,7 @@ import fj.data.Option;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.Tree;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.analysis.trait.expr.VarAccess;
@@ -443,7 +444,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                         ancestorNode
                 )) {
                     nextFlowGraph = nextFlowGraph.addEdge(ancestorNode);
-                    J ancestorParent = ancestorCursor.getParentTreeCursor().getValue();
+                    Tree ancestorParent = ancestorCursor.getParentTreeCursor().getValue();
                     if (ancestorParent instanceof J.Block || ancestorParent instanceof J.Case) {
                         // If the ancestor is a block or a case, then we've reached the end of the flow.
                         // We can stop here.
