@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.Tree;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.*;
@@ -155,7 +156,7 @@ public interface InvocationMatcher {
         }
 
         private static Optional<MethodCall> nearestMethodCall(Cursor cursor) {
-            J closestJ = cursor.getParentTreeCursor().getValue();
+            Tree closestJ = cursor.getParentTreeCursor().getValue();
             if (closestJ instanceof MethodCall) {
                 return Optional.of((MethodCall) closestJ);
             }
