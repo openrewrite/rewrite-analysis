@@ -71,7 +71,6 @@ public class LambdaExprTest implements RewriteTest {
 
     @Test
     void correctlyLabelsLambdaInReturn() {
-        //language=java
         rewriteRun(
           java(
             """
@@ -104,7 +103,6 @@ public class LambdaExprTest implements RewriteTest {
 
     @Test
     void correctlyLabelsLambdaInConstructor() {
-        //language=java
         rewriteRun(
           java(
             """
