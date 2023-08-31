@@ -45,7 +45,7 @@ public class LambdaExprTest implements RewriteTest {
           java(
             """
               interface Fun {
-                  // no-op
+                  String message();
               }
               
               class Test {
@@ -56,7 +56,7 @@ public class LambdaExprTest implements RewriteTest {
               """,
             """
               interface Fun {
-                  // no-op
+                  String message();
               }
               
               class Test {
