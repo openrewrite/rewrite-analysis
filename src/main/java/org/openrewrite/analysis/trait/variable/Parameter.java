@@ -60,7 +60,7 @@ public interface Parameter extends LocalScopeVariable {
             if (c.getValue() instanceof J.VariableDeclarations.NamedVariable) {
                 Cursor variableDeclarationsCursor = c.getParentTreeCursor();
                 Cursor methodDeclarationCursor = variableDeclarationsCursor.getParentTreeCursor();
-                return Method.viewOf(methodDeclarationCursor).map(callable ->  new ParameterBase(
+                return Method.viewOf(methodDeclarationCursor).map(callable -> new ParameterBase(
                         c,
                         c.getValue(),
                         variableDeclarationsCursor.getValue(),
