@@ -119,7 +119,7 @@ public interface VarAccess extends Expr {
 class VarAccessBase extends Top.Base implements VarAccess {
     private final Cursor cursor;
     private final J.Identifier identifier;
-    @Getter(lazy = true, onMethod =  @__(@Override))
+    @Getter(lazy = true, onMethod = @__(@Override))
     private final Variable variable = computeVariable(this, cursor, identifier);
 
     @Override
