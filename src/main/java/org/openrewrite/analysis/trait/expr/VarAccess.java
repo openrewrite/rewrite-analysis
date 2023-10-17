@@ -29,10 +29,7 @@ import org.openrewrite.analysis.trait.variable.Field;
 import org.openrewrite.analysis.trait.variable.Variable;
 import org.openrewrite.analysis.trait.variable.VariableUtil;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.java.tree.Flag;
-import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.Javadoc;
+import org.openrewrite.java.tree.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -172,7 +169,7 @@ class VarAccessBase extends Top.Base implements VarAccess {
     }
 
     private static Variable computeVariable(VarAccessBase varAccess, Cursor cursor, J.Identifier varAccessIdent) {
-        Cursor compilationUnit = cursor.dropParentUntil(J.CompilationUnit.class::isInstance);
+        Cursor compilationUnit = cursor.dropParentUntil(JavaSourceFile.class::isInstance);
         AtomicBoolean found = new AtomicBoolean(false);
         Variable[] closestVariable = new Variable[1];
         new JavaVisitor<AtomicBoolean>() {
@@ -357,7 +354,7 @@ class FieldFromJavaTypeVariable extends Top.Base implements Field {
     }
 
     static Field create(JavaType.Variable variable, Cursor anyCursor) {
-        return new FieldFromJavaTypeVariable(variable, anyCursor.dropParentUntil(J.CompilationUnit.class::isInstance));
+        return new FieldFromJavaTypeVariable(variable, anyCursor.dropParentUntil(JavaSourceFile.class::isInstance));
     }
 }
 
