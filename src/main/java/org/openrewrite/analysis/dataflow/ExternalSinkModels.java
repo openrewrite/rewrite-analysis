@@ -25,6 +25,7 @@ import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
 import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 
 import java.lang.ref.WeakReference;
@@ -72,10 +73,10 @@ public final class ExternalSinkModels {
     }
 
     private OptimizedSinkModels getOrComputeOptimizedSinkModels(Cursor cursor) {
-        Cursor cuCursor = cursor.dropParentUntil(J.CompilationUnit.class::isInstance);
+        Cursor cuCursor = cursor.dropParentUntil(JavaSourceFile.class::isInstance);
         return cuCursor.computeMessageIfAbsent(
                 CURSOR_MESSAGE_KEY,
-                __ -> getOptimizedSinkModelsForTypesInUse(cuCursor.<J.CompilationUnit>getValue().getTypesInUse())
+                __ -> getOptimizedSinkModelsForTypesInUse(cuCursor.<JavaSourceFile>getValue().getTypesInUse())
         );
     }
 

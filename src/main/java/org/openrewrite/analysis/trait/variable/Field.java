@@ -29,6 +29,7 @@ import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.util.FlagUtil;
 import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.Collection;
@@ -99,13 +100,13 @@ class FieldFromCursor extends Top.Base implements Field {
     public Collection<VarAccess> getVarAccesses() {
         // Searching starts at the J.CompilationUnit because we want to find all references to this field, within the file,
         // not just within the class (which may contain multiple classes).
-        Cursor searchScope = parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance);
+        Cursor searchScope = parentBlock.dropParentUntil(JavaSourceFile.class::isInstance);
         return VarAccess.findAllInScope(searchScope, this);
     }
 
     @Override
     public Collection<Expr> getAssignedValues() {
-        return VariableUtil.findAssignedValues(parentBlock.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+        return VariableUtil.findAssignedValues(parentBlock.dropParentUntil(JavaSourceFile.class::isInstance), this);
     }
 
     @Override

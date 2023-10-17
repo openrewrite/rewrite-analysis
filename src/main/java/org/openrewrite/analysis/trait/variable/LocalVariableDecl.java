@@ -31,10 +31,7 @@ import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.member.StaticInitializerMethod;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.util.FlagUtil;
-import org.openrewrite.java.tree.Flag;
-import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.Statement;
+import org.openrewrite.java.tree.*;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -89,12 +86,12 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
 
     @Override
     public Collection<VarAccess> getVarAccesses() {
-        return VarAccess.findAllInScope(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+        return VarAccess.findAllInScope(cursor.dropParentUntil(JavaSourceFile.class::isInstance), this);
     }
 
     @Override
     public Collection<Expr> getAssignedValues() {
-        return VariableUtil.findAssignedValues(cursor.dropParentUntil(J.CompilationUnit.class::isInstance), this);
+        return VariableUtil.findAssignedValues(cursor.dropParentUntil(JavaSourceFile.class::isInstance), this);
     }
 
     @Override

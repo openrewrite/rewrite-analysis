@@ -26,6 +26,7 @@ import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 
 import java.lang.ref.WeakReference;
@@ -68,10 +69,10 @@ final class ExternalFlowModels {
     }
 
     private OptimizedFlowModels getOrComputeOptimizedFlowModels(Cursor cursor) {
-        Cursor cuCursor = cursor.dropParentUntil(J.CompilationUnit.class::isInstance);
+        Cursor cuCursor = cursor.dropParentUntil(JavaSourceFile.class::isInstance);
         return cuCursor.computeMessageIfAbsent(
                 CURSOR_MESSAGE_KEY,
-                __ -> getOptimizedFlowModelsForTypesInUse(cuCursor.<J.CompilationUnit>getValue().getTypesInUse())
+                __ -> getOptimizedFlowModelsForTypesInUse(cuCursor.<JavaSourceFile>getValue().getTypesInUse())
         );
     }
 
