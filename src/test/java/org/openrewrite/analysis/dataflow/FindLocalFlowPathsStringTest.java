@@ -57,8 +57,8 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
                   .map("42"::equals)
                   .orSome(() -> srcNode
                     .asExpr(MethodAccess.class)
-                    .map(ma -> ma.getSimpleName()
-                      .equals("source"))
+                    .map(ma -> "source"
+                      .equals(ma.getSimpleName()))
                     .orSome(false));
             }
 
@@ -70,7 +70,7 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
             @Override
             public boolean isBarrierGuard(Guard guard, boolean branch) {
                 if (guard.getExpression() instanceof J.MethodInvocation) {
-                    return branch && ((J.MethodInvocation) guard.getExpression()).getName().getSimpleName().equals("guard");
+                    return branch && "guard".equals(((J.MethodInvocation) guard.getExpression()).getName().getSimpleName());
                 }
                 return super.isBarrierGuard(guard, branch);
             }

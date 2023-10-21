@@ -30,7 +30,7 @@ public class ParameterDataflowTest implements RewriteTest {
             public boolean isSource(DataFlowNode srcNode) {
                 return srcNode
                   .asParameter()
-                  .map(p -> p.getName().equals("source"))
+                  .map(p -> "source".equals(p.getName()))
                   .orSome(false);
             }
 

@@ -96,7 +96,7 @@ public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumu
 
 
         String flow = this.flow == null ? "Data" : this.flow;
-        if (flow.equals("Taint")) {
+        if ("Taint".equals(flow)) {
             return GlobalDataFlow.accumulator(new TaintFlowSpec() {
 
                 @Override

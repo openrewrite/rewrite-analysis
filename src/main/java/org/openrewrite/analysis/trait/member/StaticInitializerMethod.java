@@ -23,7 +23,7 @@ import org.openrewrite.analysis.trait.util.TraitErrors;
  * A static initializer is a method that contains all static
  * field initializations and static initializer blocks.
  */
-public class StaticInitializerMethod extends InitializerMethodBase {
+public final class StaticInitializerMethod extends InitializerMethodBase {
     private StaticInitializerMethod(Cursor cursor) {
         super(cursor);
     }

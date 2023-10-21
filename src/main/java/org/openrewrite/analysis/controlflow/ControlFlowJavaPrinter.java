@@ -325,7 +325,7 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
     }
 
     static class ControlFlowPrintOutputCapture<P> extends PrintOutputCapture<P> {
-        boolean enabled = false;
+        boolean enabled;
 
         public ControlFlowPrintOutputCapture(P p) {
             super(p);
