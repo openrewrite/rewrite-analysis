@@ -30,8 +30,12 @@ public interface Top {
     UUID getId();
 
     static boolean equals(Top e1, @Nullable Object other) {
-        if (e1 == other) return true;
-        if (other == null || e1.getClass() != other.getClass()) return false;
+        if (e1 == other) {
+            return true;
+        }
+        if (other == null || e1.getClass() != other.getClass()) {
+            return false;
+        }
         Top e2 = (Top) other;
         return e1.getId().equals(e2.getId());
     }

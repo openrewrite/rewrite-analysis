@@ -256,13 +256,13 @@ public class FileUtils {
         String displaySize;
 
         if (size / ONE_GB > 0) {
-            displaySize = String.valueOf(size / ONE_GB) + " GB";
+            displaySize = size / ONE_GB + " GB";
         } else if (size / ONE_MB > 0) {
-            displaySize = String.valueOf(size / ONE_MB) + " MB";
+            displaySize = size / ONE_MB + " MB";
         } else if (size / ONE_KB > 0) {
-            displaySize = String.valueOf(size / ONE_KB) + " KB";
+            displaySize = size / ONE_KB + " KB";
         } else {
-            displaySize = String.valueOf(size) + " bytes";
+            displaySize = size + " bytes";
         }
         return displaySize;
     }
@@ -376,7 +376,7 @@ public class FileUtils {
         }
 
         //Find files
-        Collection<File> files = new java.util.LinkedList<File>();
+        Collection<File> files = new java.util.LinkedList<>();
         innerListFiles(files, directory,
                 FileFilterUtils.or(effFileFilter, effDirFilter));
         return files;
@@ -615,7 +615,7 @@ public class FileUtils {
         for (int i = 0; i < urls.length; i++) {
             URL url = urls[i];
             if (url != null) {
-                if (url.getProtocol().equals("file") == false) {
+                if ("file".equals(url.getProtocol()) == false) {
                     throw new IllegalArgumentException(
                             "URL could not be converted to a File: " + url);
                 }
@@ -1046,7 +1046,7 @@ public class FileUtils {
         if (canonicalDestDir.startsWith(srcDir.getCanonicalPath())) {
             File[] srcFiles = filter == null ? srcDir.listFiles() : srcDir.listFiles(filter);
             if (srcFiles != null && srcFiles.length > 0) {
-                exclusionList = new ArrayList<String>(srcFiles.length);
+                exclusionList = new ArrayList<>(srcFiles.length);
                 for (File srcFile : srcFiles) {
                     File copiedFile = new File(destDir, srcFile.getName());
                     exclusionList.add(copiedFile.getCanonicalPath());
@@ -2206,10 +2206,6 @@ public class FileUtils {
             fileInCanonicalDir = new File(canonicalDir, file.getName());
         }
 
-        if (fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile())) {
-            return false;
-        } else {
-            return true;
-        }
+        return !(fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile()));
     }
 }

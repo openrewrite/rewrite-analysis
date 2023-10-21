@@ -44,7 +44,8 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
                         .map(NodeToNodeText::new)
                         .sorted()
                         .collect(Collectors.toList());
-        int vizSrc = -1, vizSink = -1;
+        int vizSrc = -1;
+        int vizSink = -1;
         for (int i = 0; i < nodeToNodeText.size(); i++) {
             NodeToNodeText toNodeText = nodeToNodeText.get(i);
             ControlFlowNode node = toNodeText.node;

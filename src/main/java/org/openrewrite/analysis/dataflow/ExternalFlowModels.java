@@ -101,7 +101,7 @@ final class ExternalFlowModels {
     }
 
     @AllArgsConstructor
-    final static class OptimizedFlowModels {
+    static final class OptimizedFlowModels {
         private final Map<AdditionalFlowStepPredicate, Set<FlowModel>> value;
         private final Map<AdditionalFlowStepPredicate, Set<FlowModel>> taint;
 
@@ -243,32 +243,26 @@ final class ExternalFlowModels {
                     flowFromArgumentIndexToReturn
                             .entrySet()
                             .stream()
-                            .map(entry -> {
-                                return new PredicateToFlowModels(forFlowFromArgumentIndexToReturn(
+                            .map(entry -> new PredicateToFlowModels(forFlowFromArgumentIndexToReturn(
                                         entry.getKey(),
                                         entry.getValue()
-                                ), entry.getValue());
-                            });
+                                ), entry.getValue()));
             Stream<PredicateToFlowModels> flowFromArgumentIndexToQualifierStream =
                     flowFromArgumentIndexToQualifier
                             .entrySet()
                             .stream()
-                            .map(entry -> {
-                                return new PredicateToFlowModels(forFlowFromArgumentIndexToQualifier(
+                            .map(entry -> new PredicateToFlowModels(forFlowFromArgumentIndexToQualifier(
                                         entry.getKey(),
                                         entry.getValue()
-                                ), entry.getValue());
-                            });
+                                ), entry.getValue()));
             Stream<PredicateToFlowModels> flowFromArgumentIndexToArgumentIndexStream =
                     flowFromArgumentIndexToArgumentIndex
                             .entrySet()
                             .stream()
-                            .map(entry -> {
-                                return new PredicateToFlowModels(forFlowFromArgumentIndexToArgumentIndex(
+                            .map(entry -> new PredicateToFlowModels(forFlowFromArgumentIndexToArgumentIndex(
                                         entry.getKey(),
                                         entry.getValue()
-                                ), entry.getValue());
-                            });
+                                ), entry.getValue()));
 
             Stream<PredicateToFlowModels> s1 = Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream);
             return Stream.concat(s1, flowFromArgumentIndexToArgumentIndexStream)

@@ -43,7 +43,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
         Set<ControlFlowNode> predecessors;
         Cursor cursor;
 
-        static class MessageBuilder {
+        static final class MessageBuilder {
             private final String message;
             // LinkedHashMap to preserve order of insertion1
             private final LinkedHashMap<String, ControlFlowNode> nodes = new LinkedHashMap<>();
