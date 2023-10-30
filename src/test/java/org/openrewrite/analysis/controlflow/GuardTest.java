@@ -283,6 +283,7 @@ class GuardTest implements RewriteTest {
     @Test
     void identifiesGuardsForControlParenthesesWithMissingTypeInformation() {
         rewriteRun(
+          spec -> spec.typeValidationOptions(TypeValidation.builder().identifiers(false).build()),
           java(
             """
               class Test {
@@ -309,6 +310,7 @@ class GuardTest implements RewriteTest {
     @Test
     void doesNotFlagArbitraryParenthesesAsGuards() {
         rewriteRun(
+          spec -> spec.typeValidationOptions(TypeValidation.builder().identifiers(false).build()),
           java(
             """
               class Test {

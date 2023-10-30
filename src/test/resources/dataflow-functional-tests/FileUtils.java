@@ -113,7 +113,7 @@ public class FileUtils {
     /**
      * An empty array of type <code>File</code>.
      */
-    public static final File[] EMPTY_FILE_ARRAY = new File.get(0);
+    public static final File[] EMPTY_FILE_ARRAY = new File[0];
 
     /**
      * The UTF-8 character set, used to decode octets in URLs.

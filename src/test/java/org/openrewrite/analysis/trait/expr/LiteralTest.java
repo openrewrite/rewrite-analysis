@@ -262,7 +262,7 @@ public class LiteralTest implements RewriteTest {
             """
               class Test {
                   boolean test(int i, float f, double d, char c, String s) {
-                      boolean b1 = s.contains(c.toString());
+                      boolean b1 = s.contains(Character.toString(c));
                       if (b1 && i - f == d) {
                           return i > d;
                       } else {

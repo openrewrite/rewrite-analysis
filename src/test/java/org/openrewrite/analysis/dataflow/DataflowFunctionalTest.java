@@ -25,6 +25,7 @@ import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RewriteTest;
+import org.openrewrite.test.TypeValidation;
 
 import java.util.stream.Stream;
 
@@ -45,46 +46,48 @@ class DataflowFunctionalTest implements RewriteTest {
     void eachJavaFile(String input) {
         rewriteRun(
           spec -> spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {
-              @Override
-              public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
-                  // Force a case where data flow occurs inside a doAfterVisit on a non-top-level visitor run.
-                  new JavaIsoVisitor<ExecutionContext>() {
-                      @Override
-                      public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
-                          // The doAfterVisit
-                          doAfterVisit(new JavaIsoVisitor<>() {
-                              @Override
-                              public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
-                                  doRunDataFlow();
-                                  return super.visitMethodInvocation(method, ctx);
-                              }
-                          });
-                          return method;
-                      }
-                  }.visitNonNull(classDecl, ctx, getCursor().getParentOrThrow());
-                  return super.visitClassDeclaration(classDecl, ctx);
-              }
+                @Override
+                public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
+                    // Force a case where data flow occurs inside a doAfterVisit on a non-top-level visitor run.
+                    new JavaIsoVisitor<ExecutionContext>() {
+                        @Override
+                        public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, ExecutionContext ctx) {
+                            // The doAfterVisit
+                            doAfterVisit(new JavaIsoVisitor<>() {
+                                @Override
+                                public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+                                    doRunDataFlow();
+                                    return super.visitMethodInvocation(method, ctx);
+                                }
+                            });
+                            return method;
+                        }
+                    }.visitNonNull(classDecl, ctx, getCursor().getParentOrThrow());
+                    return super.visitClassDeclaration(classDecl, ctx);
+                }
 
-              @Override
-              public Expression visitExpression(Expression expression, ExecutionContext executionContext) {
-                  doRunDataFlow();
-                  return super.visitExpression(expression, executionContext);
-              }
+                @Override
+                public Expression visitExpression(Expression expression, ExecutionContext executionContext) {
+                    doRunDataFlow();
+                    return super.visitExpression(expression, executionContext);
+                }
 
-              private void doRunDataFlow() {
-                  Dataflow.startingAt(getCursor()).findSinks(new TaintFlowSpec() {
-                      @Override
-                      public boolean isSource(DataFlowNode srcNode) {
-                          return true;
-                      }
+                private void doRunDataFlow() {
+                    Dataflow.startingAt(getCursor()).findSinks(new TaintFlowSpec() {
+                        @Override
+                        public boolean isSource(DataFlowNode srcNode) {
+                            return true;
+                        }
 
-                      @Override
-                      public boolean isSink(DataFlowNode sinkNode) {
-                          return true;
-                      }
-                  });
-              }
-          })).cycles(1),
+                        @Override
+                        public boolean isSink(DataFlowNode sinkNode) {
+                            return true;
+                        }
+                    });
+                }
+            }))
+            .cycles(1)
+            .typeValidationOptions(TypeValidation.none()),
           java(
             StringUtils.readFully(requireNonNull(DataflowFunctionalTest.class
               .getResourceAsStream("/" + input)))

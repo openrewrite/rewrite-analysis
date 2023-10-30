@@ -23,6 +23,7 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
+import org.openrewrite.test.TypeValidation;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.openrewrite.java.Assertions.java;
@@ -167,6 +168,7 @@ public class JavadocTest implements RewriteTest {
     @Test
     void javadocWithLink() {
         rewriteRun(
+          spec -> spec.typeValidationOptions(TypeValidation.builder().methodInvocations(false).build()),
           java(
             """
               class Test {
