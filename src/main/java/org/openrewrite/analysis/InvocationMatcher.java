@@ -107,8 +107,10 @@ public interface InvocationMatcher {
         public boolean isAnyArgument(Cursor cursor) {
             return asExpression(
                     cursor,
-                    expression -> nearestMethodCall(cursor).map(call -> call.getArguments().contains(expression)
-                               && matcher.matches(call)).orElse(false)
+                    expression -> nearestMethodCall(cursor).map(call ->
+                            call.getArguments().contains(expression)
+                            && matcher.matches(call) // Do the matcher.matches(...) last as this can be expensive
+                    ).orElse(false)
             );
         }
 
@@ -137,11 +139,11 @@ public interface InvocationMatcher {
                     if (finalParameterIndex == parameterIndex) {
                         List<Expression> varargs = arguments.subList(finalParameterIndex, arguments.size());
                         return varargs.contains(expression) &&
-                                matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
+                               matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
                     }
                 }
                 return arguments.get(parameterIndex) == expression &&
-                        matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
+                       matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
             }).orElse(false));
         }
 

@@ -44,7 +44,7 @@ public final class SecurityUtils {
         PORTS = new HashSet<>();
         PORTS.add(443);
         PORTS.add(80);
-        PORTS.add(3000);
+        PORTS.add(3000); // we allow port 3000 for SAM local
     }
 
     public static boolean isValidPort(String port) {
