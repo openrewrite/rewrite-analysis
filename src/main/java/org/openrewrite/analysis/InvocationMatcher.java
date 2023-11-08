@@ -164,7 +164,7 @@ public interface InvocationMatcher {
         }
 
         private static boolean asExpression(Cursor cursor, Predicate<Expression> expressionPredicate) {
-            return cursor.getValue() instanceof Expression && expressionPredicate.test((Expression) cursor.getValue());
+            return cursor.getValue() instanceof Expression && expressionPredicate.test(cursor.getValue());
         }
     }
 }

@@ -55,7 +55,8 @@ public interface Field extends Member, Variable {
                 Cursor maybeVariableDecl = cursor.getParentTreeCursor();
                 Cursor maybeBlock = maybeVariableDecl.getParentTreeCursor();
                 Cursor maybeClassDecl = maybeBlock.getParentTreeCursor();
-                if (maybeClassDecl.getValue() instanceof J.ClassDeclaration || maybeClassDecl.getValue() instanceof J.NewClass) {
+                if (maybeClassDecl.getValue() instanceof J.ClassDeclaration ||
+                    maybeClassDecl.getValue() instanceof J.NewClass && ((J.NewClass) maybeClassDecl.getValue()).getBody() != null) {
                     return Validation.success(new FieldFromCursor(cursor, cursor.getValue(), maybeVariableDecl.getValue(), maybeBlock));
                 }
                 return TraitErrors.invalidTraitCreationError("Field must be declared in a class, interface, or anonymous class");
