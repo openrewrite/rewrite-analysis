@@ -46,7 +46,6 @@ public class LambdaTest implements RewriteTest {
     }
 
     @Test
-    @Disabled("https://github.com/openrewrite/rewrite-analysis/issues/31")
     void lambdaException() {
         //language=java
         rewriteRun(

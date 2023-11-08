@@ -105,7 +105,7 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
         while (path.hasNext()) {
             Cursor c = path.next();
             Tree t = c.getValue();
-            if (t instanceof J.ClassDeclaration || t instanceof J.NewClass) {
+            if (t instanceof J.ClassDeclaration || t instanceof J.NewClass && previous != null && ((J.NewClass) t).getBody() == previous.getValue()) {
                 break;
             }
             if (t instanceof J.Block && J.Block.isStaticOrInitBlock(c)) {
@@ -120,6 +120,12 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
                 J.MethodDeclaration m = (J.MethodDeclaration) t;
                 assert previous != null : "previous should not be null";
                 if (m.getParameters().contains(previous.<Statement>getValue())) {
+                    break;
+                }
+            } else if (t instanceof J.Lambda) {
+                J.Lambda l = (J.Lambda) t;
+                assert previous != null : "previous should not be null";
+                if (l.getParameters().getParameters().contains(previous.<Statement>getValue())) {
                     break;
                 }
             }
