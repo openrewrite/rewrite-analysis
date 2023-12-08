@@ -49,7 +49,8 @@ public class CallableTest implements RewriteTest {
     @Test
     void searchResultsForCallables() {
         rewriteRun(
-          java("""
+          java(
+                """
             class Test {
                 Test() {}
                 void test() {}

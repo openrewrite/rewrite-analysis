@@ -63,32 +63,32 @@ public class GlobalDataFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                
-                    String identity(String s) {
-                        return s;
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        String t = identity(s);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+              
+                  String identity(String s) {
+                      return s;
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      String t = identity(s);
+                      System.out.println(t);
+                  }
+              }
               """,
             """
-                class Test {
-                
-                    String identity(String /*~~>*/s) {
-                        return /*~~>*/s;
-                    }
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        String t = /*~~>*/identity(/*~~>*/s);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                }
+              class Test {
+              
+                  String identity(String /*~~>*/s) {
+                      return /*~~>*/s;
+                  }
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      String t = /*~~>*/identity(/*~~>*/s);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
               """
           )
         );
@@ -99,32 +99,32 @@ public class GlobalDataFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                
-                    Object identity(Object s) {
-                        return s;
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        Object t = identity(s);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+              
+                  Object identity(Object s) {
+                      return s;
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      Object t = identity(s);
+                      System.out.println(t);
+                  }
+              }
               """,
             """
-                class Test {
-                
-                    Object identity(Object /*~~>*/s) {
-                        return /*~~>*/s;
-                    }
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        Object t = /*~~>*/identity(/*~~>*/s);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                }
+              class Test {
+              
+                  Object identity(Object /*~~>*/s) {
+                      return /*~~>*/s;
+                  }
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      Object t = /*~~>*/identity(/*~~>*/s);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
               """
           )
         );
@@ -135,32 +135,32 @@ public class GlobalDataFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                    
-                    void test() {
-                        String s = "42";
-                        String t = identity(s);
-                        System.out.println(t);
-                    }
-                    
-                    String identity(String s) {
-                        return s;
-                    }
-                }
+              class Test {
+                  
+                  void test() {
+                      String s = "42";
+                      String t = identity(s);
+                      System.out.println(t);
+                  }
+                  
+                  String identity(String s) {
+                      return s;
+                  }
+              }
               """,
             """
-                class Test {
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        String t = /*~~>*/identity(/*~~>*/s);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                    
-                    String identity(String /*~~>*/s) {
-                        return /*~~>*/s;
-                    }
-                }
+              class Test {
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      String t = /*~~>*/identity(/*~~>*/s);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+                  
+                  String identity(String /*~~>*/s) {
+                      return /*~~>*/s;
+                  }
+              }
               """
           )
         );
@@ -172,18 +172,18 @@ public class GlobalDataFlowTest implements RewriteTest {
           spec -> spec.expectedCyclesThatMakeChanges(0),
           java(
             """
-                class Test {
-                
-                    String noOp(String s) {
-                        return "something else";
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        String t = noOp(s);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+              
+                  String noOp(String s) {
+                      return "something else";
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      String t = noOp(s);
+                      System.out.println(t);
+                  }
+              }
               """
           )
         );
@@ -194,30 +194,30 @@ public class GlobalDataFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                
-                    void print(String s) {
-                        System.out.println(s);
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        print(s);
-                    }
-                }
+              class Test {
+              
+                  void print(String s) {
+                      System.out.println(s);
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      print(s);
+                  }
+              }
               """,
             """
-                class Test {
-                
-                    void print(String /*~~>*/s) {
-                        System.out.println(/*~~(sink)~~>*/s);
-                    }
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        print(/*~~>*/s);
-                    }
-                }
+              class Test {
+              
+                  void print(String /*~~>*/s) {
+                      System.out.println(/*~~(sink)~~>*/s);
+                  }
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      print(/*~~>*/s);
+                  }
+              }
               """
           )
         );
@@ -228,38 +228,38 @@ public class GlobalDataFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                
-                    String recursive(String s) {
-                        if(s.length() > 0) {
-                            return recursive(s.substring(1));
-                        }
-                        return s;
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        String t = recursive(s);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+              
+                  String recursive(String s) {
+                      if(s.length() > 0) {
+                          return recursive(s.substring(1));
+                      }
+                      return s;
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      String t = recursive(s);
+                      System.out.println(t);
+                  }
+              }
               """,
             """
-                class Test {
-                
-                    String recursive(String /*~~>*/s) {
-                        if(/*~~>*/s.length() > 0) {
-                            return recursive(s.substring(1));
-                        }
-                        return /*~~>*/s;
-                    }
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        String t = /*~~>*/recursive(/*~~>*/s);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                }
+              class Test {
+              
+                  String recursive(String /*~~>*/s) {
+                      if(/*~~>*/s.length() > 0) {
+                          return recursive(s.substring(1));
+                      }
+                      return /*~~>*/s;
+                  }
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      String t = /*~~>*/recursive(/*~~>*/s);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
               """
           )
         );
@@ -268,7 +268,8 @@ public class GlobalDataFlowTest implements RewriteTest {
     @Test
     void stringNullCheck() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   static String requireNonNull(String obj) {
                       if (obj == null)
@@ -311,7 +312,8 @@ public class GlobalDataFlowTest implements RewriteTest {
     @Test
     void genericNullCheck() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   static <T> T requireNonNull(T obj) {
                       if (obj == null)
@@ -356,48 +358,48 @@ public class GlobalDataFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                    void test() {
-                        String s = Util.requireNonNull("0");
-                        System.out.println(s);
-                        String t = Util.requireNonNull("42");
-                        System.out.println(t);
-                        String u = Util.requireNonNull("0");
-                        System.out.println(u);
-                    }
-                }
+              class Test {
+                  void test() {
+                      String s = Util.requireNonNull("0");
+                      System.out.println(s);
+                      String t = Util.requireNonNull("42");
+                      System.out.println(t);
+                      String u = Util.requireNonNull("0");
+                      System.out.println(u);
+                  }
+              }
               """,
             """
-                  class Test {
-                      void test() {
-                          String s = Util.requireNonNull("0");
-                          System.out.println(s);
-                          String t = /*~~>*/Util.requireNonNull(/*~~(source)~~>*/"42");
-                          System.out.println(/*~~(sink)~~>*/t);
-                          String u = Util.requireNonNull("0");
-                          System.out.println(u);
-                      }
+              class Test {
+                  void test() {
+                      String s = Util.requireNonNull("0");
+                      System.out.println(s);
+                      String t = /*~~>*/Util.requireNonNull(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/t);
+                      String u = Util.requireNonNull("0");
+                      System.out.println(u);
                   }
+              }
               """
           ),
           java(
             """
-                class Util {
-                    static String requireNonNull(String obj) {
-                        if (obj == null)
-                            throw new NullPointerException();
-                        return obj;
-                    }
-                }
+              class Util {
+                  static String requireNonNull(String obj) {
+                      if (obj == null)
+                          throw new NullPointerException();
+                      return obj;
+                  }
+              }
               """,
             """
-                class Util {
-                    static String requireNonNull(String /*~~>*/obj) {
-                        if (/*~~>*/obj == null)
-                            throw new NullPointerException();
-                        return /*~~>*/obj;
-                    }
-                }
+              class Util {
+                  static String requireNonNull(String /*~~>*/obj) {
+                      if (/*~~>*/obj == null)
+                          throw new NullPointerException();
+                      return /*~~>*/obj;
+                  }
+              }
               """
           )
         );

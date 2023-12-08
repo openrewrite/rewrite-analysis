@@ -55,7 +55,8 @@ public class DataFlowNodeTest implements RewriteTest {
     @Test
     void importsAreNotDataFlowNodes() {
         rewriteRun(
-          java("""
+          java(
+                """
             import java.util.*;
             class A {}
             """
@@ -66,7 +67,8 @@ public class DataFlowNodeTest implements RewriteTest {
     @Test
     void dataFlowNodes() {
         rewriteRun(
-          java("""
+          java(
+                """
             class A {
                int test(int i) {
                   i++;

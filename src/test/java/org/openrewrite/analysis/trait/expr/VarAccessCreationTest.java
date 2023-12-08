@@ -49,7 +49,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForVarAccessUnary() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test() {
                       int i = 0;
@@ -72,7 +73,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForBinaryExpression() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   int test(int a, int b) {
                       return a + b;
@@ -93,7 +95,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForSubjectMethodInvocation() {
         rewriteRun(
-          java("""
+          java(
+                """
               import java.util.function.Supplier;
               class Test {
                    void test(Supplier<Object> s) {
@@ -116,7 +119,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForNewClass() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object o) {
                       Another a = new Another(o);
@@ -155,7 +159,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForArgumentsMethodInvocation() {
         rewriteRun(
-          java("""
+          java(
+                """
               import java.util.function.Consumer;
               class Test {
                   void test(Consumer<Object> c, Object value) {
@@ -164,12 +169,12 @@ public class VarAccessCreationTest implements RewriteTest {
               }
               """,
             """
-                  import java.util.function.Consumer;
-                  class Test {
-                      void test(Consumer<Object> c, Object value) {
-                          /*~~(c)~~>*/c.accept(/*~~(value)~~>*/value);
-                      }               
-                  }
+              import java.util.function.Consumer;
+              class Test {
+                  void test(Consumer<Object> c, Object value) {
+                      /*~~(c)~~>*/c.accept(/*~~(value)~~>*/value);
+                  }               
+              }
               """)
         );
     }
@@ -177,7 +182,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForParenthesesWrappedMethodInvocation() {
         rewriteRun(
-          java("""
+          java(
+                """
               import java.util.function.Consumer;
               class Test {
                   void test(Consumer<Object> c, Object value) {
@@ -186,12 +192,12 @@ public class VarAccessCreationTest implements RewriteTest {
               }
               """,
             """
-                  import java.util.function.Consumer;
-                  class Test {
-                      void test(Consumer<Object> c, Object value) {
-                          (/*~~(c)~~>*/c).accept((/*~~(value)~~>*/value));
-                      }               
-                  }
+              import java.util.function.Consumer;
+              class Test {
+                  void test(Consumer<Object> c, Object value) {
+                      (/*~~(c)~~>*/c).accept((/*~~(value)~~>*/value));
+                  }               
+              }
               """)
         );
     }
@@ -199,7 +205,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForTertiaryExpression() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object any, Object other) {
                       Object o = any == null ? other : any;
@@ -220,7 +227,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForNamedVariableCreation() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object any) {
                       Object o = any;
@@ -241,7 +249,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForVariableReassignment() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object any) {
                       Object o = new Object();
@@ -264,7 +273,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForCast() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object any) {
                       Integer o = (Integer) any;
@@ -285,7 +295,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultForForEachLoop() {
         rewriteRun(
-          java("""
+          java(
+                """
               import java.util.List;
               class Test {
                   void test(List<Object> any) {
@@ -312,7 +323,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForForLoop() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(int initial, boolean condition, Object any) {
                       for(int i = initial; condition; i++) {
@@ -337,7 +349,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForControlParentheses() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(boolean condition, Object any) {
                       while(condition) {
@@ -362,7 +375,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForNewArray() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object first, Object second, int size) {
                       Object[] o = new Object[] { first, second };
@@ -385,7 +399,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForArrayAccess() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   void test(Object[] any, int index) {
                       Object o = any[index];
@@ -406,7 +421,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForAnnotations() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   private static final String FOO = "foo";
                   @SuppressWarnings(FOO)
@@ -429,7 +445,8 @@ public class VarAccessCreationTest implements RewriteTest {
     @Test
     void searchResultsForAnnotationsExplicitArgument() {
         rewriteRun(
-          java("""
+          java(
+                """
               class Test {
                   private static final String FOO = "foo";
                   @SuppressWarnings(value = FOO)
@@ -477,7 +494,8 @@ public class VarAccessCreationTest implements RewriteTest {
     void searchResultsDoNotInclude() {
         rewriteRun(
           spec -> spec.expectedCyclesThatMakeChanges(0),
-          java("""
+          java(
+                """
             package org.openrewrite;
             import java.util.function.Supplier;
             class Test {

@@ -61,22 +61,22 @@ public class GlobalTaintFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                    void test() {
-                        String s = "42";
-                        String t = s.substring(1);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+                  void test() {
+                      String s = "42";
+                      String t = s.substring(1);
+                      System.out.println(t);
+                  }
+              }
               """,
             """
-                class Test {
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        String t = /*~~>*//*~~>*/s.substring(1);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                }
+              class Test {
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      String t = /*~~>*//*~~>*/s.substring(1);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
               """
           )
         );
@@ -87,30 +87,30 @@ public class GlobalTaintFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                    String stringAppend(String s) {
-                        return "Value: " + s;
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        String t = stringAppend(s);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+                  String stringAppend(String s) {
+                      return "Value: " + s;
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      String t = stringAppend(s);
+                      System.out.println(t);
+                  }
+              }
               """,
             """
-                class Test {
-                    String stringAppend(String /*~~>*/s) {
-                        return /*~~>*/"Value: " + /*~~>*/s;
-                    }
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        String t = /*~~>*/stringAppend(/*~~>*/s);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                }
+              class Test {
+                  String stringAppend(String /*~~>*/s) {
+                      return /*~~>*/"Value: " + /*~~>*/s;
+                  }
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      String t = /*~~>*/stringAppend(/*~~>*/s);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
               """
           )
         );
@@ -121,32 +121,32 @@ public class GlobalTaintFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                import java.util.Objects;
-                
-                class Test {
-                    String stringSubstring(String s) {
-                        return Objects.requireNonNull(s.substring(1));
-                    }
-                    
-                    void test() {
-                        String s = stringSubstring("42");
-                        System.out.println(s);
-                    }
-                }
+              import java.util.Objects;
+              
+              class Test {
+                  String stringSubstring(String s) {
+                      return Objects.requireNonNull(s.substring(1));
+                  }
+                  
+                  void test() {
+                      String s = stringSubstring("42");
+                      System.out.println(s);
+                  }
+              }
               """,
             """
-                import java.util.Objects;
-                
-                class Test {
-                    String stringSubstring(String /*~~>*/s) {
-                        return /*~~>*/Objects.requireNonNull(/*~~>*//*~~>*/s.substring(1));
-                    }
-                    
-                    void test() {
-                        String s = /*~~>*/stringSubstring(/*~~(source)~~>*/"42");
-                        System.out.println(/*~~(sink)~~>*/s);
-                    }
-                }
+              import java.util.Objects;
+              
+              class Test {
+                  String stringSubstring(String /*~~>*/s) {
+                      return /*~~>*/Objects.requireNonNull(/*~~>*//*~~>*/s.substring(1));
+                  }
+                  
+                  void test() {
+                      String s = /*~~>*/stringSubstring(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/s);
+                  }
+              }
               """
           )
         );
@@ -157,48 +157,48 @@ public class GlobalTaintFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                
-                    String stringFizzBuzz(String number) {
-                        int n = Integer.parseInt(number);
-                        if (n % 15 == 0) {
-                            return "Value: FizzBuzz";
-                        } else if (n % 3 == 0) {
-                            return "Value: Fizz";
-                        } else if (n % 5 == 0) {
-                            return "Value: Buzz";
-                        } else {
-                            return "Value: " + number;
-                        }
-                    }
-                    
-                    void test() {
-                        String s = stringFizzBuzz("42");
-                        System.out.println(s);
-                    }
-                }
+              class Test {
+              
+                  String stringFizzBuzz(String number) {
+                      int n = Integer.parseInt(number);
+                      if (n % 15 == 0) {
+                          return "Value: FizzBuzz";
+                      } else if (n % 3 == 0) {
+                          return "Value: Fizz";
+                      } else if (n % 5 == 0) {
+                          return "Value: Buzz";
+                      } else {
+                          return "Value: " + number;
+                      }
+                  }
+                  
+                  void test() {
+                      String s = stringFizzBuzz("42");
+                      System.out.println(s);
+                  }
+              }
               """,
             """
-                class Test {
-                
-                    String stringFizzBuzz(String /*~~>*/number) {
-                        int n = Integer.parseInt(/*~~>*/number);
-                        if (n % 15 == 0) {
-                            return "Value: FizzBuzz";
-                        } else if (n % 3 == 0) {
-                            return "Value: Fizz";
-                        } else if (n % 5 == 0) {
-                            return "Value: Buzz";
-                        } else {
-                            return /*~~>*/"Value: " + /*~~>*/number;
-                        }
-                    }
-                    
-                    void test() {
-                        String s = /*~~>*/stringFizzBuzz(/*~~(source)~~>*/"42");
-                        System.out.println(/*~~(sink)~~>*/s);
-                    }
-                }
+              class Test {
+              
+                  String stringFizzBuzz(String /*~~>*/number) {
+                      int n = Integer.parseInt(/*~~>*/number);
+                      if (n % 15 == 0) {
+                          return "Value: FizzBuzz";
+                      } else if (n % 3 == 0) {
+                          return "Value: Fizz";
+                      } else if (n % 5 == 0) {
+                          return "Value: Buzz";
+                      } else {
+                          return /*~~>*/"Value: " + /*~~>*/number;
+                      }
+                  }
+                  
+                  void test() {
+                      String s = /*~~>*/stringFizzBuzz(/*~~(source)~~>*/"42");
+                      System.out.println(/*~~(sink)~~>*/s);
+                  }
+              }
               """
           )
         );
@@ -210,38 +210,38 @@ public class GlobalTaintFlowTest implements RewriteTest {
         rewriteRun(
           java(
             """
-                class Test {
-                
-                    String recursive(String parameterS) {
-                        if (parameterS.length() > 0) {
-                            return recursive(parameterS.substring(1));
-                        }
-                        return parameterS;
-                    }
-                    
-                    void test() {
-                        String s = "42";
-                        String t = recursive(s);
-                        System.out.println(t);
-                    }
-                }
+              class Test {
+              
+                  String recursive(String parameterS) {
+                      if (parameterS.length() > 0) {
+                          return recursive(parameterS.substring(1));
+                      }
+                      return parameterS;
+                  }
+                  
+                  void test() {
+                      String s = "42";
+                      String t = recursive(s);
+                      System.out.println(t);
+                  }
+              }
               """,
             """
-                class Test {
-                
-                    String recursive(String /*~~>*/parameterS) {
-                        if (/*~~>*/parameterS.length() > 0) {
-                            return /*~~>*/recursive(/*~~>*//*~~>*/parameterS.substring(1));
-                        }
-                        return /*~~>*/parameterS;
-                    }
-                    
-                    void test() {
-                        String s = /*~~(source)~~>*/"42";
-                        String t = /*~~>*/recursive(/*~~>*/s);
-                        System.out.println(/*~~(sink)~~>*/t);
-                    }
-                }
+              class Test {
+              
+                  String recursive(String /*~~>*/parameterS) {
+                      if (/*~~>*/parameterS.length() > 0) {
+                          return /*~~>*/recursive(/*~~>*//*~~>*/parameterS.substring(1));
+                      }
+                      return /*~~>*/parameterS;
+                  }
+                  
+                  void test() {
+                      String s = /*~~(source)~~>*/"42";
+                      String t = /*~~>*/recursive(/*~~>*/s);
+                      System.out.println(/*~~(sink)~~>*/t);
+                  }
+              }
               """
           )
         );

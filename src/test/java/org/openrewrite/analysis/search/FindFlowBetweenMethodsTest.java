@@ -239,12 +239,12 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               """,
 
             """
-                class Test {
-                    void test() {
-                        Integer x = /*~~>*/Provider.provide();
-                        System.out.println(/*~~(sink)~~>*/x);
-                    }
-                }
+              class Test {
+                  void test() {
+                      Integer x = /*~~>*/Provider.provide();
+                      System.out.println(/*~~(sink)~~>*/x);
+                  }
+              }
               """
           ),
           java(
