@@ -28,12 +28,10 @@ import org.openrewrite.analysis.trait.expr.BinaryExpr;
 import org.openrewrite.analysis.trait.expr.Literal;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.java.search.UsesMethod;
 import org.openrewrite.java.tree.J;
 
 public class UriCreatedWithHttpScheme extends Recipe {
-    private static final MethodMatcher URI_CREATE_METHOD_MATCHER = new MethodMatcher("java.net.URI create(..)");
-    private static final InvocationMatcher URI_CREATE = InvocationMatcher.fromMethodMatcher(URI_CREATE_METHOD_MATCHER);
+    private static final InvocationMatcher URI_CREATE = InvocationMatcher.fromMethodMatcher("java.net.URI create(..)");
     private static final MethodMatcher STRING_REPLACE = new MethodMatcher("java.lang.String replace(..)");
 
     private static final DataFlowSpec INSECURE_URI_CREATE = new DataFlowSpec() {
@@ -77,7 +75,7 @@ public class UriCreatedWithHttpScheme extends Recipe {
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
-        return Preconditions.check(new UsesMethod<>(URI_CREATE_METHOD_MATCHER), new JavaIsoVisitor<ExecutionContext>() {
+        return Preconditions.check(new UsesInvocation<>(URI_CREATE), new JavaIsoVisitor<ExecutionContext>() {
             @Override
             public J.Literal visitLiteral(J.Literal literal, ExecutionContext ctx) {
                 J.Literal l = super.visitLiteral(literal, ctx);

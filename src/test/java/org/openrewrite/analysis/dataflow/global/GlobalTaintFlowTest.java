@@ -30,7 +30,7 @@ import static org.openrewrite.java.Assertions.java;
 public class GlobalTaintFlowTest implements RewriteTest {
     static final TaintFlowSpec TAINT_FLOW_SPEC = new TaintFlowSpec() {
         private static final InvocationMatcher SYSTEM_OUT_PRINTLN = InvocationMatcher.fromMethodMatcher(
-          new MethodMatcher("java.io.PrintStream println(..)")
+          "java.io.PrintStream println(..)"
         );
 
         @Override
@@ -122,7 +122,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
           java(
             """
               import java.util.Objects;
-              
+                            
               class Test {
                   String stringSubstring(String s) {
                       return Objects.requireNonNull(s.substring(1));
@@ -136,7 +136,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
               """,
             """
               import java.util.Objects;
-              
+                            
               class Test {
                   String stringSubstring(String /*~~>*/s) {
                       return /*~~>*/Objects.requireNonNull(/*~~>*//*~~>*/s.substring(1));
@@ -158,7 +158,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   String stringFizzBuzz(String number) {
                       int n = Integer.parseInt(number);
                       if (n % 15 == 0) {
@@ -180,7 +180,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
               """,
             """
               class Test {
-              
+                            
                   String stringFizzBuzz(String /*~~>*/number) {
                       int n = Integer.parseInt(/*~~>*/number);
                       if (n % 15 == 0) {
@@ -211,7 +211,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   String recursive(String parameterS) {
                       if (parameterS.length() > 0) {
                           return recursive(parameterS.substring(1));
@@ -228,7 +228,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
               """,
             """
               class Test {
-              
+                            
                   String recursive(String /*~~>*/parameterS) {
                       if (/*~~>*/parameterS.length() > 0) {
                           return /*~~>*/recursive(/*~~>*//*~~>*/parameterS.substring(1));
