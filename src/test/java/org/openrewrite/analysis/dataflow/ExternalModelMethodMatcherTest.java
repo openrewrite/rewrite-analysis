@@ -20,7 +20,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.TreeVisitor;
-import org.openrewrite.analysis.FindJavaTypeMethodsVisitor;
+import org.openrewrite.analysis.search.UsesInvocation;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RewriteTest;
 
@@ -29,15 +29,16 @@ import java.util.function.Supplier;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
+@SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf", "StringOperationCanBeSimplified"})
 public class ExternalModelMethodMatcherTest implements RewriteTest {
-    static Supplier<TreeVisitor<?, ExecutionContext>>  fromModel(
+    static Supplier<TreeVisitor<?, ExecutionContext>> fromModel(
       String namespace,
       String type,
       boolean subtypes,
       String name,
       String signature
     ) {
-        return () -> new FindJavaTypeMethodsVisitor(
+        return () -> new UsesInvocation<>(
           new ExternalFlowModels.FlowModel(
             namespace,
             type,
@@ -85,7 +86,7 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               }
               """,
             """
-              import org.apache.commons.io.IOUtils;
+              /*~~>*/import org.apache.commons.io.IOUtils;
               import java.io.InputStream;
               import java.io.OutputStream;
               import java.io.FileOutputStream;
@@ -94,7 +95,7 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
                   void test() {
                       InputStream source = source();
                       OutputStream dest = new FileOutputStream("dest.txt");
-                      /*~~>*/IOUtils.copy(source, dest);
+                      IOUtils.copy(source, dest);
                   }
               }
               """
@@ -128,14 +129,14 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               }
               """,
             """
-              import org.apache.commons.io.IOUtils;
+              /*~~>*/import org.apache.commons.io.IOUtils;
               import java.io.InputStream;
               import java.io.BufferedInputStream;
               class Test {
                   InputStream source() { return null; }
                   void test() {
                       InputStream source = source();
-                      BufferedInputStream output = /*~~>*/IOUtils.buffer(source, 64);
+                      BufferedInputStream output = IOUtils.buffer(source, 64);
                   }
               }
               """
@@ -164,11 +165,11 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               }
               """,
             """
-              class Test {
+              /*~~>*/class Test {
                   String source() { return null; }
                   void test() {
                       String source = source();
-                      System.out.println(/*~~>*/source.toString());
+                      System.out.println(source.toString());
                   }
               }
               """
@@ -198,12 +199,12 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               }
               """,
             """
-              import java.util.Arrays;
+              /*~~>*/import java.util.Arrays;
               class Test {
                   double[] source() { return null; }
                   void test() {
                       double[] source = source();
-                      /*~~>*/Arrays.fill(source, 1.0);
+                      Arrays.fill(source, 1.0);
                   }
               }
               """
@@ -234,12 +235,12 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
               }
               """,
             """
-              import java.util.Vector;
+              /*~~>*/import java.util.Vector;
               class Test {
                   Vector<String> source() { return null; }
                   void test() {
                       Vector<String> source = source();
-                      String firstElem = /*~~>*/source.firstElement();
+                      String firstElem = source.firstElement();
                       System.out.println(firstElem);
                   }
               }
@@ -360,40 +361,44 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
           java(
             """
               import java.io.File;
-              class Test {
-                  void test(AClass a, File file, PotatoFile potatoFile) {
-                      a.aMethod(file);
-                      a.aMethod(potatoFile);
-                  }
-              }
               class AClass {
                   void aMethod(File file) {
                       // no-op
                   }
+                  
                   void aMethod(PotatoFile potatoFile) {
                       // no-op
                   }
               }
               class PotatoFile {
+              }
+              """
+          ),
+          java(
+            """
+              import java.io.File;
+              class Test1 {
+                  void test(AClass a, File file) {
+                      a.aMethod(file);
+                  }
               }
               """,
             """
+              /*~~>*/import java.io.File;
+              class Test1 {
+                  void test(AClass a, File file) {
+                      a.aMethod(file);
+                  }
+              }
+              """
+          ),
+          java(
+            """
               import java.io.File;
-              class Test {
-                  void test(AClass a, File file, PotatoFile potatoFile) {
-                      /*~~>*/a.aMethod(file);
+              class Test2 {
+                  void test(AClass a, PotatoFile potatoFile) {
                       a.aMethod(potatoFile);
                   }
-              }
-              class AClass {
-                  void aMethod(File file) {
-                      // no-op
-                  }
-                  void aMethod(PotatoFile potatoFile) {
-                      // no-op
-                  }
-              }
-              class PotatoFile {
               }
               """
           )
@@ -413,20 +418,26 @@ public class ExternalModelMethodMatcherTest implements RewriteTest {
           java(
             """
               import java.util.Collection;
-              import java.util.Set;
-              class Test {
-                  void test(Collection<Object> collection, Set<Object> set) {
+              class Test1 {
+                  void test(Collection<Object> collection) {
                       collection.size();
-                      set.size();
                   }
               }
               """,
             """
-              import java.util.Collection;
+              /*~~>*/import java.util.Collection;
+              class Test1 {
+                  void test(Collection<Object> collection) {
+                      collection.size();
+                  }
+              }
+              """
+          ),
+          java(
+            """
               import java.util.Set;
-              class Test {
-                  void test(Collection<Object> collection, Set<Object> set) {
-                      /*~~>*/collection.size();
+              class Test2 {
+                  void test(Set<Object> set) {
                       set.size();
                   }
               }

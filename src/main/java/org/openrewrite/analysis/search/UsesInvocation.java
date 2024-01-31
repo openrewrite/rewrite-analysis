@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.search;
 
+import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.internal.LoathingOfOthers;
@@ -30,6 +31,7 @@ import org.openrewrite.marker.SearchResult;
  *
  * @implNote If {@link org.openrewrite.java.MethodMatcher} were or had a base interface, this wouldn't be needed.
  */
+@Incubating(since = "8.14.4")
 @LoathingOfOthers("org.openrewrite.java.MethodMatcher")
 public class UsesInvocation<P> extends JavaIsoVisitor<P> {
     private final InvocationMatcher invocationMatcher;
