@@ -68,7 +68,8 @@ public interface InvocationMatcher {
             return expression -> false;
         }
         if (matchers.size() == 1) {
-            return e -> matchers.iterator().next().matches(e);
+            // Avoid creating a new lambda for a single matcher
+            return matchers.iterator().next();
         }
         return expression -> matchers.stream().anyMatch(matcher -> matcher.matches(expression));
     }
@@ -109,7 +110,6 @@ public interface InvocationMatcher {
 
         public boolean isSelect(Cursor cursor) {
             return asExpression(cursor, expression -> {
-                assert expression == cursor.getValue() : "expression != cursor.getValue()";
                 J.MethodInvocation maybeMethodInvocation =
                         cursor.getParentOrThrow().firstEnclosing(J.MethodInvocation.class);
                 return maybeMethodInvocation != null &&
@@ -128,10 +128,64 @@ public interface InvocationMatcher {
             );
         }
 
+        /**
+         * <b>IMPORTANT NOTE:</b> An argument is a value passed during function invocation.
+         * <p>
+         * By contrast, a parameter is a variable in a function definition.
+         * It is a placeholder and hence does not have a concrete value.
+         * <p>
+         * This method looks at <b>arguments</b>, not parameters.
+         * <p>
+         * This method is most useful when looking for the first argument passed to a varargs method.
+         */
+        public boolean isFirstArgument(Cursor cursor) {
+            return isArgument(cursor, 0);
+        }
+
+        /**
+         * <b>IMPORTANT NOTE:</b> An argument is a value passed during function invocation.
+         * <p>
+         * By contrast, a parameter is a variable in a function definition.
+         * It is a placeholder and hence does not have a concrete value.
+         * <p>
+         * This method looks at <b>arguments</b>, not parameters.
+         * <p>
+         * This method is most useful when looking for a given argument passed to a varargs method.
+         */
+        public boolean isArgument(Cursor cursor, int argumentIndex) {
+            if (argumentIndex < 0) {
+                throw new IllegalArgumentException("argumentIndex < 0");
+            }
+            return asExpression(cursor, expression -> nearestMethodCall(cursor).map(call -> {
+                List<Expression> arguments = call.getArguments();
+                if (argumentIndex >= arguments.size()) {
+                    return false;
+                }
+                return arguments.get(argumentIndex) == expression &&
+                       matcher.matches(call); // Do the matcher.matches(...) last as this can be expensive
+            }).orElse(false));
+        }
+
+        /**
+         * <b>IMPORTANT NOTE:</b> A parameter is a variable in a function definition.
+         * It is a placeholder and hence does not have a concrete value.
+         * <p>
+         * By contrast, an argument is a value passed during function invocation.
+         * <p>
+         * This method looks at <b>parameters</b>, not arguments.
+         */
         public boolean isFirstParameter(Cursor cursor) {
             return isParameter(cursor, 0);
         }
 
+        /**
+         * <b>IMPORTANT NOTE:</b> A parameter is a variable in a function definition.
+         * It is a placeholder and hence does not have a concrete value.
+         * <p>
+         * By contrast, an argument is a value passed during function invocation.
+         * <p>
+         * This method looks at <b>parameters</b>, not arguments.
+         */
         public boolean isParameter(Cursor cursor, int parameterIndex) {
             if (parameterIndex < 0) {
                 throw new IllegalArgumentException("parameterIndex < 0");

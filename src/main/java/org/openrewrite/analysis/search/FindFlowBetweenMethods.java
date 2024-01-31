@@ -73,19 +73,19 @@ public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumu
         InvocationMatcher startMatcher = InvocationMatcher.fromMethodMatcher(startMethodPattern, startMatchOverrides);
         InvocationMatcher endMatcher = InvocationMatcher.fromMethodMatcher(endMethodPattern, endMatchOverrides);
 
-        final Predicate<Cursor> sinkMatcher;
+        InvocationMatcher.AdvancedInvocationMatcher endAdvanced = endMatcher.advanced();
 
+        final Predicate<Cursor> sinkMatcher;
         switch (target) {
             case "Select":
-                sinkMatcher = endMatcher.advanced()::isSelect;
+                sinkMatcher = endAdvanced::isSelect;
                 break;
             case "Arguments":
-                sinkMatcher = endMatcher.advanced()::isAnyArgument;
+                sinkMatcher = endAdvanced::isAnyArgument;
                 break;
             case "Both":
-                InvocationMatcher.AdvancedInvocationMatcher advanced = endMatcher.advanced();
-                sinkMatcher = cursor -> advanced.isAnyArgument(cursor) ||
-                                        advanced.isSelect(cursor);
+                sinkMatcher = cursor -> endAdvanced.isAnyArgument(cursor) ||
+                                        endAdvanced.isSelect(cursor);
                 break;
             default:
                 throw new IllegalStateException("Unknown target: " + target);
