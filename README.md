@@ -1,4 +1,4 @@
-<h1 align="center">OpenRewrite</h1>
+<h1 align="center">OpenRewrite Analysis</h1>
 <p align="center"><i></i><b>🎉 Automate software refactoring 🎉</b></i></p>
 
 ---
@@ -12,19 +12,22 @@
 <!-- Keep the gap above this line, otherwise they won't render correctly! -->
 [![ci](https://github.com/openrewrite/rewrite-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/openrewrite/rewrite-analysis/actions/workflows/ci.yml)
 [![Apache 2.0](https://img.shields.io/github/license/openrewrite/rewrite.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Maven Central](https://img.shields.io/maven-central/v/org.openrewrite/rewrite-java.svg)](https://mvnrepository.com/artifact/org.openrewrite/rewrite-java)
+[![Maven Central](https://img.shields.io/maven-central/v/org.openrewrite.meta/rewrite-analysis.svg)](https://mvnrepository.com/artifact/org.openrewrite.meta/rewrite-analysis)
 [![Revved up by Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A)](https://ge.openrewrite.org/scans)
 </div>
 
-## More tech. Less debt.
+## What is this?
 
-The OpenRewrite project is a mass source code refactoring ecosystem. Reduce 1000s of hours of static code analysis fixes to minutes. Turn a four month migration project into four hours of work. Patch security vulnerabilities across 100s of repositories at once. OpenRewrite automates code refactoring and remediation tasks for you, enabling developers to deliver more business.
+This project contains a series of utility functions and visitors to perform complex analysis of source code.
 
-Start with our [quickstart guide](https://docs.openrewrite.org/running-recipes/getting-started) and let OpenRewrite start handling the boring parts of software development for you. Full documentation available at [docs.openrewrite.org](https://docs.openrewrite.org/).
+For example:
+ - Data flow analysis
+ - Control Flow Analysis
+ - Fluent AST navigation with an trait-based API similar to [CodeQL](https://codeql.github.com).
 
-Feel free to join us on [Slack](https://join.slack.com/t/rewriteoss/shared_invite/zt-nj42n3ea-b~62rIHzb3Vo0E1APKCXEA) or [Discord](https://discord.gg/xk3ZKrhWAb)! We're happy to answer your questions directly. Also, follow us on [Twitter](https://twitter.com/moderneinc) and [LinkedIn](https://www.linkedin.com/company/moderneinc).
+## How to use?
 
-See this [doc page](https://docs.openrewrite.org/reference/building-openrewrite-from-source) for more on building this repository from source.
+See the full documentation at [docs.openrewrite.org](https://docs.openrewrite.org/).
 
 ## Refactoring at scale with Moderne
 
