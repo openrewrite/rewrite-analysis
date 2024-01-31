@@ -16,8 +16,10 @@
 package org.openrewrite.analysis.search;
 
 import lombok.RequiredArgsConstructor;
+import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
 import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.internal.LoathingOfOthers;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
@@ -33,8 +35,12 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Marks a {@link JavaSourceFile} as matching if all the passed methods are found.
+ *
+ * @implNote This is a copy of {@link org.openrewrite.java.search.UsesAllMethods} but for any {@link InvocationMatcher}.
  */
 @RequiredArgsConstructor
+@Incubating(since = "8.14.4")
+@LoathingOfOthers("org.openrewrite.java.MethodMatcher")
 public class UsesAllInvocations<P> extends JavaIsoVisitor<P> {
     private final List<InvocationMatcher> invocationMatchers;
 

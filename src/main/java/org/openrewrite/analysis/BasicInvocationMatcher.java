@@ -24,10 +24,33 @@ import org.openrewrite.java.tree.TypeUtils;
 import java.util.List;
 
 /**
+ * Allows for the creation of an {@link InvocationMatcher} by implementing four simple predicates.
+ * <ul>
+ *     <li>{@link #isMatchOverrides()}</li>
+ *     <li>{@link #matchesTargetTypeName(String)}</li>
+ *     <li>{@link #matchesMethodName(String)}</li>
+ *     <li>{@link #matchesParameterTypes(List)}</li>
+ * </ul>
+ *
  * @implNote Much of this logic is copied from {@link org.openrewrite.java.MethodMatcher}, but extracted as an interface.
  */
 @LoathingOfOthers("org.openrewrite.java.MethodMatcher")
 public interface BasicInvocationMatcher extends InvocationMatcher {
+
+    /**
+     * @return True if this method matcher should match on overrides of the target type.
+     * @implNote This will be used to determine if the target type should be checked against the supertypes
+     * passing super types to {@link #matchesTargetTypeName(String)}.
+     * @implSpec MUST return a constant value for all invocations.
+     */
+    boolean isMatchOverrides();
+
+    boolean matchesTargetTypeName(String fullyQualifiedTypeName);
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    boolean matchesMethodName(String methodName);
+
+    boolean matchesParameterTypes(List<JavaType> parameterTypes);
 
     @Override
     default boolean matches(@Nullable JavaType.Method type) {
@@ -49,6 +72,7 @@ public interface BasicInvocationMatcher extends InvocationMatcher {
     /**
      * @param type The declaring type of the method invocation or constructor.
      * @return True if the declaring type matches the criteria of this matcher.
+     *
      * @implNote {@link #isMatchOverrides()} will be used to determine if parent types should also be checked
      */
     default boolean matchesTargetType(@Nullable JavaType.FullyQualified type) {
@@ -58,20 +82,4 @@ public interface BasicInvocationMatcher extends InvocationMatcher {
                 this::matchesTargetTypeName
         );
     }
-
-    /**
-     * @return True if this method matcher should match on overrides of the target type.
-     * @implNote This will be used to determine if the target type should be checked against the supertypes
-     * passing super types to {@link #matchesTargetTypeName(String)}.
-     * @implSpec MUST return a constant value for all invocations.
-     */
-    boolean isMatchOverrides();
-
-    boolean matchesTargetTypeName(String fullyQualifiedTypeName);
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    boolean matchesMethodName(String methodName);
-
-    boolean matchesParameterTypes(List<JavaType> parameterTypes);
-
 }
