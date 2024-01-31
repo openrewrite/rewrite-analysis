@@ -32,7 +32,7 @@ public class GlobalDataFlowTest implements RewriteTest {
 
     static final DataFlowSpec DATA_FLOW_SPEC = new DataFlowSpec() {
         private static final InvocationMatcher SYSTEM_OUT_PRINTLN = InvocationMatcher.fromMethodMatcher(
-          new MethodMatcher("java.io.PrintStream println(..)")
+          "java.io.PrintStream println(..)"
         );
 
         @Override
@@ -64,7 +64,7 @@ public class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   String identity(String s) {
                       return s;
                   }
@@ -78,7 +78,7 @@ public class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-              
+                            
                   String identity(String /*~~>*/s) {
                       return /*~~>*/s;
                   }
@@ -100,7 +100,7 @@ public class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   Object identity(Object s) {
                       return s;
                   }
@@ -114,7 +114,7 @@ public class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-              
+                            
                   Object identity(Object /*~~>*/s) {
                       return /*~~>*/s;
                   }
@@ -173,7 +173,7 @@ public class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   String noOp(String s) {
                       return "something else";
                   }
@@ -195,7 +195,7 @@ public class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   void print(String s) {
                       System.out.println(s);
                   }
@@ -208,7 +208,7 @@ public class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-              
+                            
                   void print(String /*~~>*/s) {
                       System.out.println(/*~~(sink)~~>*/s);
                   }
@@ -229,7 +229,7 @@ public class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-              
+                            
                   String recursive(String s) {
                       if(s.length() > 0) {
                           return recursive(s.substring(1));
@@ -246,7 +246,7 @@ public class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-              
+                            
                   String recursive(String /*~~>*/s) {
                       if(/*~~>*/s.length() > 0) {
                           return recursive(s.substring(1));
@@ -269,7 +269,7 @@ public class GlobalDataFlowTest implements RewriteTest {
     void stringNullCheck() {
         rewriteRun(
           java(
-                """
+            """
               class Test {
                   static String requireNonNull(String obj) {
                       if (obj == null)
@@ -313,7 +313,7 @@ public class GlobalDataFlowTest implements RewriteTest {
     void genericNullCheck() {
         rewriteRun(
           java(
-                """
+            """
               class Test {
                   static <T> T requireNonNull(T obj) {
                       if (obj == null)

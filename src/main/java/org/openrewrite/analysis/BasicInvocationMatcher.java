@@ -17,11 +17,16 @@ package org.openrewrite.analysis;
 
 import io.micrometer.core.lang.Nullable;
 import lombok.NoArgsConstructor;
+import org.openrewrite.internal.LoathingOfOthers;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.List;
 
+/**
+ * @implNote Much of this logic is copied from {@link org.openrewrite.java.MethodMatcher}, but extracted as an interface.
+ */
+@LoathingOfOthers("org.openrewrite.java.MethodMatcher")
 public interface BasicInvocationMatcher extends InvocationMatcher {
 
     @Override
@@ -69,10 +74,4 @@ public interface BasicInvocationMatcher extends InvocationMatcher {
 
     boolean matchesParameterTypes(List<JavaType> parameterTypes);
 
-}
-
-@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-final class SimpleMethodMatcherHolder {
-    static final JavaType.ShallowClass OBJECT_CLASS =
-            JavaType.ShallowClass.build("java.lang.Object");
 }

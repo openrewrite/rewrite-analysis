@@ -70,12 +70,8 @@ public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumu
 
     @Override
     public GlobalDataFlow.Accumulator getInitialValue(ExecutionContext ctx) {
-        InvocationMatcher startMatcher = InvocationMatcher.fromMethodMatcher(
-                new MethodMatcher(startMethodPattern, startMatchOverrides)
-        );
-        InvocationMatcher endMatcher = InvocationMatcher.fromMethodMatcher(
-                new MethodMatcher(endMethodPattern, endMatchOverrides)
-        );
+        InvocationMatcher startMatcher = InvocationMatcher.fromMethodMatcher(startMethodPattern, startMatchOverrides);
+        InvocationMatcher endMatcher = InvocationMatcher.fromMethodMatcher(endMethodPattern, endMatchOverrides);
 
         final Predicate<Cursor> sinkMatcher;
 
@@ -87,8 +83,9 @@ public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumu
                 sinkMatcher = endMatcher.advanced()::isAnyArgument;
                 break;
             case "Both":
-                sinkMatcher = cursor -> endMatcher.advanced().isAnyArgument(cursor) ||
-                                        endMatcher.advanced().isSelect(cursor);
+                InvocationMatcher.AdvancedInvocationMatcher advanced = endMatcher.advanced();
+                sinkMatcher = cursor -> advanced.isAnyArgument(cursor) ||
+                                        advanced.isSelect(cursor);
                 break;
             default:
                 throw new IllegalStateException("Unknown target: " + target);

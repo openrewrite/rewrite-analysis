@@ -73,6 +73,20 @@ public interface InvocationMatcher {
         return expression -> matchers.stream().anyMatch(matcher -> matcher.matches(expression));
     }
 
+    /**
+     * This method functions in the same way as <code>fromMethodMatcher(new MethodMatcher(methodName))</code>.
+     */
+    static InvocationMatcher fromMethodMatcher(String methodName) {
+        return fromMethodMatcher(new MethodMatcher(methodName));
+    }
+
+    /**
+     * This method functions in the same way as <code>fromMethodMatcher(new MethodMatcher(methodName, matchOverrides))</code>.
+     */
+    static InvocationMatcher fromMethodMatcher(String methodName, @Nullable Boolean matchOverrides) {
+        return fromMethodMatcher(new MethodMatcher(methodName, matchOverrides));
+    }
+
     static InvocationMatcher fromMethodMatcher(MethodMatcher methodMatcher) {
         return methodMatcher::matches;
     }
@@ -91,7 +105,7 @@ public interface InvocationMatcher {
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     final class AdvancedInvocationMatcher {
-        private InvocationMatcher matcher;
+        private final InvocationMatcher matcher;
 
         public boolean isSelect(Cursor cursor) {
             return asExpression(cursor, expression -> {
