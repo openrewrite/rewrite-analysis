@@ -33,7 +33,7 @@ import java.util.function.Predicate;
  * Finds either Taint or Data flow between specified start and end methods.
  */
 @Value
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumulator> {
 
     /**
