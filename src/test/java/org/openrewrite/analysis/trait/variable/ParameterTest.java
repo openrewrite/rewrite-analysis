@@ -51,7 +51,7 @@ class ParameterTest implements RewriteTest {
     }
 
     @Test
-    void testVariableVisit() {
+    void variableVisit() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
@@ -73,7 +73,7 @@ class ParameterTest implements RewriteTest {
     }
 
     @Test
-    void testVariableVisitVarargs() {
+    void variableVisitVarargs() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);

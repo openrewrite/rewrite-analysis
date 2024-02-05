@@ -59,7 +59,7 @@ public class LocalVariableDeclTest implements RewriteTest {
     }
 
     @Test
-    void testVariableVisit() {
+    void variableVisit() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
@@ -77,7 +77,7 @@ public class LocalVariableDeclTest implements RewriteTest {
 
     @Test
     @SuppressWarnings("ClassInitializerMayBeStatic")
-    void testVariableInInitBlock() {
+    void variableInInitBlock() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
@@ -94,7 +94,7 @@ public class LocalVariableDeclTest implements RewriteTest {
     }
 
     @Test
-    void testVariableInStaticInitBlock() {
+    void variableInStaticInitBlock() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
