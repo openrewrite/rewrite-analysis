@@ -24,5 +24,4 @@
 @NonNullApi
 package org.openrewrite.analysis.trait;
 
-import org.openrewrite.Incubating;
 import org.openrewrite.internal.lang.NonNullApi;

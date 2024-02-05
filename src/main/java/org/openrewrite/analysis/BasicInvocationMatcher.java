@@ -16,7 +16,6 @@
 package org.openrewrite.analysis;
 
 import io.micrometer.core.lang.Nullable;
-import lombok.NoArgsConstructor;
 import org.openrewrite.internal.LoathingOfOthers;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
