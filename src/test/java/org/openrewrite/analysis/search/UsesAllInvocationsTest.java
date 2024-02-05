@@ -24,7 +24,7 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 
 @LoathingOfOthers("This is basically a copy-paste of UsesAllMethodsTest.java in rewrite-java-test")
-public class UsesAllInvocationsTest implements RewriteTest {
+class UsesAllInvocationsTest implements RewriteTest {
 
     @DocumentExample
     @Test

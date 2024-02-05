@@ -30,7 +30,7 @@ import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
 @SuppressWarnings({"ResultOfMethodCallIgnored", "UnnecessaryCallToStringValueOf", "StringOperationCanBeSimplified"})
-public class ExternalModelMethodMatcherTest implements RewriteTest {
+class ExternalModelMethodMatcherTest implements RewriteTest {
     static Supplier<TreeVisitor<?, ExecutionContext>> fromModel(
       String namespace,
       String type,

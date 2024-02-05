@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 
 import static org.openrewrite.java.Assertions.java;
 
-public class InvocationMatcherTest implements RewriteTest {
+class InvocationMatcherTest implements RewriteTest {
 
     static JavaIsoVisitor<ExecutionContext> matcherVisitor(Predicate<Cursor> match) {
         return new JavaIsoVisitor<>() {
