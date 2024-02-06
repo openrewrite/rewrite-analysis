@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
@@ -64,6 +65,7 @@ public class DataFlowNodeTest implements RewriteTest {
         );
     }
 
+    @DocumentExample
     @Test
     void dataFlowNodes() {
         rewriteRun(

@@ -17,6 +17,7 @@ package org.openrewrite.analysis.dataflow.global;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.TaintFlowSpec;
@@ -56,6 +57,7 @@ public class GlobalTaintFlowTest implements RewriteTest {
           .cycles(1);
     }
 
+    @DocumentExample
     @Test
     void normalTaintFlowStillWorks() {
         rewriteRun(

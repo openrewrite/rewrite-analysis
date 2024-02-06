@@ -18,6 +18,7 @@ package org.openrewrite.analysis.dataflow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.analysis.search.UsesInvocation;
@@ -103,6 +104,7 @@ class ExternalModelMethodMatcherTest implements RewriteTest {
         );
     }
 
+    @DocumentExample
     @Test
     void methodMatcherOnBuffer() {
         rewriteRun(
