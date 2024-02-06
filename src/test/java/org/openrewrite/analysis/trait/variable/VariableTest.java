@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.trait.variable;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -63,6 +64,7 @@ public class VariableTest implements RewriteTest {
         })).cycles(1).expectedCyclesThatMakeChanges(1);
     }
 
+    @DocumentExample
     @Test
     void correctlyLabelsLocalVariables() {
         rewriteRun(

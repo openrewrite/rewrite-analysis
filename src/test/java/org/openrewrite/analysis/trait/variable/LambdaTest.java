@@ -17,6 +17,7 @@ package org.openrewrite.analysis.trait.variable;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -45,6 +46,7 @@ public class LambdaTest implements RewriteTest {
         }));
     }
 
+    @DocumentExample
     @Test
     void lambdaException() {
         //language=java

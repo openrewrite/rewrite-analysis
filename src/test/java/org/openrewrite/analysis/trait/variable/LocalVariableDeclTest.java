@@ -17,6 +17,7 @@ package org.openrewrite.analysis.trait.variable;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.Cursor;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.analysis.trait.util.TraitErrors;
@@ -58,6 +59,7 @@ public class LocalVariableDeclTest implements RewriteTest {
         }).orSuccess(variable))));
     }
 
+    @DocumentExample
     @Test
     void variableVisit() {
         rewriteRun(

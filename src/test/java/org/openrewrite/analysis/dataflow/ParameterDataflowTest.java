@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
@@ -41,6 +42,7 @@ public class ParameterDataflowTest implements RewriteTest {
         }))).expectedCyclesThatMakeChanges(1).cycles(1);
     }
 
+    @DocumentExample
     @Test
     void dataflowFromSourceArgumentToPrintln() {
         rewriteRun(
