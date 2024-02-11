@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-public class LocalVariableDeclTest implements RewriteTest {
+class LocalVariableDeclTest implements RewriteTest {
 
     static Supplier<TreeVisitor<?, ExecutionContext>> visitVariable(
       BiFunction<J.VariableDeclarations.NamedVariable, Cursor, J.VariableDeclarations.NamedVariable> visitor

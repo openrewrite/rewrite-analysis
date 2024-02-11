@@ -28,7 +28,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
-public class GlobalTaintFlowTest implements RewriteTest {
+class GlobalTaintFlowTest implements RewriteTest {
     static final TaintFlowSpec TAINT_FLOW_SPEC = new TaintFlowSpec() {
         private static final InvocationMatcher SYSTEM_OUT_PRINTLN = InvocationMatcher.fromMethodMatcher(
           "java.io.PrintStream println(..)"

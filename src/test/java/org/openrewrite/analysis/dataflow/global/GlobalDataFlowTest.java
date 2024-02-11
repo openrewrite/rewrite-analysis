@@ -29,7 +29,7 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 
 @SuppressWarnings("ObviousNullCheck")
-public class GlobalDataFlowTest implements RewriteTest {
+class GlobalDataFlowTest implements RewriteTest {
 
     static final DataFlowSpec DATA_FLOW_SPEC = new DataFlowSpec() {
         private static final InvocationMatcher SYSTEM_OUT_PRINTLN = InvocationMatcher.fromMethodMatcher(

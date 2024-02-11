@@ -29,7 +29,7 @@ import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
 @SuppressWarnings("UnusedAssignment")
-public class VariableTest implements RewriteTest {
+class VariableTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
