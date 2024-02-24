@@ -121,7 +121,7 @@ public class ConstantFold {
     public static <T> Option<T> findConstantLiteralValue(DataFlowNode node, Class<T> type) {
         validateTypeIsPrimitiveType(type);
         return findConstantLiteral(node)
-                .map(Literal::getValue)
+                .bind(Literal::getValue)
                 .filter(type::isInstance)
                 .map(type::cast);
     }
