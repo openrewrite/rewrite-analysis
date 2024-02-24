@@ -59,20 +59,28 @@ public class ConstantFold {
     public static Option<Expr> findConstantExpr(Cursor cursor) {
         return DataFlowNode
                 .of(cursor)
-                .bind(n -> n
-                        // If the DataFlow node is a VarAccess
-                        .asExpr(VarAccess.class)
-                        // Get the variable that is being accessed
-                        .map(VarAccess::getVariable)
-                        // Get the assigned values to that variable
-                        .map(Variable::getAssignedValues)
-                        // If there is more than one assigned values,
-                        // we can't determine which one is the one we are looking for
-                        .filter(values -> values.size() == 1)
-                        // Get the single value
-                        .map(values -> values.iterator().next())
-                        // If the value is an expression other than a var access, just return it
-                        .orElse(() -> n.asExpr(Expr.class)));
+                .bind(ConstantFold::findConstantExpr);
+    }
+
+    /**
+     * Find the constant expression that is being assigned to a variable, if any.
+     * Otherwise, return the expression itself.
+     */
+    public static Option<Expr> findConstantExpr(DataFlowNode node) {
+        return node
+                // If the DataFlow node is a VarAccess
+                .asExpr(VarAccess.class)
+                // Get the variable that is being accessed
+                .map(VarAccess::getVariable)
+                // Get the assigned values to that variable
+                .map(Variable::getAssignedValues)
+                // If there is more than one assigned values,
+                // we can't determine which one is the one we are looking for
+                .filter(values -> values.size() == 1)
+                // Get the single value
+                .map(values -> values.iterator().next())
+                // If the value is an expression other than a var access, just return it
+                .orElse(() -> node.asExpr(Expr.class));
     }
 
     @AllArgsConstructor
