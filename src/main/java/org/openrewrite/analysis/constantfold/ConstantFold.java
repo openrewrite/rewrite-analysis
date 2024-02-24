@@ -23,6 +23,7 @@ import org.openrewrite.Tree;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.expr.Expr;
+import org.openrewrite.analysis.trait.expr.Literal;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.variable.Variable;
 import org.openrewrite.java.JavaVisitor;
@@ -30,14 +31,14 @@ import org.openrewrite.java.tree.J;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-@Incubating(since="2.4.0")
+@Incubating(since = "2.4.0")
 public class ConstantFold {
 
     /**
      * Find the constant value that is being assigned to a variable, if any.
      * Otherwise, return the {@link J} itself.
      */
-    public static Option<J> findConstantValue(Cursor cursor) {
+    public static Option<J> findConstantJ(Cursor cursor) {
         return findConstantExpr(cursor)
                 .bind(expr -> {
                     TopFinderVisitor topFinder = new TopFinderVisitor(expr);
@@ -48,8 +49,23 @@ public class ConstantFold {
                     );
                     return Option.some(found.get());
                 });
+    }
 
+    @AllArgsConstructor
+    private static final class TopFinderVisitor extends JavaVisitor<AtomicReference<J>> {
+        private final Top top;
 
+        @Override
+        public J preVisit(J tree, AtomicReference<J> p) {
+            if (top.getId().equals(tree.getId())) {
+                stopAfterPreVisit();
+                if (p.get() != null) {
+                    throw new IllegalStateException("Multiple top-level trees found for " + top);
+                }
+                p.set(tree);
+            }
+            return super.preVisit(tree, p);
+        }
     }
 
     /**
@@ -83,20 +99,36 @@ public class ConstantFold {
                 .orElse(() -> node.asExpr(Expr.class));
     }
 
-    @AllArgsConstructor
-    private static final class TopFinderVisitor extends JavaVisitor<AtomicReference<J>> {
-        private final Top top;
+    public static Option<Literal> findConstantLiteral(Cursor cursor) {
+        return DataFlowNode
+                .of(cursor)
+                .bind(ConstantFold::findConstantLiteral);
+    }
 
-        @Override
-        public J preVisit(J tree, AtomicReference<J> p) {
-            if (top.getId().equals(tree.getId())) {
-                stopAfterPreVisit();
-                if (p.get() != null) {
-                    throw new IllegalStateException("Multiple top-level trees found for " + top);
-                }
-                p.set(tree);
-            }
-            return super.preVisit(tree, p);
+    public static Option<Literal> findConstantLiteral(DataFlowNode node) {
+        return findConstantExpr(node)
+                .filter(Literal.class::isInstance)
+                .map(Literal.class::cast);
+    }
+
+    public static <T> Option<T> findConstantLiteralValue(Cursor cursor, Class<T> type) {
+        validateTypeIsPrimitiveType(type);
+        return DataFlowNode
+                .of(cursor)
+                .bind(n -> findConstantLiteralValue(n, type));
+    }
+
+    public static <T> Option<T> findConstantLiteralValue(DataFlowNode node, Class<T> type) {
+        validateTypeIsPrimitiveType(type);
+        return findConstantLiteral(node)
+                .map(Literal::getValue)
+                .filter(type::isInstance)
+                .map(type::cast);
+    }
+
+    private static void validateTypeIsPrimitiveType(Class<?> type) {
+        if (!type.isPrimitive() && type != String.class) {
+            throw new IllegalArgumentException("Type must be a primitive or String type");
         }
     }
 }

@@ -36,12 +36,12 @@ public class ConstantFoldTest implements RewriteTest {
     }
 
     static class ConstantFoldVisitor<P> extends JavaIsoVisitor<P> {
-        private static InvocationMatcher ALL_MATCHER = t -> true;
+        private static final InvocationMatcher ALL_MATCHER = t -> true;
 
         @Override
         public Expression visitExpression(Expression expression, P p) {
             if (ALL_MATCHER.advanced().isFirstArgument(getCursor())) {
-                Option<J> constantValue = ConstantFold.findConstantValue(getCursor());
+                Option<J> constantValue = ConstantFold.findConstantJ(getCursor());
                 if (constantValue.isSome() && constantValue.map(j -> j.getMarkers().findFirst(SearchResult.class).isEmpty()).orSome(false)) {
                     return SearchResult.found(expression, constantValue.some().print(getCursor()).trim());
                 }
