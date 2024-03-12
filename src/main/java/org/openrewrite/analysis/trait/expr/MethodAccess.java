@@ -39,6 +39,7 @@ public interface MethodAccess extends Expr, Call {
 
     List<Expr> getArguments();
 
+    @Override
     boolean matches(InvocationMatcher callMatcher);
 
     enum Factory implements TraitFactory<MethodAccess> {
@@ -63,10 +64,12 @@ class MethodAccessBase extends Top.Base implements MethodAccess {
     private final Cursor cursor;
     private final J.MethodInvocation methodInvocation;
 
+    @Override
     public String getSimpleName() {
         return methodInvocation.getSimpleName();
     }
 
+    @Override
     public List<Expr> getArguments() {
         return methodInvocation
                 .getArguments()
@@ -75,6 +78,7 @@ class MethodAccessBase extends Top.Base implements MethodAccess {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public boolean matches(InvocationMatcher callMatcher) {
         return callMatcher.matches(methodInvocation);
     }

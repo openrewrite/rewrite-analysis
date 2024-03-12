@@ -339,6 +339,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         }
     }
 
+    @Override
     public GlobalDataFlow.Summary summary(Cursor cursor) {
         Set<Cursor> prunedParticipatingNodes = pruneFlowGraphs();
         if (prunedParticipatingNodes.isEmpty()) {

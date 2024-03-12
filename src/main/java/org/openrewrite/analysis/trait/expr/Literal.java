@@ -53,6 +53,7 @@ class LiteralBase extends Top.Base implements Literal {
     private final Cursor cursor;
     private final J.Literal literal;
 
+    @Override
     public Option<Object> getValue() {
         return Option.fromNull(literal.getValue());
     }

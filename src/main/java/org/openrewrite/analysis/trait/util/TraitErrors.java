@@ -43,6 +43,7 @@ public final class TraitErrors implements Iterable<TraitError> {
         throw new TraitErrorsException(this);
     }
 
+    @Override
     public String toString() {
         return "TraitErrors: " + errors.stream()
                 .map(TraitError::getError)

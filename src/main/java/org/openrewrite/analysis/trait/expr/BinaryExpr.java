@@ -59,18 +59,22 @@ class BinaryExprBase extends Top.Base implements BinaryExpr {
     private final Cursor cursor;
     private final J.Binary binary;
 
+    @Override
     public J.Binary.Type getOperator() {
         return binary.getOperator();
     }
 
+    @Override
     public JavaType getType() {
         return binary.getType();
     }
 
+    @Override
     public Expr getLeft() {
         return Expr.viewOf(new Cursor(cursor, binary.getLeft())).on(TraitErrors::doThrow);
     }
 
+    @Override
     public Expr getRight() {
         return Expr.viewOf(new Cursor(cursor, binary.getRight())).on(TraitErrors::doThrow);
     }

@@ -54,6 +54,7 @@ class ClassInstanceExprBase extends Top.Base implements ClassInstanceExpr {
     private final Cursor cursor;
     private final J.NewClass newClass;
 
+    @Override
     public boolean matches(InvocationMatcher callMatcher) {
         return callMatcher.matches(newClass);
     }

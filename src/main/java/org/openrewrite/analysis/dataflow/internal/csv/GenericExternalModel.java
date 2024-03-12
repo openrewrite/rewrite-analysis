@@ -59,6 +59,7 @@ public interface GenericExternalModel extends BasicInvocationMatcher {
         return getFullyQualifiedName().equals(fullyQualifiedTypeName);
     }
 
+    @Override
     default boolean matchesMethodName(String methodName) {
         if (isConstructor()) {
             return "<constructor>".equals(methodName);
@@ -66,6 +67,7 @@ public interface GenericExternalModel extends BasicInvocationMatcher {
         return getName().equals(methodName);
     }
 
+    @Override
     default boolean matchesParameterTypes(List<JavaType> parameterTypes) {
         if (getSignature().isEmpty()) {
             return true;
