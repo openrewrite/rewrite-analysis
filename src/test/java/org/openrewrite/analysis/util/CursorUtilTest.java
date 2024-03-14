@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.openrewrite.java.Assertions.java;
 
-public class CursorUtilTest implements RewriteTest {
+class CursorUtilTest implements RewriteTest {
 
     private static final class FindCursorForTreeTestVisitor extends JavaVisitor<ExecutionContext> {
 
@@ -45,7 +45,7 @@ public class CursorUtilTest implements RewriteTest {
     }
 
     @Test
-    public void findCursorForTreeTest() {
+    void findCursorForTreeTest() {
         rewriteRun(
           spec -> spec.recipe(RewriteTest.toRecipe(FindCursorForTreeTestVisitor::new)),
           java(

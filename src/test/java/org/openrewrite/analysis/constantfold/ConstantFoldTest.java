@@ -28,7 +28,7 @@ import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
 
-public class ConstantFoldTest implements RewriteTest {
+class ConstantFoldTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {
@@ -51,7 +51,7 @@ public class ConstantFoldTest implements RewriteTest {
     }
 
     @Test
-    public void constantFoldSingleElementString() {
+    void constantFoldSingleElementString() {
         rewriteRun(
           java(
             """
@@ -84,7 +84,7 @@ public class ConstantFoldTest implements RewriteTest {
 
     @Test
     @DocumentExample
-    public void constantFoldTagsElements() {
+    void constantFoldTagsElements() {
         rewriteRun(
           java(
             """
@@ -122,7 +122,7 @@ public class ConstantFoldTest implements RewriteTest {
     }
 
     @Test
-    public void constantFoldTagsArray() {
+    void constantFoldTagsArray() {
         rewriteRun(
           java(
             """
