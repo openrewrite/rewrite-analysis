@@ -755,7 +755,7 @@ public final class ControlFlow {
         @SelfLoathing(name = "Jonathan Leitschuh")
         private J.VariableDeclarations createFakeIteratorVariableDeclarations(String variableName, JavaType iteratorType, J.ForEachLoop forLoop) {
             Expression iterable = forLoop.getControl().getIterable();
-            String type = iteratorType instanceof JavaType.Primitive ? ((JavaType.Primitive) iteratorType).getClassName() : iteratorType.toString();
+            String type = TypeUtils.toString(iteratorType);
             JavaTemplate fakeIterableVariableTemplate = iterable.getType() instanceof JavaType.Array ?
                     JavaTemplate.builder("final Iterator<" + type + "> " + variableName + " = Arrays.stream(#{anyArray()}).iterator();").imports("java.util.Arrays").build() :
                     JavaTemplate.builder("final Iterator<" + type + "> " + variableName + " = #{any(java.lang.Iterable)}.iterator();").build();
