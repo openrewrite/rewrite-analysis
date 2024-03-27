@@ -202,7 +202,7 @@ public final class SecurityUtils {
         try {
             String canonicalPath = f.getCanonicalPath();
 
-            if (isWrite && canonicalPath.startsWith("/var/task")) {
+            if (isWrite && f.getCanonicalFile().toPath().startsWith("/var/task")) {
                 throw new IllegalArgumentException("Trying to write to /var/task folder");
             }
 
