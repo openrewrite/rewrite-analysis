@@ -636,9 +636,8 @@ public final class ControlFlow {
             // Point any `continue` nodes to the condition node
             bodyAnalysis.continueFlow.forEach(continueControlFlowNode -> continueControlFlowNode.addSuccessor(entryBlock[0].getSuccessor()));
             // Add the 'increment' statement to the basic block as the last element
-            controlAnalysisSecondBit.current.forEach(controlFlowNode -> {
-                controlFlowNode.addSuccessor(entryBlock[0].getSuccessor());
-            });
+            controlAnalysisSecondBit.current.forEach(controlFlowNode ->
+                controlFlowNode.addSuccessor(entryBlock[0].getSuccessor()));
 
             current = Stream.concat(Stream.of(getControlFlowNodeMissingOneSuccessor(allAsConditionNodesMissingTruthFirst(controlAnalysisFirstBit.current))), bodyAnalysis.breakFlow.stream()).collect(Collectors.toSet());
             return forLoop;

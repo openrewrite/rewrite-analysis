@@ -81,7 +81,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
             public J visitVariable(J.VariableDeclarations.NamedVariable variable, ExecutionContext executionContext) {
                 DataFlowNode
                         .of(getCursor())
-                        .forEach(n -> n.asParameter().forEach(p -> {
+                        .forEach(n -> n.asParameter().forEach(p ->
                             p.getCallable().getMethodType().forEach(m -> {
                                 FlowGraph g = ForwardFlow.findAllFlows(n, globalDataFlowSpec, flowGraphFactory);
                                 parameterFlowGraphs.computeIfAbsent(m, __ -> flowGraphList(p.getCallable().getParameters().size()))
@@ -96,8 +96,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                                     sourceFlowGraphs.add(g);
                                 }
                                 walkFlowGraphConnecting(g);
-                            });
-                        }));
+                            })));
                 return super.visitVariable(variable, executionContext);
             }
 
