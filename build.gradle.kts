@@ -2,7 +2,6 @@
 
 plugins {
     id("org.openrewrite.build.recipe-library") version "latest.release"
-    id("org.openrewrite.rewrite") version "latest.release"
 }
 
 group = "org.openrewrite.meta"
@@ -50,9 +49,3 @@ tasks.withType<Javadoc> {
     // 1 error
     exclude("**/trait/**")
 }
-
-rewrite {
-    failOnDryRunResults = true
-    activeRecipe("org.openrewrite.self.Rewrite")
-}
-
