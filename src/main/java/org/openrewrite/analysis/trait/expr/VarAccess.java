@@ -357,4 +357,3 @@ class FieldFromJavaTypeVariable extends Top.Base implements Field {
         return new FieldFromJavaTypeVariable(variable, anyCursor.dropParentUntil(JavaSourceFile.class::isInstance));
     }
 }
-

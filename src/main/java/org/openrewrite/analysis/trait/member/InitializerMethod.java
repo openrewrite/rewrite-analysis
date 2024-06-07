@@ -85,4 +85,3 @@ abstract class InitializerMethodBase extends Top.Base implements InitializerMeth
         return TraitErrors.invalidTraitCreationType(clazz, cursor, J.Block.class);
     }
 }
-
