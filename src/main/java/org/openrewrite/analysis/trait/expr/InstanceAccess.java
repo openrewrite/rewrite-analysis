@@ -20,8 +20,8 @@ import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.Top;
-import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.J;
 
 import java.util.Objects;

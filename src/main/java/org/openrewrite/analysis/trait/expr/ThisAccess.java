@@ -19,9 +19,9 @@ import fj.data.Validation;
 import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
 import org.openrewrite.Cursor;
+import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
 import org.openrewrite.analysis.trait.util.TraitErrors;
-import org.openrewrite.analysis.trait.Top;
 
 /**
  * A use of the keyword `this`, which may be qualified.
