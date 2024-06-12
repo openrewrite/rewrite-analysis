@@ -45,6 +45,7 @@ public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumu
 
     @Option(displayName = "Match start method on overrides", description = "When enabled, find methods that are overrides of the method pattern.", required = false)
     @Nullable Boolean startMatchOverrides;
+
     @Option(displayName = "End method pattern", description = "A method pattern that is used to find matching the end point's method invocations.", example = "java.util.List add(..)")
     String endMethodPattern;
 

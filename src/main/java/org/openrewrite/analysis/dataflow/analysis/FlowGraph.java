@@ -29,8 +29,10 @@ import static java.util.Collections.emptyList;
 @RequiredArgsConstructor
 public class FlowGraph {
     private final Factory factory;
+
     @Getter
     private final DataFlowNode node;
+
     private Map<J, FlowGraph> edges = Collections.emptyMap();
 
     public List<FlowGraph> getEdges() {

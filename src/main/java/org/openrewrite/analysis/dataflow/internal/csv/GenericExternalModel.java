@@ -116,6 +116,7 @@ public interface GenericExternalModel extends BasicInvocationMatcher {
         // Inclusive
         @Getter
         final int start;
+
         // Inclusive
         @Getter
         final int end;

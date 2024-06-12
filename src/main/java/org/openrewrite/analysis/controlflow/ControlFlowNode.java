@@ -118,6 +118,7 @@ public abstract class ControlFlowNode {
          */
         @Getter
         private ControlFlowNode truthySuccessor;
+
         /**
          * The successor that will be evaluated if the {@link #getCondition()} is false.
          */
@@ -274,6 +275,7 @@ public abstract class ControlFlowNode {
     static final class BasicBlock extends ControlFlowNode {
         @Getter
         private ControlFlowNode successor;
+
         private final List<Cursor> node = new ArrayList<>();
         private boolean nextConditionDefault = true;
 
@@ -469,6 +471,7 @@ public abstract class ControlFlowNode {
     static final class End extends ControlFlowNode implements GraphTerminator {
         @Getter
         private final GraphType graphType;
+
         private ControlFlowNode successor;
 
         @Override

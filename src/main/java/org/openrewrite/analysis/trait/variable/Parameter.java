@@ -84,8 +84,10 @@ class ParameterBase extends Top.Base implements Parameter {
     Cursor cursor;
     J.VariableDeclarations.NamedVariable namedVariable;
     J.VariableDeclarations variableDeclarations;
+
     @Getter(onMethod = @__(@Override))
     Method callable;
+
     Cursor methodDeclarationCursor;
     J.MethodDeclaration methodDeclaration;
 

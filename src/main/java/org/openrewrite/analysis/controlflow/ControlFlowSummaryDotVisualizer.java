@@ -114,6 +114,7 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
                 .thenComparing(NodeToNodeText::getNodeText);
 
         @NonNull ControlFlowNode node;
+
         String nodeText;
 
         NodeToNodeText(ControlFlowNode node) {
