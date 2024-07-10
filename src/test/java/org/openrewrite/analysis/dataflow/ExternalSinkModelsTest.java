@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ExternalSinkModelsTest {
 
@@ -37,7 +37,7 @@ class ExternalSinkModelsTest {
         // Remove all optimized sink flow models
         models.removeAll(optimizedModels.getSinkModels());
 
-        assertEquals(0, models.size(), "All sink models should be optimized");
+        assertThat(models.size()).as("All sink models should be optimized").isEqualTo(0);
     }
 
 }

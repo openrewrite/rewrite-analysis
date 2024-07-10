@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ExternalFlowModelsTest {
     @Test
@@ -45,8 +45,8 @@ class ExternalFlowModelsTest {
         taint = taint.stream().filter(ExternalFlowModelsTest::filterModels).collect(Collectors.toSet());
 
         // Ensure that there are no unchecked values
-        assertEquals(0, value.size(), "All value models should be optimized");
-        assertEquals(0, taint.size(), "All taint models should be optimized");
+        assertThat(value.size()).as("All value models should be optimized").isEqualTo(0);
+        assertThat(taint.size()).as("All taint models should be optimized").isEqualTo(0);
     }
     
     static boolean filterModels(ExternalFlowModels.FlowModel model) {
