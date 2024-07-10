@@ -24,7 +24,6 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.test.RewriteTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.openrewrite.java.Assertions.java;
 
 class CursorUtilTest implements RewriteTest {
@@ -35,7 +34,7 @@ class CursorUtilTest implements RewriteTest {
         public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext executionContext) {
             Option<Cursor> found = CursorUtil.findCursorForTree(getCursor(), method.getArguments().get(0));
 
-            assertTrue(found.isSome(), "Cursor for the sub-tree tree not found");
+            assertThat(found.isSome()).as("Cursor for the sub-tree tree not found").isTrue();
             assertThat(found.some().<J>getValue()).isEqualTo(method.getArguments().get(0));
             assertThat(found.some().dropParentUntil(J.MethodInvocation.class::isInstance).<J>getValue()).isEqualTo(method);
             assertThat(found.some().dropParentUntil(J.CompilationUnit.class::isInstance)).isNotNull();
