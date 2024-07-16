@@ -166,8 +166,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
             return label + " (" + tag + ')';
         }
 
-        @Nullable
-        private static String labelTag(J j) {
+        private static @Nullable String labelTag(J j) {
             if (j instanceof J.Binary) {
                 J.Binary binary = (J.Binary) j;
                 switch (binary.getOperator()) {

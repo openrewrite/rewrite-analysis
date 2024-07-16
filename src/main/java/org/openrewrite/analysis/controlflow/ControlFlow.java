@@ -445,8 +445,7 @@ public final class ControlFlow {
                     }
 
                     @Override
-                    @Nullable
-                    public J getFalsePart() {
+                    public @Nullable J getFalsePart() {
                         return ifStatement.getElsePart();
                     }
                 };

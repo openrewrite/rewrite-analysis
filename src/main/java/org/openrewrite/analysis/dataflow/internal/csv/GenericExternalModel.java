@@ -141,8 +141,7 @@ class Internal {
                 .equals(parameterSignature);
     }
 
-    @Nullable
-    static String typePattern(JavaType type) {
+    static @Nullable String typePattern(JavaType type) {
         if (type instanceof JavaType.Primitive) {
             if (type.equals(JavaType.Primitive.String)) {
                 return ((JavaType.Primitive) type).getClassName();
