@@ -17,11 +17,11 @@ package org.openrewrite.analysis.dataflow;
 
 import fj.data.Option;
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.ControlFlow;
 import org.openrewrite.analysis.dataflow.analysis.*;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.Expression;
 
 import java.util.Optional;

@@ -19,7 +19,7 @@
  * The primary entry point for interacting with this logic is
  * {@link org.openrewrite.analysis.dataflow.Dataflow#startingAt(org.openrewrite.Cursor)}.
  */
-@NonNullApi
+@NullMarked
 package org.openrewrite.analysis.search;
 
-import org.openrewrite.internal.lang.NonNullApi;
+import org.jspecify.annotations.NullMarked;

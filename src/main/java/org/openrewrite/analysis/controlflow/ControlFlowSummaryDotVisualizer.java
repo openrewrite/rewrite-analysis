@@ -16,7 +16,7 @@
 package org.openrewrite.analysis.controlflow;
 
 import lombok.Value;
-import org.openrewrite.internal.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Comparator;
 import java.util.IdentityHashMap;

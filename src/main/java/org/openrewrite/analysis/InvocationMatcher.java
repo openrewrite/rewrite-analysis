@@ -17,10 +17,10 @@ package org.openrewrite.analysis;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.*;
 

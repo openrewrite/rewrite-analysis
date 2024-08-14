@@ -16,9 +16,9 @@
 package org.openrewrite.analysis.controlflow;
 
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.PrintOutputCapture;
 import org.openrewrite.internal.ListUtils;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaPrinter;
 import org.openrewrite.java.tree.*;
 import org.openrewrite.marker.Markers;
