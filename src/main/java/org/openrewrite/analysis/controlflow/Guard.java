@@ -17,9 +17,9 @@ package org.openrewrite.analysis.controlflow;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.*;
 
 import java.util.Optional;
@@ -35,11 +35,10 @@ public final class Guard {
     private final Expression expression;
 
     @Getter
-    @Nullable
-    private final J.Case theCase;
+    private final J.@Nullable Case theCase;
 
 
-    private Guard(Cursor cursor, @Nullable Expression expression, @Nullable J.Case theCase) {
+    private Guard(Cursor cursor, @Nullable Expression expression, J.@Nullable Case theCase) {
         if (expression == null && theCase == null) {
             throw new IllegalArgumentException("Guard must have either an expression or a case");
         }
