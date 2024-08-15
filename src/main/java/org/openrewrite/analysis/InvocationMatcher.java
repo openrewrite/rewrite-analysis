@@ -17,10 +17,10 @@ package org.openrewrite.analysis;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.*;
 
@@ -44,7 +44,7 @@ public interface InvocationMatcher {
      * @param type The type of the method invocation or constructor.
      * @return True if the invocation or constructor matches the criteria of this matcher.
      */
-    boolean matches(@Nullable JavaType.Method type);
+    boolean matches(JavaType.@Nullable Method type);
 
     default boolean matches(@Nullable MethodCall methodCall) {
         if (methodCall == null) {
