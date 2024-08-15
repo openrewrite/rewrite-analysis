@@ -21,7 +21,7 @@
  * </p>
  * The traits are modeled after CodeQL's representation of the Java syntax and the queries and predicates it provides.
  */
-@NonNullApi
+@NullMarked
 package org.openrewrite.analysis.trait;
 
-import org.openrewrite.internal.lang.NonNullApi;
+import org.jspecify.annotations.NullMarked;

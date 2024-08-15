@@ -15,7 +15,7 @@
  */
 package org.openrewrite.analysis.trait;
 
-import org.openrewrite.internal.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 

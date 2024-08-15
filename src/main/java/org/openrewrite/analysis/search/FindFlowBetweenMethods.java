@@ -17,6 +17,7 @@ package org.openrewrite.analysis.search;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.*;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
@@ -24,7 +25,6 @@ import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.analysis.dataflow.TaintFlowSpec;
 import org.openrewrite.analysis.dataflow.global.GlobalDataFlow;
 import org.openrewrite.analysis.trait.expr.Call;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 
 import java.util.function.Predicate;
