@@ -122,8 +122,8 @@ public interface InvocationMatcher {
             return asExpression(
                     cursor,
                     expression -> nearestMethodCall(cursor).map(call ->
-                            call.getArguments().contains(expression)
-                            && matcher.matches(call) // Do the matcher.matches(...) last as this can be expensive
+                            call.getArguments().contains(expression) &&
+                            matcher.matches(call) // Do the matcher.matches(...) last as this can be expensive
                     ).orElse(false)
             );
         }
