@@ -50,6 +50,5 @@ abstract class Test<P extends Collection> implements Supplier<P> {
         String n = "42";
         String o = n;
         System.out.println(o);
-        String p = o;
     }
 }

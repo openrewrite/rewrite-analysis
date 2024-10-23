@@ -42,7 +42,6 @@ import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -58,7 +57,6 @@ import java.util.List;
  */
 public final class GitCommandLineUtils
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger( GitCommandLineUtils.class );
 
     private GitCommandLineUtils()
     {

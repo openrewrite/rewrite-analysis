@@ -48,7 +48,7 @@ class ExternalFlowModelsTest {
         assertThat(value.size()).as("All value models should be optimized").isEqualTo(0);
         assertThat(taint.size()).as("All taint models should be optimized").isEqualTo(0);
     }
-    
+
     static boolean filterModels(ExternalFlowModels.FlowModel model) {
         for (int i = 0; i < model.input.length() - 1; i++) {
             char currC = model.input.charAt(i);

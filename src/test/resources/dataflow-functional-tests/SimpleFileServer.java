@@ -184,7 +184,7 @@ public class SimpleFileServer extends AbstractTestServer {
      * server are initialized.
      */
     public SimpleFileServer(Configuration config, Map<Select, Configuration> protocolConfig, String coapRootPath,
-                            File filesRoot) throws SocketException {
+                            File filesRoot) {
         super(config, protocolConfig);
         add(new FileResource(config, coapRootPath, filesRoot));
         add(new MyIpResource(MyIpResource.RESOURCE_NAME, true));
