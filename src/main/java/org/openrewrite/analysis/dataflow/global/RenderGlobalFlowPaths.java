@@ -28,13 +28,16 @@ public class RenderGlobalFlowPaths<P> extends JavaIsoVisitor<P> {
     @Override
     public Expression visitExpression(Expression expression, P p) {
         Expression e = super.visitExpression(expression, p);
+        boolean marked = false;
         if (acc.isSource(getCursor())) {
             e = SearchResult.mergingFound(e, "source");
+            marked = true;
         }
         if (acc.isSink(getCursor())) {
             e = SearchResult.mergingFound(e, "sink");
+            marked = true;
         }
-        if (expression != e) {
+        if (marked) {
             return e;
         }
         if (acc.isFlowParticipant(getCursor())) {
@@ -46,13 +49,16 @@ public class RenderGlobalFlowPaths<P> extends JavaIsoVisitor<P> {
     @Override
     public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, P p) {
         J.VariableDeclarations.NamedVariable v = super.visitVariable(variable, p);
+        boolean marked = false;
         if (acc.isSource(getCursor())) {
             v = SearchResult.mergingFound(v, "source");
+            marked = true;
         }
         if (acc.isSink(getCursor())) {
             v = SearchResult.mergingFound(v, "sink");
+            marked = true;
         }
-        if (variable != v) {
+        if (marked) {
             return v;
         }
         if (acc.isFlowParticipant(getCursor())) {
