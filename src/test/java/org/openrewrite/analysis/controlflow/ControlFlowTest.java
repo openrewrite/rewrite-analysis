@@ -37,6 +37,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void displayControlFlowGraphForSingleBasicBlock() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1665,10 +1666,10 @@ class ControlFlowTest implements RewriteTest {
                       /*~~(3L)~~>*/if ((/*~~(2C)~~>*/potato)) /*~~(4L)~~>*/{
                           // ...
                       }
-                      /*~~(5L)~~>*/if (/*~~(3C)~~>*/potato && /*~~(6L)~~>*/turnip) /*~~(7L)~~>*/{
+                      /*~~(5L)~~>*/if (/*~~(3C)~~>*/potato && /*~~(6L)~~>*//*~~(4C)~~>*/turnip) /*~~(7L)~~>*/{
                           // ...
                       }
-                      /*~~(8L)~~>*/if (/*~~(5C)~~>*/potato && /*~~(9L)~~>*/turnip || /*~~(10L)~~>*/squash) /*~~(11L)~~>*/{
+                      /*~~(8L)~~>*/if (/*~~(5C)~~>*/potato && /*~~(9L)~~>*//*~~(6C)~~>*/turnip || /*~~(10L)~~>*//*~~(7C)~~>*/squash) /*~~(11L)~~>*/{
                           // ...
                       }
                       int a = /*~~(12L)~~>*/1, b = 2;
@@ -1925,7 +1926,7 @@ class ControlFlowTest implements RewriteTest {
                   abstract boolean otherCondition();
 
                   void test() /*~~(BB: 3 CN: 2 EX: 1 | 1L)~~>*/{
-                      while (/*~~(1C)~~>*/condition() && /*~~(2L | 2C)~~>*/otherCondition())/*~~(3L)~~>*/;
+                      while (/*~~(1C)~~>*/condition() && /*~~(2L | 2C)~~>*//*~~(2C)~~>*/otherCondition())/*~~(3L)~~>*/;
                   }
               }
               """
@@ -1956,7 +1957,7 @@ class ControlFlowTest implements RewriteTest {
                   abstract boolean thirdCondition();
 
                   void test() /*~~(BB: 4 CN: 3 EX: 1 | 1L)~~>*/{
-                      while (/*~~(1C)~~>*/condition() && /*~~(2L | 2C)~~>*/otherCondition() && /*~~(3L | 3C)~~>*/thirdCondition())/*~~(4L)~~>*/;
+                      while (/*~~(1C)~~>*/condition() && /*~~(2L | 2C)~~>*//*~~(2C)~~>*/otherCondition() && /*~~(3L | 3C)~~>*//*~~(3C)~~>*/thirdCondition())/*~~(4L)~~>*/;
                   }
               }
               """
@@ -2439,7 +2440,7 @@ class ControlFlowTest implements RewriteTest {
             """
               abstract class Test {
                   abstract String[] array();
-                            
+
                   void test(boolean condition) /*~~(BB: 5 CN: 2 EX: 1 | 1L)~~>*/{
                       for (String s : /*~~(1C)~~>*/condition ? /*~~(2L)~~>*/array() : new /*~~(3L)~~>*/String[] { "Hello!" }) /*~~(4L)~~>*/{
                           System.out.println(s);
@@ -2698,7 +2699,7 @@ class ControlFlowTest implements RewriteTest {
             """
               class Test {
                   enum E { A, B, C }
-                          
+
                   void test(E x) {
                       switch (x) {
                           case A:
@@ -2718,7 +2719,7 @@ class ControlFlowTest implements RewriteTest {
             """
               class Test {
                   enum E { A, B, C }
-                          
+
                   void test(E x) /*~~(BB: 7 CN: 3 EX: 1 | 1L)~~>*/{
                       switch (x) {
                           /*~~(1C)~~>*/case A:

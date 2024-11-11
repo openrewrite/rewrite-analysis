@@ -29,6 +29,7 @@ class FindMethodsTest implements RewriteTest {
     void findConstructors() {
         rewriteRun(
           spec -> spec.recipe(new FindMethods("A <constructor>(String)", false, null)),
+          //language=java
           java(
             """
               class Test {
@@ -41,6 +42,7 @@ class FindMethodsTest implements RewriteTest {
               }
               """
           ),
+          //language=java
           java(
             """
               class A {

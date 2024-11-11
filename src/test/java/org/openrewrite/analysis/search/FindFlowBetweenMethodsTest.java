@@ -39,6 +39,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Taint"
             )
           ),
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -78,6 +79,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Taint"
             )
           ),
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -118,6 +120,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Taint"
             )
           ),
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -160,6 +163,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Taint"
             )
           ),
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -186,6 +190,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Taint"
             )
           ),
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -227,6 +232,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Value"
             )
           ),
+          //language=java
           java(
             """
               class Test {
@@ -246,6 +252,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               }
               """
           ),
+          //language=java
           java(
             """
               class Provider {

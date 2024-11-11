@@ -12,6 +12,8 @@
  */
 package com.amazonaws.serverless.proxy.internal;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Locale;
 
 public class SecurityUtils {
@@ -25,7 +27,7 @@ public class SecurityUtils {
      * @param s The string to be cleaned
      * @return The escaped string
      */
-    public static String encode(String s) {
+    public static @Nullable String encode(String s) {
         if (s == null) {
             return null;
         }
