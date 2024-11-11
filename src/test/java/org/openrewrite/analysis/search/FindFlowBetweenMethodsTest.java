@@ -39,6 +39,7 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
               "Taint"
             )
           ),
+          //language=java
           java(
             """
               import java.util.LinkedList;

@@ -72,6 +72,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
     @Test
     void taintTrackingThroughStringManipulations() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -736,7 +737,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
           java(
             """
               import java.util.Objects;
-              
+
               class Test {
                   String source() { return null; }
                   void test() {
@@ -747,7 +748,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
               """,
             """
               import java.util.Objects;
-              
+
               class Test {
                   String source() { return null; }
                   void test() {

@@ -37,6 +37,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void displayControlFlowGraphForSingleBasicBlock() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
