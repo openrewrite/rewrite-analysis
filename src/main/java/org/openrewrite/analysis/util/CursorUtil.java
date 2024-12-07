@@ -38,7 +38,7 @@ public class CursorUtil {
             Object next = nextCursor.getValue();
             if (next instanceof J.Block) {
                 methodDeclarationBlockCursor = nextCursor;
-                if (J.Block.isStaticOrInitBlock(nextCursor)) {
+                if (J.Block.isStaticOrInitBlock(nextCursor) || nextCursor.getParentTreeCursor().getValue() instanceof J.Lambda) {
                     return Option.some(nextCursor);
                 }
             } else if (next instanceof J.MethodDeclaration) {

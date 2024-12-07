@@ -107,4 +107,47 @@ class FindLocalFlowPathsNumericTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void flowPathDetectionWithChainedLambdas() {
+        //language=java
+        rewriteRun(
+          spec -> spec.expectedCyclesThatMakeChanges(1).cycles(1),
+          java(
+            """
+              import java.util.List;
+              import java.util.stream.Stream;
+
+              class Test {
+                  void test() {
+                      List<Integer> list = Stream.of(1, 2, 3).peek(i -> {
+                          System.out.println("Number " + i);
+                      }).peek(i -> {
+                          int n = 42;
+                          int o = n;
+                          System.out.println(o);
+                          int p = o;
+                      }).toList();
+                  }
+              }
+              """, """
+              import java.util.List;
+              import java.util.stream.Stream;
+
+              class Test {
+                  void test() {
+                      List<Integer> list = Stream.of(1, 2, 3).peek(i -> {
+                          System.out.println("Number " + i);
+                      }).peek(i -> {
+                          int n = /*~~>*/42;
+                          int o = /*~~>*/n;
+                          System.out.println(/*~~>*/o);
+                          int p = /*~~>*/o;
+                      }).toList();
+                  }
+              }
+              """
+          )
+        );
+    }
 }
