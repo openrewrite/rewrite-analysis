@@ -476,7 +476,7 @@ public abstract class ControlFlowNode {
 
         @Override
         Set<ControlFlowNode> getSuccessors() {
-            if (GraphType.LAMBDA.equals(graphType)) {
+            if (GraphType.LAMBDA == graphType) {
                 if (successor == null) {
                     throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node has no successor").thisNode(this).addPredecessors(this));
                 }
@@ -487,7 +487,7 @@ public abstract class ControlFlowNode {
 
         @Override
         protected void _addSuccessorInternal(ControlFlowNode successor) {
-            if (GraphType.LAMBDA.equals(graphType)) {
+            if (GraphType.LAMBDA == graphType) {
                 if (this.successor != null) {
                     throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node already has a successor").thisNode(this).current(this.successor).otherNode(successor));
                 }

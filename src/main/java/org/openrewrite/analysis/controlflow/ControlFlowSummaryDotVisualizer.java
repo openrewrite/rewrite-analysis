@@ -53,7 +53,7 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
             abstractToVisualNodeMapping.put(node, i);
             if (node instanceof ControlFlowNode.GraphTerminator) {
                 ControlFlowNode.GraphTerminator terminator = (ControlFlowNode.GraphTerminator) node;
-                if (terminator.getGraphType().equals(ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER)) {
+                if (terminator.getGraphType() == ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER) {
                     if (node instanceof ControlFlowNode.Start) {
                         vizSrc = i;
                     } else if (node instanceof ControlFlowNode.End) {
@@ -165,7 +165,7 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
     private static String getShape(ControlFlowNode node) {
         if (node instanceof ControlFlowNode.Start || node instanceof ControlFlowNode.End) {
             ControlFlowNode.GraphTerminator graphTerminator = (ControlFlowNode.GraphTerminator) node;
-            if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER.equals(graphTerminator.getGraphType())) {
+            if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER == graphTerminator.getGraphType()) {
                 return "circle";
             } else {
                 return "oval";

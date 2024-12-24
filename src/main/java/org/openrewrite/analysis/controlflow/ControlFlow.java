@@ -512,12 +512,12 @@ public final class ControlFlow {
 
         @Override
         public J.Binary visitBinary(J.Binary binary, P p) {
-            if (J.Binary.Type.And.equals(binary.getOperator())) {
+            if (J.Binary.Type.And == binary.getOperator()) {
                 ControlFlowAnalysis<P> left = visitRecursive(current, binary.getLeft(), p);
                 Set<ControlFlowNode.ConditionNode> conditionNodes = allAsConditionNodesMissingTruthFirst(left.current);
                 ControlFlowAnalysis<P> right = visitRecursive(conditionNodes, binary.getRight(), p);
                 current = Stream.concat(right.current.stream(), Stream.of(getControlFlowNodeMissingOneSuccessor(conditionNodes))).collect(Collectors.toSet());
-            } else if (J.Binary.Type.Or.equals(binary.getOperator())) {
+            } else if (J.Binary.Type.Or == binary.getOperator()) {
                 ControlFlowAnalysis<P> left = visitRecursive(current, binary.getLeft(), p);
                 Set<ControlFlowNode.ConditionNode> conditionNodes = allAsConditionNodesMissingFalseFirst(left.current);
                 ControlFlowAnalysis<P> right = visitRecursive(conditionNodes, binary.getRight(), p);
