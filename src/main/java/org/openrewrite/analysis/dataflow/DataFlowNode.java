@@ -22,7 +22,6 @@ import lombok.Getter;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.expr.Expr;
 import org.openrewrite.analysis.trait.expr.ExprParent;
-import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
