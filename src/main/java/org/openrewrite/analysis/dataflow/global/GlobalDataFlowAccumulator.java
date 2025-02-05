@@ -364,7 +364,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
 
         @Override
         public boolean isSource() {
-            return spec.isSource(node);
+            return spec.isSource(node) && isFlowParticipant();
         }
 
         @Override

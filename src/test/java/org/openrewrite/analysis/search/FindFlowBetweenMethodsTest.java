@@ -17,13 +17,8 @@ package org.openrewrite.analysis.search;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.gradle.GradleParser;
-import org.openrewrite.groovy.GroovyParser;
-import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
-import static org.openrewrite.gradle.Assertions.buildGradle;
-import static org.openrewrite.gradle.toolingapi.Assertions.withToolingApi;
 import static org.openrewrite.java.Assertions.java;
 
 @SuppressWarnings("FunctionName")
