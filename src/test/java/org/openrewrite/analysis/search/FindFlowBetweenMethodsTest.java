@@ -17,7 +17,6 @@ package org.openrewrite.analysis.search;
 
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
-import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
@@ -211,6 +210,52 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
                       Integer x = Integer.parseInt("10");
                       LinkedList<Integer> l = /*~~(source)~~>*/new LinkedList<>();
                       System.out.println(x);
+                      System.out.println(/*~~>*/l);
+                      /*~~(sink)~~>*/l.remove();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void taintFlowBetweenArgumentsAndSubject_FakeSource() {
+        rewriteRun(
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.util.LinkedList <constructor>()",
+              true,
+              "java.util.LinkedList remove()",
+              true,
+              "Both",
+              "Taint"
+            )
+          ),
+          //language=java
+          java(
+            """
+              import java.util.LinkedList;
+              class Test {
+                  void test() {
+                      Integer x = Integer.parseInt("10");
+                      LinkedList<Integer> l = new LinkedList<>();
+                      LinkedList<Integer> m = new LinkedList<>();
+                      System.out.println(x);
+                      System.out.println(m);
+                      System.out.println(l);
+                      l.remove();
+                  }
+              }
+              """,
+            """
+              import java.util.LinkedList;
+              class Test {
+                  void test() {
+                      Integer x = Integer.parseInt("10");
+                      LinkedList<Integer> l = /*~~(source)~~>*/new LinkedList<>();
+                      LinkedList<Integer> m = new LinkedList<>();
+                      System.out.println(x);
+                      System.out.println(m);
                       System.out.println(/*~~>*/l);
                       /*~~(sink)~~>*/l.remove();
                   }
