@@ -316,4 +316,28 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void expressionInAnnotationOverClass() {
+        rewriteRun(
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.util.LinkedList <constructor>()",
+              true,
+              "java.util.LinkedList remove()",
+              true,
+              "Both",
+              "Taint"
+            )
+          ),
+          //language=java
+          java(
+            """
+              @Deprecated(since = "now")
+              class Test {
+              }
+              """
+          )
+        );
+    }
+
 }

@@ -101,7 +101,10 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         } else {
             // This is when assignment occurs within the body of a block
             assert taintStmt != null : "taintStmt is null";
-            visitBlocksRecursive(root.getNode().getCursor().dropParentUntil(J.Block.class::isInstance), taintStmt, analysis);
+            Cursor c = root.getNode().getCursor().dropParentUntil(v -> J.Block.class.isInstance(v) || J.CompilationUnit.class.isInstance(v));
+            if (c.getValue() instanceof J.Block) {
+                visitBlocksRecursive(c, taintStmt, analysis);
+            }
         }
     }
 
