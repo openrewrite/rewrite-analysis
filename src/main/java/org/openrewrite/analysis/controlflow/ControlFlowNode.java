@@ -303,8 +303,8 @@ public abstract class ControlFlowNode {
                             .flatMap(v -> {
                                 if (v instanceof J.Case) {
                                     J.Case caseStatement = (J.Case) v;
-                                    if (caseStatement.getExpressions().size() == 1 && caseStatement.getExpressions().get(0) instanceof J.Literal) {
-                                        return Stream.of(v, caseStatement.getExpressions().get(0));
+                                    if (caseStatement.getCaseLabels().size() == 1 && caseStatement.getCaseLabels().get(0) instanceof J.Literal) {
+                                        return Stream.of(v, caseStatement.getCaseLabels().get(0));
                                     }
                                 }
                                 return Stream.of(v);

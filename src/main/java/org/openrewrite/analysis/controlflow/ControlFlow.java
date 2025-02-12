@@ -348,7 +348,7 @@ public final class ControlFlow {
                                 return super.visitCase(_case, p);
                             }
                             // TODO: Handle complex conditional expressions in case statements (ie. Java 17 pattern matching)
-                            // visit(_case.getExpressions(), p);
+                            // visit(_case.getCaseLabels(), p);
                             addCursorToBasicBlock();
                             ControlFlowNode.ConditionNode conditionNode = currentAsBasicBlock().addConditionNodeTruthFirst();
                             current = Stream.concat(Stream.of(conditionNode), caseFlow.stream()).collect(Collectors.toSet());
@@ -953,7 +953,7 @@ public final class ControlFlow {
          * @return true if this case is the default case.
          */
         private static boolean isDefaultCase(J.Case _case) {
-            List<Expression> expressions = _case.getExpressions();
+            List<J> expressions = _case.getCaseLabels();
             return expressions.size() == 1 &&
                    expressions.get(0) instanceof J.Identifier &&
                    "default".equals(((J.Identifier) expressions.get(0)).getSimpleName());
