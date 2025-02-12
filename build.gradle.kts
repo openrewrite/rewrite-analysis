@@ -31,16 +31,9 @@ dependencies {
     testImplementation("org.assertj:assertj-core:latest.release")
 
     testRuntimeOnly("org.openrewrite:rewrite-java-17:${rewriteVersion}")
-    testRuntimeOnly("org.openrewrite:rewrite-java-21:${rewriteVersion}")
 
     testRuntimeOnly("commons-io:commons-io:2.13.+")
     testRuntimeOnly("com.google.guava:guava:32.1.1-jre")
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
 }
 
 tasks.withType<Javadoc> {
