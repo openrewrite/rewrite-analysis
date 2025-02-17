@@ -144,14 +144,14 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
         private int comparingType() {
             if (node instanceof ControlFlowNode.Start) {
                 ControlFlowNode.Start start = (ControlFlowNode.Start) node;
-                if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER.equals(start.getGraphType())) {
+                if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER == start.getGraphType()) {
                     return -2;
                 } else {
                     return -1;
                 }
             } else if (node instanceof ControlFlowNode.End) {
                 ControlFlowNode.End end = (ControlFlowNode.End) node;
-                if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER.equals(end.getGraphType())) {
+                if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER == end.getGraphType()) {
                     return 2;
                 } else {
                     return 1;

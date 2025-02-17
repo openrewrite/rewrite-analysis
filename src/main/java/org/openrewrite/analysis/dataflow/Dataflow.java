@@ -21,10 +21,11 @@ import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.ControlFlow;
-import org.openrewrite.analysis.dataflow.analysis.*;
+import org.openrewrite.analysis.dataflow.analysis.FlowGraph;
+import org.openrewrite.analysis.dataflow.analysis.ForwardFlow;
+import org.openrewrite.analysis.dataflow.analysis.SinkFlowSummary;
 import org.openrewrite.java.tree.Expression;
 
-import java.util.Optional;
 import java.util.Set;
 
 /**

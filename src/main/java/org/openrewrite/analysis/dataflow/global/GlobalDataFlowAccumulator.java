@@ -16,7 +16,6 @@
 package org.openrewrite.analysis.dataflow.global;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Value;
 import org.openrewrite.Cursor;

@@ -416,15 +416,6 @@ public final class ControlFlow {
             throw new IllegalArgumentException("No control flow node missing only one successor");
         }
 
-        private static ControlFlowNode.ConditionNode getControlFlowNodeMissingBothSuccessors(Set<ControlFlowNode.ConditionNode> nodes) {
-            for (ControlFlowNode.ConditionNode node : nodes) {
-                if (node.getTruthySuccessor() == null && node.getFalsySuccessor() == null) {
-                    return node;
-                }
-            }
-            throw new IllegalArgumentException("No control flow node missing both successors");
-        }
-
         private interface BranchingAdapter {
             Expression getCondition();
 

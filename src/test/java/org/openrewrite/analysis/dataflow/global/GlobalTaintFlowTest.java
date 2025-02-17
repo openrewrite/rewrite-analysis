@@ -22,7 +22,6 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.TaintFlowSpec;
 import org.openrewrite.analysis.trait.expr.Literal;
-import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 

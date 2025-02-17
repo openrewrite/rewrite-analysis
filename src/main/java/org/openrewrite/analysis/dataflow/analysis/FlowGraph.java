@@ -15,7 +15,8 @@
  */
 package org.openrewrite.analysis.dataflow.analysis;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.java.tree.J;
