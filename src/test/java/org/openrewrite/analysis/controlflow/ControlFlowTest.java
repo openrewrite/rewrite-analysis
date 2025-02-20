@@ -64,6 +64,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowGraphForSynchronizedBlock() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -100,6 +101,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void dualBranch() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -136,6 +138,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void dualBranchAndStatementsAfterwards() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -174,6 +177,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void nestedBranchAndStatementsAfterwards() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -220,6 +224,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void flowGraphWithBranchesWithReturns() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -256,6 +261,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void flowGraphWithBranchesWithThrows() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -290,6 +296,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void emptyMethodSignature() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -312,6 +319,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithReturnEndingBasicBlock() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -348,6 +356,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithAndOperatorInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -382,6 +391,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithOrOperatorInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -417,6 +427,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithMultipleAndOperatorInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -451,6 +462,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void standaloneBooleanExpressionDoesNotCreateANewBasicBlock() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -488,6 +500,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithAndOperatorForBooleanVariableInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -526,6 +539,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithNegationForBooleanVariableInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -562,6 +576,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithWrappedParenthesesInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -596,6 +611,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifMethodAccessInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -632,6 +648,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifStatementWithNegationInControl() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -668,6 +685,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void whileLoop() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -704,6 +722,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void whileLoopWithContinueAndBreak() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -756,6 +775,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void doWhileLoop() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -792,6 +812,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void doWhileLoopWithContinueAndBreak() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -840,6 +861,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forIndexedLoop() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -876,6 +898,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forIndexedLoopWithContinueAndBreak() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -925,6 +948,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forIndexedLoopForever() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -961,6 +985,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forEachLoop() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -998,6 +1023,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forLoopNestedBranchingWithContinue() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -1044,6 +1070,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forEachLoopWithContinueAndBreak() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1092,6 +1119,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forEachLoopOverNewArray() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1127,6 +1155,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void typecast() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1170,6 +1199,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void throwAnExceptionAsAnExitCondition() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1198,6 +1228,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void simpleTwoBranchExitCondition() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1231,6 +1262,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void literalTrue() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1259,6 +1291,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowForTryWithResources() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.InputStream;
@@ -1293,6 +1326,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowForTryWithResourcesWithCatchAndAdditionalReturn() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.InputStream;
@@ -1330,6 +1364,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowForTry() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.InputStream;
@@ -1367,6 +1402,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowForTryWithReturn() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.InputStream;
@@ -1404,6 +1440,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowForInitBlock() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -1436,6 +1473,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void controlFlowForNotEqualNull() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -1469,6 +1507,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void decodeUrl() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.lang.StringBuffer;
@@ -1592,6 +1631,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void objectsPrint() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -1703,6 +1743,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void exampleCode() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.File;
@@ -1768,6 +1809,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void lambdaForEach() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -1827,6 +1869,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void byteBuddyMinimalReplica() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.util.LinkedList;
@@ -1882,6 +1925,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void whileLoopWithNoBodyOneConditional() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1909,6 +1953,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void whileLoopWithNoBodyTwoConditionals() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1938,6 +1983,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void whileLoopWithNoBodyAndThreeConditionals() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1969,6 +2015,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forLoopWithStrangeConditional() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -1999,6 +2046,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void exampleImagejUiSwing() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.IOException;
@@ -2069,6 +2117,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void classDeclaredInsideAFunction() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2152,6 +2201,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forLoopWithContinueThenAnotherConditional() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2189,6 +2239,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifWithJEmptyThen() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2224,6 +2275,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ifWithJEmptyThenAndJEmptyElse() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2260,6 +2312,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void exampleImageUiSwing() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.io.File;
@@ -2354,6 +2407,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void whileLoopEndingInReturn() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2390,6 +2444,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void forEachLoopEndingInReturnStatement() {
         rewriteRun(
+          //language=java
           java(
             """
               import java.util.ArrayList;
@@ -2425,6 +2480,7 @@ class ControlFlowTest implements RewriteTest {
     @Issue("https://github.com/openrewrite/rewrite/issues/2128")
     void ternaryWithinTheIteratorForAForEachLoop() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2455,6 +2511,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ternary() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2483,6 +2540,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void ternaryWithinMethodCall() {
         rewriteRun(
+          //language=java
           java(
             """
               abstract class Test {
@@ -2514,6 +2572,7 @@ class ControlFlowTest implements RewriteTest {
     @SuppressWarnings("EnhancedSwitchMigration")
     void switchCase() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -2556,6 +2615,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void switchCaseEnhanced() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -2587,6 +2647,7 @@ class ControlFlowTest implements RewriteTest {
     @SuppressWarnings("EnhancedSwitchMigration")
     void switchCaseTwoMatches() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -2626,6 +2687,7 @@ class ControlFlowTest implements RewriteTest {
     @SuppressWarnings("EnhancedSwitchMigration")
     void switchCaseFallthroughToDefault() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -2666,6 +2728,7 @@ class ControlFlowTest implements RewriteTest {
     @Test
     void switchCaseTwoMatchesEnhanced() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -2692,9 +2755,9 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
-    @SuppressWarnings("EnhancedSwitchMigration")
     void switchCaseNoDefault() {
         rewriteRun(
+          //language=java
           java(
             """
               class Test {
@@ -2736,6 +2799,45 @@ class ControlFlowTest implements RewriteTest {
                   }
               }
               """
+          )
+        );
+    }
+
+    @Test
+    void switchCaseNoBreakOrReturn() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+            class Test {
+                enum E { A, B }
+
+                void test(E x) {
+                    switch (x) {
+                        case A:
+                            System.out.println("A");
+                        case B:
+                            System.out.println("B");
+                    }
+                    System.out.println("done");
+                }
+            }
+            """,
+            """
+            class Test {
+                enum E { A, B }
+
+                void test(E x) /*~~(BB: 5 CN: 2 EX: 1 | 1L)~~>*/{
+                    switch (x) {
+                        /*~~(1C)~~>*/case A:
+                            /*~~(2L)~~>*/System.out.println("A");
+                        /*~~(3L | 2C)~~>*/case B:
+                            /*~~(4L)~~>*/System.out.println("B");
+                    }
+                    /*~~(5L)~~>*/System.out.println("done");
+                }
+            }
+            """
           )
         );
     }

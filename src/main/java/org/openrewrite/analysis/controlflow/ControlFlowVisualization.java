@@ -26,7 +26,7 @@ import org.openrewrite.TreeVisitor;
 @EqualsAndHashCode(callSuper = false)
 public class ControlFlowVisualization extends Recipe {
 
-    @Option(displayName = "Include Dotfile",
+    @Option(displayName = "Include dotfile",
             description = "Also output with a Dotfile which can be then later visualized by Graphviz.")
     boolean includeDotfile;
 
@@ -34,7 +34,7 @@ public class ControlFlowVisualization extends Recipe {
 
     @Override
     public String getDisplayName() {
-        return "Control Flow Visualization";
+        return "Control flow visualization";
     }
 
     @Override

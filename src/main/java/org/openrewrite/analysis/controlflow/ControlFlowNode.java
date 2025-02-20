@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.internal.StringUtils;
@@ -117,13 +118,13 @@ public abstract class ControlFlowNode {
          * The successor that will be evaluated if the {@link #getCondition()}} is true.
          */
         @Getter
-        private ControlFlowNode truthySuccessor;
+        @Nullable private ControlFlowNode truthySuccessor;
 
         /**
          * The successor that will be evaluated if the {@link #getCondition()} is false.
          */
         @Getter
-        private ControlFlowNode falsySuccessor;
+        @Nullable private ControlFlowNode falsySuccessor;
 
         public J getCondition() {
             return guard.getCursor().getValue();
@@ -274,7 +275,7 @@ public abstract class ControlFlowNode {
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE, staticName = "create")
     static final class BasicBlock extends ControlFlowNode {
         @Getter
-        private ControlFlowNode successor;
+        @Nullable private ControlFlowNode successor;
 
         private final List<Cursor> node = new ArrayList<>();
         private boolean nextConditionDefault = true;
@@ -382,7 +383,7 @@ public abstract class ControlFlowNode {
         @Override
         Set<ControlFlowNode> getSuccessors() {
             if (successor == null) {
-                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no successor").thisNode(this));
+                return  Collections.emptySet(); // e.g. a switch statement without a break / return
             }
             return Collections.singleton(successor);
         }
@@ -425,7 +426,7 @@ public abstract class ControlFlowNode {
         @Getter
         private final GraphType graphType;
 
-        private ControlFlowNode successor;
+        @Nullable private ControlFlowNode successor;
 
         @Override
         protected void _addSuccessorInternal(ControlFlowNode successor) {
@@ -472,7 +473,7 @@ public abstract class ControlFlowNode {
         @Getter
         private final GraphType graphType;
 
-        private ControlFlowNode successor;
+        @Nullable private ControlFlowNode successor;
 
         @Override
         Set<ControlFlowNode> getSuccessors() {
