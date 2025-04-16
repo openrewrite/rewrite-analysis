@@ -1174,7 +1174,8 @@ class ControlFlowTest implements RewriteTest {
                       }
                   }
               }
-              """, """
+              """,
+                """
               abstract class Test {
                   abstract boolean guard();
 

@@ -177,7 +177,8 @@ class VarAccessCreationTest implements RewriteTest {
                       /*~~(c)~~>*/c.accept(/*~~(value)~~>*/value);
                   }               
               }
-              """)
+              """
+          )
         );
     }
 
@@ -200,7 +201,8 @@ class VarAccessCreationTest implements RewriteTest {
                       (/*~~(c)~~>*/c).accept((/*~~(value)~~>*/value));
                   }               
               }
-              """)
+              """
+          )
         );
     }
 

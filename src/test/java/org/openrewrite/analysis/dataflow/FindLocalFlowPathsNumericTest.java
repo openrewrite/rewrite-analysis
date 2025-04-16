@@ -61,7 +61,8 @@ class FindLocalFlowPathsNumericTest implements RewriteTest {
                       int p = o;
                   }
               }
-              """, """
+              """,
+                """
               class Test {
                   void test() {
                       int n = /*~~>*/42;
@@ -92,7 +93,8 @@ class FindLocalFlowPathsNumericTest implements RewriteTest {
                       }
                   }
               }
-              """, """
+              """,
+                """
               class Test {
                   void test() {
                       if (true) {
@@ -130,7 +132,8 @@ class FindLocalFlowPathsNumericTest implements RewriteTest {
                       }).toList();
                   }
               }
-              """, """
+              """,
+                """
               import java.util.List;
               import java.util.stream.Stream;
 
