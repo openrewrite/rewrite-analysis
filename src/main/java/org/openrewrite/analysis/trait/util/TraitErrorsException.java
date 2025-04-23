@@ -15,8 +15,14 @@
  */
 package org.openrewrite.analysis.trait.util;
 
-class TraitErrorsException extends RuntimeException {
+import lombok.Getter;
+
+@Getter
+public class TraitErrorsException extends RuntimeException {
+    private final TraitErrors errors;
+
     TraitErrorsException(TraitErrors traitErrors) {
         super(traitErrors.toString());
+        this.errors = traitErrors;
     }
 }
