@@ -60,22 +60,6 @@ class FieldTest implements RewriteTest {
         }).orSuccess(variable))));
     }
 
-    @Test
-    void parameters() {
-        rewriteRun(
-          java(
-            "abstract class Test { abstract void test(int i); }"
-          )
-        );
-    }
-
-    @Test
-    void localVariables() {
-        rewriteRun(
-          java("class Test { void test() { int i = 0; } }")
-        );
-    }
-
     @DocumentExample
     @Test
     void fieldsInAnonymousInnerClasses() {
@@ -102,6 +86,22 @@ class FieldTest implements RewriteTest {
               }
               """
           )
+        );
+    }
+
+    @Test
+    void parameters() {
+        rewriteRun(
+          java(
+            "abstract class Test { abstract void test(int i); }"
+          )
+        );
+    }
+
+    @Test
+    void localVariables() {
+        rewriteRun(
+          java("class Test { void test() { int i = 0; } }")
         );
     }
 

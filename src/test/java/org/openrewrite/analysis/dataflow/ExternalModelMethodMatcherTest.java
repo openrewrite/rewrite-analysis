@@ -55,6 +55,48 @@ class ExternalModelMethodMatcherTest implements RewriteTest {
         );
     }
 
+    @DocumentExample
+    @Test
+    void methodMatcherOnBuffer() {
+        rewriteRun(
+          spec -> spec
+            .recipe(toRecipe(fromModel(
+              "org.apache.commons.io",
+              "IOUtils",
+              true,
+              "buffer",
+              "(InputStream,int)")))
+            .parser(JavaParser.fromJavaVersion()
+              .classpath("commons-io")),
+          java(
+            """
+              import org.apache.commons.io.IOUtils;
+              import java.io.InputStream;
+              import java.io.BufferedInputStream;
+              class Test {
+                  InputStream source() { return null; }
+                  void test() {
+                      InputStream source = source();
+                      BufferedInputStream output = IOUtils.buffer(source, 64);
+                  }
+              }
+              """,
+            """
+              /*~~>*/import org.apache.commons.io.IOUtils;
+              import java.io.InputStream;
+              import java.io.BufferedInputStream;
+              class Test {
+                  InputStream source() { return null; }
+                  void test() {
+                      InputStream source = source();
+                      BufferedInputStream output = IOUtils.buffer(source, 64);
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
       "(InputStream,OutputStream)",
@@ -97,48 +139,6 @@ class ExternalModelMethodMatcherTest implements RewriteTest {
                       InputStream source = source();
                       OutputStream dest = new FileOutputStream("dest.txt");
                       IOUtils.copy(source, dest);
-                  }
-              }
-              """
-          )
-        );
-    }
-
-    @DocumentExample
-    @Test
-    void methodMatcherOnBuffer() {
-        rewriteRun(
-          spec -> spec
-            .recipe(toRecipe(fromModel(
-              "org.apache.commons.io",
-              "IOUtils",
-              true,
-              "buffer",
-              "(InputStream,int)")))
-            .parser(JavaParser.fromJavaVersion()
-              .classpath("commons-io")),
-          java(
-            """
-              import org.apache.commons.io.IOUtils;
-              import java.io.InputStream;
-              import java.io.BufferedInputStream;
-              class Test {
-                  InputStream source() { return null; }
-                  void test() {
-                      InputStream source = source();
-                      BufferedInputStream output = IOUtils.buffer(source, 64);
-                  }
-              }
-              """,
-            """
-              /*~~>*/import org.apache.commons.io.IOUtils;
-              import java.io.InputStream;
-              import java.io.BufferedInputStream;
-              class Test {
-                  InputStream source() { return null; }
-                  void test() {
-                      InputStream source = source();
-                      BufferedInputStream output = IOUtils.buffer(source, 64);
                   }
               }
               """

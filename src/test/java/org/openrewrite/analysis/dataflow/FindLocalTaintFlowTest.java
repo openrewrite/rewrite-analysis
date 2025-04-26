@@ -39,6 +39,20 @@ import static org.openrewrite.test.RewriteTest.toRecipe;
 @SuppressWarnings("FunctionName")
 class FindLocalTaintFlowTest implements RewriteTest {
 
+    static Stream<TestCase> fileProvider() {
+        try (ScanResult scanResult = new ClassGraph().acceptPaths("/find-local-taint-flow-tests").scan()) {
+            return scanResult
+              .getResourcesWithExtension(".java")
+              .stream()
+              .filter(resource -> resource.getPath().endsWith(".Initial.java"))
+              .map(resource -> new TestCase(
+                  resource.getPath(),
+                  resource.getPath().replace(".Initial", ".Result")
+                )
+              );
+        }
+    }
+
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new FindLocalFlowPaths<>(new TaintFlowSpec() {
@@ -759,20 +773,6 @@ class FindLocalTaintFlowTest implements RewriteTest {
               """
           )
         );
-    }
-
-    static Stream<TestCase> fileProvider() {
-        try (ScanResult scanResult = new ClassGraph().acceptPaths("/find-local-taint-flow-tests").scan()) {
-            return scanResult
-              .getResourcesWithExtension(".java")
-              .stream()
-              .filter(resource -> resource.getPath().endsWith(".Initial.java"))
-              .map(resource -> new TestCase(
-                  resource.getPath(),
-                  resource.getPath().replace(".Initial", ".Result")
-                )
-              );
-        }
     }
 
     record TestCase(String source, String after) {

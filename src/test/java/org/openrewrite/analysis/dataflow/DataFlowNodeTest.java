@@ -44,27 +44,6 @@ class DataFlowNodeTest implements RewriteTest {
         }));
     }
 
-    @Test
-    void noDataFlowNodes() {
-        rewriteRun(
-          java(
-            "class A {}"
-          )
-        );
-    }
-
-    @Test
-    void importsAreNotDataFlowNodes() {
-        rewriteRun(
-          java(
-                """
-            import java.util.*;
-            class A {}
-            """
-          )
-        );
-    }
-
     @DocumentExample
     @Test
     void dataFlowNodes() {
@@ -85,6 +64,27 @@ class DataFlowNodeTest implements RewriteTest {
                   return /*~~>*/i;
                }
             }
+            """
+          )
+        );
+    }
+
+    @Test
+    void noDataFlowNodes() {
+        rewriteRun(
+          java(
+            "class A {}"
+          )
+        );
+    }
+
+    @Test
+    void importsAreNotDataFlowNodes() {
+        rewriteRun(
+          java(
+                """
+            import java.util.*;
+            class A {}
             """
           )
         );

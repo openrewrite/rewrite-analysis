@@ -51,38 +51,6 @@ class ConstantFoldTest implements RewriteTest {
     }
 
     @Test
-    void constantFoldSingleElementString() {
-        rewriteRun(
-          java(
-            """
-            class Test {
-                private static final String FOO_IDENT = "FOO";
-                void test() {
-                    any(FOO_IDENT);
-                }
-                
-                void any(Object arg) {
-                    // No-op
-                }
-            }
-            """,
-            """
-            class Test {
-                private static final String FOO_IDENT = "FOO";
-                void test() {
-                    any(/*~~("FOO")~~>*/FOO_IDENT);
-                }
-                
-                void any(Object arg) {
-                    // No-op
-                }
-            }
-            """
-          )
-        );
-    }
-
-    @Test
     @DocumentExample
     void constantFoldTagsElements() {
         rewriteRun(
@@ -110,6 +78,38 @@ class ConstantFoldTest implements RewriteTest {
                     any(/*~~("FOO")~~>*/FOO_IDENT);
                     any(/*~~("BAR")~~>*/BAR_IDENT);
                     any(/*~~("BAZ")~~>*/"BAZ");
+                }
+                
+                void any(Object arg) {
+                    // No-op
+                }
+            }
+            """
+          )
+        );
+    }
+
+    @Test
+    void constantFoldSingleElementString() {
+        rewriteRun(
+          java(
+            """
+            class Test {
+                private static final String FOO_IDENT = "FOO";
+                void test() {
+                    any(FOO_IDENT);
+                }
+                
+                void any(Object arg) {
+                    // No-op
+                }
+            }
+            """,
+            """
+            class Test {
+                private static final String FOO_IDENT = "FOO";
+                void test() {
+                    any(/*~~("FOO")~~>*/FOO_IDENT);
                 }
                 
                 void any(Object arg) {
