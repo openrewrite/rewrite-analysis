@@ -138,17 +138,17 @@ examples:
   - 'null'
   sources:
   - before: |
+      class A {
+          public A(String s) {}
+      }
+    language: java
+  - before: |
       class Test {
           A a = new A("test");
       }
     after: |
       class Test {
           A a = /*~~>*/new A("test");
-      }
-    language: java
-  - before: |
-      class A {
-          public A(String s) {}
       }
     language: java
 ---
