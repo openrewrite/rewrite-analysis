@@ -32,10 +32,10 @@ class CursorUtilTest implements RewriteTest {
 
         @Override
         public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext executionContext) {
-            Option<Cursor> found = CursorUtil.findCursorForTree(getCursor(), method.getArguments().get(0));
+            Option<Cursor> found = CursorUtil.findCursorForTree(getCursor(), method.getArguments().getFirst());
 
             assertThat(found.isSome()).as("Cursor for the sub-tree tree not found").isTrue();
-            assertThat(found.some().<J>getValue()).isEqualTo(method.getArguments().get(0));
+            assertThat(found.some().<J>getValue()).isEqualTo(method.getArguments().getFirst());
             assertThat(found.some().dropParentUntil(J.MethodInvocation.class::isInstance).<J>getValue()).isEqualTo(method);
             assertThat(found.some().dropParentUntil(J.CompilationUnit.class::isInstance)).isNotNull();
 
