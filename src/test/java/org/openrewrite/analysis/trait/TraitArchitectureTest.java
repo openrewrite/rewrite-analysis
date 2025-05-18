@@ -38,7 +38,7 @@ public class TraitArchitectureTest {
             public void check(JavaClass item, ConditionEvents events) {
                 Optional<JavaMethod> m = getMethod.apply(item);
                 if (m.isEmpty()) {
-                    String message = String.format(description, item.getFullName());
+                    String message = description.formatted(item.getFullName());
                     events.add(SimpleConditionEvent.violated(item, message));
                 }
             }

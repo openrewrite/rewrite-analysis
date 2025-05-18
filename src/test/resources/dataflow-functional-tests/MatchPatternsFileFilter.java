@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.String.*;
 import static java.util.Arrays.*;
 import static java.util.regex.Pattern.*;
 
@@ -123,7 +122,7 @@ public class MatchPatternsFileFilter implements FileFilter {
     String relativePath(File file) throws IOException {
         String canonicalPath = file.getCanonicalPath();
         if (!canonicalPath.startsWith(sourceDirectory)) {
-            throw new IOException(format("the path %s is not a decedent of the basedir %s", canonicalPath, sourceDirectory));
+            throw new IOException("the path %s is not a decedent of the basedir %s".formatted(canonicalPath, sourceDirectory));
         }
         return canonicalPath.substring(sourceDirectory.length()).replaceAll("^" + quote(File.separator), "");
     }

@@ -190,12 +190,12 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
             tempFileLocation = File.createTempFile("check", "tmp", baseDir);
             if (!tempFileLocation.delete()) {
                 setEnabled(false);
-                final String msg = String.format("Unable to delete temporary file '%s'.", tempFileLocation.getAbsolutePath());
+                final String msg = "Unable to delete temporary file '%s'.".formatted(tempFileLocation.getAbsolutePath());
                 throw new InitializationException(msg);
             }
             if (!tempFileLocation.mkdirs()) {
                 setEnabled(false);
-                final String msg = String.format("Unable to create directory '%s'.", tempFileLocation.getAbsolutePath());
+                final String msg = "Unable to create directory '%s'.".formatted(tempFileLocation.getAbsolutePath());
                 throw new InitializationException(msg);
             }
         } catch (IOException ex) {
@@ -398,7 +398,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
             return getNextTempDirectory();
         }
         if (!directory.mkdirs()) {
-            final String msg = String.format("Unable to create temp directory '%s'.", directory.getAbsolutePath());
+            final String msg = "Unable to create temp directory '%s'.".formatted(directory.getAbsolutePath());
             throw new AnalysisException(msg);
         }
         return directory;
@@ -424,7 +424,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
             try {
                 fis = new FileInputStream(archive);
             } catch (FileNotFoundException ex) {
-                final String msg = String.format("Error extracting file `%s`: %s", archive.getAbsolutePath(), ex.getMessage());
+                final String msg = "Error extracting file `%s`: %s".formatted(archive.getAbsolutePath(), ex.getMessage());
                 LOGGER.debug(msg, ex);
                 throw new AnalysisException(msg);
             }
@@ -451,8 +451,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                     if (engine.accept(f)) {
                         final String destPath = destination.getCanonicalPath();
                         if (!f.getCanonicalPath().startsWith(destPath)) {
-                            final String msg = String.format(
-                                    "Archive (%s) contains a file that would be written outside of the destination directory",
+                            final String msg = "Archive (%s) contains a file that would be written outside of the destination directory".formatted(
                                     archive.getPath());
                             throw new AnalysisException(msg);
                         }
@@ -466,8 +465,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                     if (engine.accept(f)) {
                         final String destPath = destination.getCanonicalPath();
                         if (!f.getCanonicalPath().startsWith(destPath)) {
-                            final String msg = String.format(
-                                    "Archive (%s) contains a file that would be written outside of the destination directory",
+                            final String msg = "Archive (%s) contains a file that would be written outside of the destination directory".formatted(
                                     archive.getPath());
                             throw new AnalysisException(msg);
                         }
@@ -585,7 +583,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                 final File file = f.toFile();
                 if (entry.isDirectory()) {
                     if (!file.exists() && !file.mkdirs()) {
-                        final String msg = String.format("Unable to create directory '%s'.", file.getAbsolutePath());
+                        final String msg = "Unable to create directory '%s'.".formatted(file.getAbsolutePath());
                         throw new AnalysisException(msg);
                     }
                 } else if (engine.accept(file)) {
@@ -610,18 +608,18 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
         LOGGER.debug("Extracting '{}'", file.getPath());
         final File parent = file.getParentFile();
         if (!parent.isDirectory() && !parent.mkdirs()) {
-            final String msg = String.format("Unable to build directory '%s'.", parent.getAbsolutePath());
+            final String msg = "Unable to build directory '%s'.".formatted(parent.getAbsolutePath());
             throw new AnalysisException(msg);
         }
         try (FileOutputStream fos = new FileOutputStream(file)) {
             IOUtils.copy(input, fos);
         } catch (FileNotFoundException ex) {
             LOGGER.debug("", ex);
-            final String msg = String.format("Unable to find file '%s'.", file.getName());
+            final String msg = "Unable to find file '%s'.".formatted(file.getName());
             throw new AnalysisException(msg, ex);
         } catch (IOException ex) {
             LOGGER.debug("", ex);
-            final String msg = String.format("IO Exception while parsing file '%s'.", file.getName());
+            final String msg = "IO Exception while parsing file '%s'.".formatted(file.getName());
             throw new AnalysisException(msg, ex);
         }
     }
