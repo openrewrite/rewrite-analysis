@@ -23,6 +23,8 @@
  */
 package com.intuit.karate.job;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -124,7 +126,7 @@ public class JobUtils {
         return destFile;
     }
 
-    public static File getFirstFileMatching(File parent, Predicate<String> predicate) {
+    public static @Nullable File getFirstFileMatching(File parent, Predicate<String> predicate) {
         File[] files = parent.listFiles((f, n) -> predicate.test(n));
         return files == null || files.length == 0 ? null : files.get(0);
     }
