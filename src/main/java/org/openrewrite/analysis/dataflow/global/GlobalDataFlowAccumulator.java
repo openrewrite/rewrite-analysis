@@ -121,10 +121,12 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                     if (methodType != null) {
                         int argumentIndex = methodCall.getArguments().indexOf(n.getCursor().<Expression>getValue());
                         JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
-                        argumentFlowGraphs
-                                .computeIfAbsent(declaredMethodType, __ -> flowGraphList(methodCall.getArguments().size()))
-                                .get(argumentIndex)
-                                .add(flowGraph);
+                        List<Set<FlowGraph>> flowGraphs = argumentFlowGraphs
+                                .computeIfAbsent(declaredMethodType, __ -> flowGraphList(methodCall.getArguments().size()));
+                        while (argumentIndex >= flowGraphs.size()) {
+                            flowGraphs.add(Collections.newSetFromMap(new IdentityHashMap<>()));
+                        }
+                        flowGraphs.get(argumentIndex).add(flowGraph);
                         if (parameterFlowGraphs.containsKey(declaredMethodType)) {
                             for (FlowGraph argumentFlow : parameterFlowGraphs.get(declaredMethodType).get(argumentIndex)) {
                                 flowGraph.addEdge(argumentFlow);

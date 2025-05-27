@@ -340,4 +340,57 @@ class FindFlowBetweenMethodsTest implements RewriteTest {
         );
     }
 
+    @Test
+    void exceptionFromVarArgMethodParameter() {
+        rewriteRun(
+          spec -> spec.recipe(new FindFlowBetweenMethods(
+              "java.util.LinkedList <constructor>()",
+              true,
+              "java.util.LinkedList remove()",
+              true,
+              "Both",
+              "Taint"
+            )
+          ),
+          java(
+            """
+              import java.util.Arrays;
+              import java.util.LinkedList;
+              import java.util.List;
+              class Test {
+                  void test() {
+                      Integer x = Integer.parseInt("10");
+                      List<Integer> a = Arrays.asList(x, 2);
+                      a = Arrays.asList(1, x, 3, x);
+                      LinkedList<Integer> l = new LinkedList<>();
+                      LinkedList<Integer> m = new LinkedList<>();
+                      System.out.println(x);
+                      System.out.println(m);
+                      System.out.println(l);
+                      l.remove();
+                  }
+              }
+              """,
+            """
+              import java.util.Arrays;
+              import java.util.LinkedList;
+              import java.util.List;
+              class Test {
+                  void test() {
+                      Integer x = Integer.parseInt("10");
+                      List<Integer> a = Arrays.asList(x, 2);
+                      a = Arrays.asList(1, x, 3, x);
+                      LinkedList<Integer> l = /*~~(source)~~>*/new LinkedList<>();
+                      LinkedList<Integer> m = new LinkedList<>();
+                      System.out.println(x);
+                      System.out.println(m);
+                      System.out.println(/*~~>*/l);
+                      /*~~(sink)~~>*/l.remove();
+                  }
+              }
+              """
+          )
+        );
+    }
+
 }
