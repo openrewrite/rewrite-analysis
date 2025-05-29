@@ -386,13 +386,13 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     break;
                 }
 
-                Cursor methodInvocationCursor = previousCursor.getParentTreeCursor();
-                if (methodInvocationCursor.getValue() instanceof J.MethodInvocation) {
+                Cursor parentCursor = previousCursor.getParentTreeCursor();
+                if (parentCursor.getValue() instanceof J.MethodInvocation) {
                     // The parent is a MethodInvocation, `previousCursor` must be either an argument or the select
-                    J.MethodInvocation methodInvocation = methodInvocationCursor.getValue();
+                    J.MethodInvocation methodInvocation = parentCursor.getValue();
                     // Support flow from any argument to the subject of a method invocation
                     if (methodInvocation.getSelect() != null && methodInvocation.getArguments().contains(previousCursor.getValue())) {
-                        Cursor selectCursor = new Cursor(methodInvocationCursor, methodInvocation.getSelect());
+                        Cursor selectCursor = new Cursor(parentCursor, methodInvocation.getSelect());
                         // Select may not be a data flow node if it's a static access
                         Option<DataFlowNode> selectNode = DataFlowNode.of(selectCursor);
                         if (selectNode.isSome() && spec.isFlowStep(
@@ -421,7 +421,39 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                                 continue;
                             }
 
-                            Cursor argumentCursor = new Cursor(methodInvocationCursor, expr);
+                            Cursor argumentCursor = new Cursor(parentCursor, expr);
+                            DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor, "Unable to create DataFlowNode for " + argumentCursor);
+
+                            if (spec.isFlowStep(
+                                    DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                                    argumentNode
+                            )) {
+                                nextFlowGraph = nextFlowGraph.addEdge(argumentNode);
+                                Expression unwrappedArgument = expr.unwrap();
+                                VariableNameToFlowGraph variableNameToFlowGraph =
+                                        computeVariableAssignment(argumentCursor, nextFlowGraph, spec);
+                                if (unwrappedArgument instanceof J.Identifier) {
+                                    // If the argument is an identifier, then we can add it to the map of variable names to flow graphs
+                                    String variableName = ((J.Identifier) unwrappedArgument).getSimpleName();
+                                    variableNameToFlowGraph.identifierToFlow.put(variableName, nextFlowGraph);
+                                }
+                                return variableNameToFlowGraph;
+                            }
+                        }
+                    }
+                } else if (parentCursor.getValue() instanceof J.NewClass) {
+                    // The parent is a J.NewClass, `previousCursor` must be an argument
+                    J.NewClass constructorInvocation = parentCursor.getValue();
+
+                    // Flow from one argument or the select to another argument
+                    if (constructorInvocation.getArguments().contains(previousCursor.getValue())) {
+                        for (Expression expr : constructorInvocation.getArguments()) {
+                            if (expr.equals(previousCursor.getValue())) {
+                                // There is no flow to itself
+                                continue;
+                            }
+
+                            Cursor argumentCursor = new Cursor(parentCursor, expr);
                             DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor, "Unable to create DataFlowNode for " + argumentCursor);
 
                             if (spec.isFlowStep(
