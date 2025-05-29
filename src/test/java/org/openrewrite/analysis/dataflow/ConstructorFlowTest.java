@@ -32,50 +32,55 @@ public class ConstructorFlowTest implements RewriteTest {
     void bigIntegerToRsaKeyGen() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {
+              final MethodMatcher bigIntMatcher = new MethodMatcher("java.math.BigInteger <init>(java.lang.String)");
+              final MethodMatcher rsaKeyGenSpecCtor = new MethodMatcher("java.security.spec.RSAKeyGenParameterSpec <init>(..)");
+
               @Override
               public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext executionContext) {
-                  MethodMatcher rsaKeyGenSpecCtor = new MethodMatcher("java.security.spec.RSAKeyGenParameterSpec <init>(..)");
                   J.NewClass n = super.visitNewClass(newClass, executionContext);
-                  if(Dataflow.startingAt(getCursor()).findSinks(new DataFlowSpec() {
-                      @Override
-                      public boolean isSource(DataFlowNode srcNode) {
-                          return true;
-                      }
-
-                      @Override
-                      public boolean isSink(DataFlowNode sinkNode) {
-                          if(sinkNode.getCursor().getValue() instanceof J.NewClass) {
-                              return rsaKeyGenSpecCtor.matches((J.NewClass) sinkNode.getCursor().getValue());
+                  if (bigIntMatcher.matches(n)) {
+                      if (Dataflow.startingAt(getCursor()).findSinks(new DataFlowSpec() {
+                          @Override
+                          public boolean isSource(DataFlowNode srcNode) {
+                              return true;
                           }
-                          return false;
+
+                          @Override
+                          public boolean isSink(DataFlowNode sinkNode) {
+                              J.NewClass nc = sinkNode.getCursor().firstEnclosing(J.NewClass.class);
+                              if (nc != null) {
+                                  return rsaKeyGenSpecCtor.matches(nc);
+                              }
+                              return false;
+                          }
+                      }).isSome()) {
+                          return SearchResult.found(n);
                       }
-                  }).isSome()) {
-                      return SearchResult.found(n);
                   }
                   return n;
               }
           })),
           //language=java
           java("""
-            import java.math.BigInteger;
-            import java.security.spec.RSAKeyGenParameterSpec;
-            class C {
-                void params() {
-                    BigInteger exponent = new BigInteger("65537");
-                    RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(2048, exponent);
-                }
-            }
-            """,
+              import java.math.BigInteger;
+              import java.security.spec.RSAKeyGenParameterSpec;
+              class C {
+                  void params() {
+                      BigInteger exponent = new BigInteger("65537");
+                      RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(2048, exponent);
+                  }
+              }
+              """,
             """
-            import java.math.BigInteger;
-            import java.security.spec.RSAKeyGenParameterSpec;
-            class C {
-                void params() {
-                    BigInteger exponent = new BigInteger("65537");
-                    RSAKeyGenParameterSpec spec = /*~~>*/new RSAKeyGenParameterSpec(2048, exponent);
-                }
-            }
-            """)
+              import java.math.BigInteger;
+              import java.security.spec.RSAKeyGenParameterSpec;
+              class C {
+                  void params() {
+                      BigInteger exponent = /*~~>*/new BigInteger("65537");
+                      RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(2048, exponent);
+                  }
+              }
+              """)
         );
     }
 }

@@ -445,7 +445,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     // The parent is a J.NewClass, `previousCursor` must be an argument
                     J.NewClass constructorInvocation = parentCursor.getValue();
 
-                    // Flow from one argument or the select to another argument
+                    // Flow from one argument to another argument
                     if (constructorInvocation.getArguments().contains(previousCursor.getValue())) {
                         for (Expression expr : constructorInvocation.getArguments()) {
                             if (expr.equals(previousCursor.getValue())) {
