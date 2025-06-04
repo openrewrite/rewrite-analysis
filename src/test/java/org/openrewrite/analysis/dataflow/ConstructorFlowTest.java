@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
@@ -26,8 +27,9 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-public class ConstructorFlowTest implements RewriteTest {
+class ConstructorFlowTest implements RewriteTest {
 
+    @DocumentExample
     @Test
     void bigIntegerToRsaKeyGen() {
         rewriteRun(
@@ -61,7 +63,8 @@ public class ConstructorFlowTest implements RewriteTest {
               }
           })),
           //language=java
-          java("""
+          java(
+                """
               import java.math.BigInteger;
               import java.security.spec.RSAKeyGenParameterSpec;
               class C {
@@ -80,7 +83,8 @@ public class ConstructorFlowTest implements RewriteTest {
                       RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(2048, exponent);
                   }
               }
-              """)
+              """
+          )
         );
     }
 }
