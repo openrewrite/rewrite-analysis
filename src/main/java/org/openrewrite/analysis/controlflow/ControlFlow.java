@@ -658,14 +658,18 @@ public final class ControlFlow {
         @Override
         @SelfLoathing(name = "Jonathan Leitschuh")
         public J.ForEachLoop visitForEachLoop(J.ForEachLoop forLoop, P p) {
+            if (!(forLoop.getControl().getVariable() instanceof J.VariableDeclarations)) {
+                throw new IllegalArgumentException("Expecting the for-each loop control variable to be a J.VariableDeclarations");
+            }
+            J.VariableDeclarations controlVariables = (J.VariableDeclarations) forLoop.getControl().getVariable();
             String iteratorVariableNumber =
                     VariableNameUtils.generateVariableName(
-                            forLoop.getControl().getVariable().getVariables().get(0).getSimpleName() + "Iterator",
+                            controlVariables.getVariables().get(0).getSimpleName() + "Iterator",
                             this.getCursor(),
                             VariableNameUtils.GenerationStrategy.INCREMENT_NUMBER
                     );
 
-            JavaType controlLoopType = forLoop.getControl().getVariable().getVariables().get(0).getType();
+            JavaType controlLoopType = controlVariables.getVariables().get(0).getType();
             if (controlLoopType == null) {
                 throw new ControlFlowIllegalStateException(
                         ControlFlowIllegalStateException.exceptionMessageBuilder("No type for `for` loop control variable")
