@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Arrays.*;
+import static java.util.List.of;
 import static java.util.regex.Pattern.*;
 
 /**
@@ -56,7 +56,7 @@ public class MatchPatternsFileFilter implements FileFilter {
 
         public Builder addIncludes(String... includes) {
             if (includes != null) {
-                addIncludes(asList(includes));
+                addIncludes(of(includes));
             }
             return this;
         }
@@ -68,13 +68,13 @@ public class MatchPatternsFileFilter implements FileFilter {
 
         public Builder addExcludes(String... excludes) {
             if (excludes != null) {
-                addExcludes(asList(excludes));
+                addExcludes(of(excludes));
             }
             return this;
         }
 
         public Builder addDefaultExcludes() {
-            excludes.addAll(processPatterns(asList(DirectoryScanner.DEFAULTEXCLUDES)));
+            excludes.addAll(processPatterns(of(DirectoryScanner.DEFAULTEXCLUDES)));
             return this;
         }
 
