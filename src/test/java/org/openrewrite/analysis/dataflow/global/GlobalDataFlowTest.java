@@ -18,6 +18,7 @@ package org.openrewrite.analysis.dataflow.global;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
+import org.openrewrite.Issue;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.DataFlowSpec;
@@ -65,7 +66,7 @@ class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-                            
+                                
                   String identity(String s) {
                       return s;
                   }
@@ -96,16 +97,74 @@ class GlobalDataFlowTest implements RewriteTest {
     }
 
     @Test
+    @Issue("https://github.com/openrewrite/rewrite-analysis/issues/83")
+    void qualifiedStaticVariable() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  static String s = "42";
+
+                  {
+                      System.out.println(Test.s);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  static String s = /*~~(source)~~>*/"42";
+
+                  {
+                      System.out.println(/*~~(sink)~~>*/Test.s);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    // TODO need issue
+    void enums() {
+        rewriteRun(
+          java(
+            """
+              enum One {
+                  ONE("1");
+
+                  private final String value;
+
+                  One(String value) {
+                      this.value = value;
+                  }
+
+                  String getValue() {
+                      return value;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() {
+                      System.out.println(/*~~(sink)~~>*/One.ONE.getValue());
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void polymorphicIdentityFunction() {
         rewriteRun(
           java(
             """
               class Test {
-                            
+
                   Object identity(Object s) {
                       return s;
                   }
-                  
+
                   void test() {
                       String s = "42";
                       Object t = identity(s);
@@ -115,11 +174,11 @@ class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                            
+
                   Object identity(Object /*~~>*/s) {
                       return /*~~>*/s;
                   }
-                  
+
                   void test() {
                       String s = /*~~(source)~~>*/"42";
                       Object t = /*~~>*/identity(/*~~>*/s);
@@ -137,13 +196,13 @@ class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-                  
+
                   void test() {
                       String s = "42";
                       String t = identity(s);
                       System.out.println(t);
                   }
-                  
+
                   String identity(String s) {
                       return s;
                   }
@@ -151,13 +210,13 @@ class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  
+
                   void test() {
                       String s = /*~~(source)~~>*/"42";
                       String t = /*~~>*/identity(/*~~>*/s);
                       System.out.println(/*~~(sink)~~>*/t);
                   }
-                  
+
                   String identity(String /*~~>*/s) {
                       return /*~~>*/s;
                   }
@@ -174,11 +233,11 @@ class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-                            
+
                   String noOp(String s) {
                       return "something else";
                   }
-                  
+
                   void test() {
                       String s = "42";
                       String t = noOp(s);
@@ -196,11 +255,11 @@ class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-                            
+
                   void print(String s) {
                       System.out.println(s);
                   }
-                  
+
                   void test() {
                       String s = "42";
                       print(s);
@@ -209,11 +268,11 @@ class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                            
+
                   void print(String /*~~>*/s) {
                       System.out.println(/*~~(sink)~~>*/s);
                   }
-                  
+
                   void test() {
                       String s = /*~~(source)~~>*/"42";
                       print(/*~~>*/s);
@@ -230,14 +289,14 @@ class GlobalDataFlowTest implements RewriteTest {
           java(
             """
               class Test {
-                            
+
                   String recursive(String s) {
                       if(s.length() > 0) {
                           return recursive(s.substring(1));
                       }
                       return s;
                   }
-                  
+
                   void test() {
                       String s = "42";
                       String t = recursive(s);
@@ -247,14 +306,14 @@ class GlobalDataFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                            
+
                   String recursive(String /*~~>*/s) {
                       if(/*~~>*/s.length() > 0) {
                           return recursive(s.substring(1));
                       }
                       return /*~~>*/s;
                   }
-                  
+
                   void test() {
                       String s = /*~~(source)~~>*/"42";
                       String t = /*~~>*/recursive(/*~~>*/s);
@@ -277,7 +336,7 @@ class GlobalDataFlowTest implements RewriteTest {
                           throw new NullPointerException();
                       return obj;
                   }
-                  
+
                   void test() {
                       String s = requireNonNull("0");
                       System.out.println(s);
@@ -295,7 +354,7 @@ class GlobalDataFlowTest implements RewriteTest {
                           throw new NullPointerException();
                       return /*~~>*/obj;
                   }
-                  
+
                   void test() {
                       String s = requireNonNull("0");
                       System.out.println(s);
@@ -321,7 +380,7 @@ class GlobalDataFlowTest implements RewriteTest {
                           throw new NullPointerException();
                       return obj;
                   }
-                  
+
                   void test() {
                       String s = requireNonNull("0");
                       System.out.println(s);
@@ -339,7 +398,7 @@ class GlobalDataFlowTest implements RewriteTest {
                           throw new NullPointerException();
                       return /*~~>*/obj;
                   }
-                  
+
                   void test() {
                       String s = requireNonNull("0");
                       System.out.println(s);
@@ -417,9 +476,9 @@ class GlobalDataFlowTest implements RewriteTest {
                           return obj;
                       }
                   }
-                  
+
                   static class Concrete extends Abstract { }
-                  
+
                   void test() {
                       Abstract a = new Concrete();
                       String s = a.identity("42");
@@ -437,9 +496,9 @@ class GlobalDataFlowTest implements RewriteTest {
                           return /*~~>*/obj;
                       }
                   }
-                  
+
                   static class Concrete extends Abstract { }
-                  
+
                   void test() {
                       Abstract a = new Concrete();
                       String s = /*~~>*/a.identity(/*~~(source)~~>*/"42");
@@ -465,14 +524,14 @@ class GlobalDataFlowTest implements RewriteTest {
                           return obj;
                       }
                   }
-                  
+
                   static class Concrete extends Abstract {
                       @Override
                       String identity(String obj) {
                           return super.identity(obj);
                       }
                   }
-                  
+
                   void test() {
                       Abstract a = new Concrete();
                       String s = a.identity("42");
@@ -490,14 +549,14 @@ class GlobalDataFlowTest implements RewriteTest {
                           return /*~~>*/obj;
                       }
                   }
-                  
+
                   static class Concrete extends Abstract {
                       @Override
                       String identity(String /*~~>*/obj) {
                           return /*~~>*/super.identity(/*~~>*/obj);
                       }
                   }
-                  
+
                   void test() {
                       Abstract a = new Concrete();
                       String s = /*~~>*/a.identity(/*~~(source)~~>*/"42");
@@ -522,14 +581,14 @@ class GlobalDataFlowTest implements RewriteTest {
                   abstract static class Abstract {
                       abstract String identity(String obj);
                   }
-                  
+
                   static class Concrete extends Abstract {
                       @Override
                       String identity(String obj) {
                           return obj;
                       }
                   }
-                  
+
                   void test() {
                       Abstract a = new Concrete();
                       String s = a.identity("42");
@@ -542,14 +601,14 @@ class GlobalDataFlowTest implements RewriteTest {
                   abstract static class Abstract {
                       abstract String identity(String obj);
                   }
-                  
+
                   static class Concrete extends Abstract {
                       @Override
                       String identity(String /*~~>*/obj) {
                           return /*~~>*/obj;
                       }
                   }
-                  
+
                   void test() {
                       Abstract a = new Concrete();
                       String s = /*~~>*/a.identity(/*~~(source)~~>*/"42");
