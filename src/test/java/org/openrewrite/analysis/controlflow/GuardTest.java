@@ -324,8 +324,8 @@ class GuardTest implements RewriteTest {
         );
     }
 
-    @Test
     @SuppressWarnings("EnhancedSwitchMigration")
+    @Test
     void switchCase() {
         rewriteRun(
           java(

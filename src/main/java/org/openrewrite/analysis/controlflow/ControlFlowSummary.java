@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 /**
  * To create an instance call {@link ControlFlow#findControlFlow()}.
  */
-@Incubating(since = "7.25.0")
 @AllArgsConstructor(staticName = "forGraph", access = AccessLevel.PACKAGE)
+@Incubating(since = "7.25.0")
 public final class ControlFlowSummary {
     private final ControlFlowNode.Start start;
     private final ControlFlowNode.End end;

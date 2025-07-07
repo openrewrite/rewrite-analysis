@@ -512,8 +512,8 @@ class GlobalDataFlowTest implements RewriteTest {
         );
     }
 
-    @Test
     @Disabled("Need to support resolving the correct JavaType.Method for the given call site")
+    @Test
     void polymorphicDataFlowThroughSuperclassesWithOverrideCalledOnSubtype() {
         rewriteRun(
           java(

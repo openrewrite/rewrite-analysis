@@ -77,8 +77,8 @@ class LocalVariableDeclTest implements RewriteTest {
         );
     }
 
-    @Test
     @SuppressWarnings("ClassInitializerMayBeStatic")
+    @Test
     void variableInInitBlock() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {

@@ -22,8 +22,8 @@ import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 
-@Value
 @EqualsAndHashCode(callSuper = false)
+@Value
 public class ControlFlowVisualization extends Recipe {
 
     @Option(displayName = "Include dotfile",

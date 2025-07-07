@@ -41,8 +41,8 @@ class DataflowFunctionalTest implements RewriteTest {
         }
     }
 
-    @ParameterizedTest
     @MethodSource("fileProvider")
+    @ParameterizedTest
     void eachJavaFile(String input) {
         rewriteRun(
           spec -> spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {

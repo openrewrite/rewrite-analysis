@@ -86,8 +86,8 @@ class LambdaTest implements RewriteTest {
         );
     }
 
-    @Test
     @Disabled("https://github.com/openrewrite/rewrite-analysis/issues/31")
+    @Test
     void lambdaNewInstance() {
         //language=java
         rewriteRun(
@@ -126,8 +126,8 @@ class LambdaTest implements RewriteTest {
         );
     }
 
-    @Test
     @Disabled("https://github.com/openrewrite/rewrite-analysis/issues/31")
+    @Test
     void lambdaReturn() {
         //language=java
         rewriteRun(

@@ -112,8 +112,8 @@ class UriCreatedWithHttpSchemeTest implements RewriteTest {
         );
     }
 
-    @Test
     @Disabled("MISSING: Assignment dominance of conditional that will always evaluate to true")
+    @Test
     void reassignmentInAlwaysEvaluatedPathBreaksDataFlowPath() {
         rewriteRun(
           java(

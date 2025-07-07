@@ -29,8 +29,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Incubating(since = "7.26.0")
 @AllArgsConstructor
+@Incubating(since = "7.26.0")
 final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
     private static final String CONTROL_FLOW_SUMMARY_CURSOR_MESSAGE = "CONTROL_FLOW_SUMMARY";
 

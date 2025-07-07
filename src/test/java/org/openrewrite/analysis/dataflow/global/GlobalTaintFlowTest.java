@@ -205,8 +205,8 @@ class GlobalTaintFlowTest implements RewriteTest {
         );
     }
 
-    @Test
     @Disabled("Not getting flow out of the inner recursive function")
+    @Test
     void recursiveFunctionWithRecursivePath() {
         rewriteRun(
           java(

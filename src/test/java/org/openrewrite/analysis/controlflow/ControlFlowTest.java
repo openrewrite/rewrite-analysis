@@ -2477,8 +2477,8 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    @Test
     @Issue("https://github.com/openrewrite/rewrite/issues/2128")
+    @Test
     void ternaryWithinTheIteratorForAForEachLoop() {
         rewriteRun(
           //language=java

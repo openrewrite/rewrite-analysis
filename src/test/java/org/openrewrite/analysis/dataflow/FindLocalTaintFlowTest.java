@@ -778,8 +778,8 @@ class FindLocalTaintFlowTest implements RewriteTest {
     record TestCase(String source, String after) {
     }
 
-    @ParameterizedTest
     @MethodSource("fileProvider")
+    @ParameterizedTest
     void taintTrackingThroughFiles(TestCase testCase) {
         rewriteRun(
           java(

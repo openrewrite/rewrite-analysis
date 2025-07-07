@@ -19,8 +19,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
-@Value
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Value
 public class TraitError {
     String error;
 }

@@ -17,8 +17,8 @@ package org.openrewrite.analysis.dataflow;
 
 import org.openrewrite.Incubating;
 
-@Incubating(since = "7.25.0")
 @FunctionalInterface
+@Incubating(since = "7.25.0")
 interface AdditionalFlowStepPredicate {
     boolean isAdditionalFlowStep(
             DataFlowNode srcNode,

@@ -37,8 +37,8 @@ import org.openrewrite.java.tree.MethodCall;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Value
 @AllArgsConstructor(access = lombok.AccessLevel.PACKAGE)
+@Value
 class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
     private static final InvocationMatcher MATCHES_ALL = e -> true;
 

@@ -50,8 +50,8 @@ class ConstantFoldTest implements RewriteTest {
         }
     }
 
-    @Test
     @DocumentExample
+    @Test
     void constantFoldTagsElements() {
         rewriteRun(
           java(

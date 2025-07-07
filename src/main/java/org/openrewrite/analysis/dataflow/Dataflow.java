@@ -31,8 +31,8 @@ import java.util.Set;
 /**
  * <a href="https://en.wikipedia.org/wiki/Dataflow_programming">Dataflow</a>.
  */
-@Incubating(since = "7.24.0")
 @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+@Incubating(since = "7.24.0")
 public class Dataflow {
     @Nullable
     private final DataFlowNode n;

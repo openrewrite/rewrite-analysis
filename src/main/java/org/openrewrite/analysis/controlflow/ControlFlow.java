@@ -37,8 +37,8 @@ import java.util.stream.Stream;
 
 import static org.openrewrite.Tree.randomId;
 
-@Incubating(since = "7.25.0")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Incubating(since = "7.25.0")
 public final class ControlFlow {
     private static final String CONTROL_FLOW_MESSAGE_KEY = "__CONTROL_FLOW_SUMMARY";
 
@@ -493,8 +493,8 @@ public final class ControlFlow {
             return iff;
         }
 
-        @SuppressWarnings("SpellCheckingInspection")
         @Override
+        @SuppressWarnings("SpellCheckingInspection")
         public J.If.Else visitElse(J.If.Else else_, P p) {
             addCursorToBasicBlock();
             visit(else_.getBody(), p);

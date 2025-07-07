@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 /**
  * The most basic version of a {@link MethodMatcher} that allows implementers to craft custom matching logic.
  */
-@Incubating(since = "8.1.3")
 @FunctionalInterface
+@Incubating(since = "8.1.3")
 public interface InvocationMatcher {
 
     /**

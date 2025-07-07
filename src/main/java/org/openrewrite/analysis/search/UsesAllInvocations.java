@@ -38,9 +38,9 @@ import static java.util.Objects.requireNonNull;
  *
  * @implNote This is a copy of {@link org.openrewrite.java.search.UsesAllMethods} but for any {@link InvocationMatcher}.
  */
-@RequiredArgsConstructor
 @Incubating(since = "2.2.4")
 @LoathingOfOthers("org.openrewrite.java.MethodMatcher")
+@RequiredArgsConstructor
 public class UsesAllInvocations<P> extends JavaIsoVisitor<P> {
     private final List<InvocationMatcher> invocationMatchers;
 
