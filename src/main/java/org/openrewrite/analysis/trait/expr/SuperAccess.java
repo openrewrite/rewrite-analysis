@@ -37,12 +37,11 @@ public interface SuperAccess extends InstanceAccess {
         public Validation<TraitErrors, SuperAccess> viewOf(Cursor cursor) {
             return InstanceAccessBase.viewOf(cursor)
                     .bind(iab -> {
-                        if ("super".equals(iab.getName())) {
-                            return Validation.success(new SuperAccessBase(iab));
-                        } else {
-                            return TraitErrors.invalidTraitCreationError("Instance Access is not a Super Access");
-                        }
-                    });
+                if ("super".equals(iab.getName())) {
+                    return Validation.success(new SuperAccessBase(iab));
+                }
+                return TraitErrors.invalidTraitCreationError("Instance Access is not a Super Access");
+            });
         }
     }
 

@@ -334,15 +334,14 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
         public PrintOutputCapture<P> append(char c) {
             if (enabled) {
                 return super.append(c);
-            } else {
-                switch (c) {
-                    case '\t':
-                    case '\n':
-                    case '\r':
-                        return super.append(c);
-                    default:
-                        return super.append(' ');
-                }
+            }
+            switch (c) {
+                case '\t':
+                case '\n':
+                case '\r':
+                    return super.append(c);
+                default:
+                    return super.append(' ');
             }
         }
 
@@ -350,13 +349,13 @@ final class ControlFlowJavaPrinter<P> extends JavaPrinter<P> {
         public PrintOutputCapture<P> append(@Nullable String text) {
             if (enabled) {
                 return super.append(text);
-            } else if (text != null) {
+            }
+            if (text != null) {
                 return super.append(text.replaceAll(
                         "[^ \\t\\n\\r]",
                         " "));
-            } else {
-                return this;
             }
+            return this;
         }
 
         public void enable() {

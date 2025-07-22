@@ -144,7 +144,8 @@ public class SimpleFileServer extends AbstractTestServer {
             if (!filesRoot.exists()) {
                 LOG.error("{} doesn't exists!", filesRoot.getAbsolutePath());
                 return;
-            } else if (!filesRoot.isDirectory()) {
+            }
+            if (!filesRoot.isDirectory()) {
                 LOG.error("{} is no directory!", filesRoot.getAbsolutePath());
                 return;
             }

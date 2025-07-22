@@ -155,11 +155,10 @@ final class ExternalFlowModels {
                 return (srcNode, sinkNode) ->
                         sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orSome(false) &&
                                 callMatcher.advanced().isSelect(srcNode.getCursor());
-            } else {
-                return (srcNode, sinkNode) ->
-                        sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orSome(false) &&
-                                callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndex);
             }
+            return (srcNode, sinkNode) ->
+                    sinkNode.asExprParent(Call.class).map(call -> call.matches(callMatcher)).orSome(false) &&
+                            callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndex);
         }
 
         /**
@@ -185,11 +184,10 @@ final class ExternalFlowModels {
                 return (srcNode, sinkNode) ->
                         callMatcher.advanced().isSelect(srcNode.getCursor()) &&
                                 callMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndices.outputIndex);
-            } else {
-                return (srcNode, sinkNode) ->
-                        callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndices.inputIndex) &&
-                                callMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndices.outputIndex);
             }
+            return (srcNode, sinkNode) ->
+                    callMatcher.advanced().isParameter(srcNode.getCursor(), argumentIndices.inputIndex) &&
+                            callMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndices.outputIndex);
         }
 
         @Value
@@ -302,7 +300,8 @@ final class ExternalFlowModels {
         public FullyQualifiedNameToFlowModels merge(FullyQualifiedNameToFlowModels other) {
             if (this.isEmpty()) {
                 return other;
-            } else if (other.isEmpty()) {
+            }
+            if (other.isEmpty()) {
                 return this;
             }
             Map<String, List<FlowModel>> value = new HashMap<>(this.value);

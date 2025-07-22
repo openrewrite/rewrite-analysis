@@ -34,12 +34,11 @@ public interface TraitFactory<T extends Top> {
             Validation<TraitErrors, T> view = viewOf(c);
             if (view.isSuccess()) {
                 return view;
+            }
+            if (errors == null) {
+                errors = view.fail();
             } else {
-                if (errors == null) {
-                    errors = view.fail();
-                } else {
-                    errors = TraitErrors.semigroup.sum(errors, view.fail());
-                }
+                errors = TraitErrors.semigroup.sum(errors, view.fail());
             }
         }
         if (errors != null) {

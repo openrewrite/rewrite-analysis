@@ -213,7 +213,8 @@ class VarAccessBase extends Top.Base implements VarAccess {
 
         if ("this".equals(ident.getSimpleName())) {
             return TraitErrors.invalidTraitCreationError("`this` is not a variable access");
-        } else if ("super".equals(ident.getSimpleName())) {
+        }
+        if ("super".equals(ident.getSimpleName())) {
             return TraitErrors.invalidTraitCreationError("`super` is not a variable access");
         }
 

@@ -120,18 +120,16 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                     SearchResult searchResult = maybeSearchResult.get();
                     String newDescription =
                             (searchResult.getDescription() == null ? "" : searchResult.getDescription()) +
-                            " | " + number + label;
+                                    " | " + number + label;
                     return statement.withMarkers(
                             statement
                                     .getMarkers()
                                     .removeByType(SearchResult.class)
                                     .add(searchResult.withDescription(newDescription)));
-                } else {
-                    return SearchResult.found(statement, "" + number + label);
                 }
-            } else {
-                return statement;
+                return SearchResult.found(statement, "" + number + label);
             }
+            return statement;
         }
 
         @Override
@@ -141,9 +139,8 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                 assert b != null;
                 int number = nodeNumbers.computeIfAbsent(b, __ -> ++nodeNumber);
                 return SearchResult.found(expression, number + labelDescription(expression));
-            } else {
-                return expression;
             }
+            return expression;
         }
 
         @Override
@@ -153,9 +150,8 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                 assert b != null;
                 int number = nodeNumbers.computeIfAbsent(b, __ -> ++nodeNumber);
                 return SearchResult.found(else_, number + labelDescription(else_));
-            } else {
-                return else_;
             }
+            return else_;
         }
 
         private String labelDescription(J j) {

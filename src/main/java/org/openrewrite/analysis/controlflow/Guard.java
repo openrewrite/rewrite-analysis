@@ -50,9 +50,8 @@ public final class Guard {
     public <T> T map(Function<Expression, T> whenExpression, Function<J.Case, T> whenCase) {
         if (expression != null) {
             return whenExpression.apply(expression);
-        } else {
-            return whenCase.apply(theCase);
         }
+        return whenCase.apply(theCase);
     }
 
     public static Optional<Guard> from(Cursor cursor) {
@@ -71,12 +70,11 @@ public final class Guard {
         }
         return getTypeSafe(cursor, e)
                 .map(type -> {
-                    if (TypeUtils.isAssignableTo(JavaType.Primitive.Boolean, type)) {
-                        return new Guard(cursor, e, null);
-                    } else {
-                        return null;
-                    }
-                });
+            if (TypeUtils.isAssignableTo(JavaType.Primitive.Boolean, type)) {
+                return new Guard(cursor, e, null);
+            }
+            return null;
+        });
     }
 
     private static Optional<J.ControlParentheses<?>> getControlParenthesesFromParent(Cursor cursor) {
@@ -193,10 +191,9 @@ public final class Guard {
                         Optional.ofNullable(c.getParentOrThrow().firstEnclosing(J.WhileLoop.class)).map(J.WhileLoop::getCondition).map(condition -> condition == controlParentheses).orElse(false) ||
                         Optional.ofNullable(c.getParentOrThrow().firstEnclosing(J.DoWhileLoop.class)).map(J.DoWhileLoop::getWhileCondition).map(condition -> condition == controlParentheses).orElse(false)) {
                     return Optional.of(JavaType.Primitive.Boolean);
-                } else {
-                    Cursor parent = c.getParentTreeCursor();
-                    return getTypeSafe(parent, parent.getValue());
                 }
+                Cursor parent = c.getParentTreeCursor();
+                return getTypeSafe(parent, parent.getValue());
             }
         } else if (firstEnclosing instanceof J.Parentheses) {
             J.Parentheses<?> parentheses = (J.Parentheses<?>) firstEnclosing;

@@ -146,19 +146,17 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
                 ControlFlowNode.Start start = (ControlFlowNode.Start) node;
                 if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER == start.getGraphType()) {
                     return -2;
-                } else {
-                    return -1;
                 }
-            } else if (node instanceof ControlFlowNode.End) {
+                return -1;
+            }
+            if (node instanceof ControlFlowNode.End) {
                 ControlFlowNode.End end = (ControlFlowNode.End) node;
                 if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER == end.getGraphType()) {
                     return 2;
-                } else {
-                    return 1;
                 }
-            } else {
-                return 0;
+                return 1;
             }
+            return 0;
         }
     }
 
@@ -167,21 +165,19 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
             ControlFlowNode.GraphTerminator graphTerminator = (ControlFlowNode.GraphTerminator) node;
             if (ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER == graphTerminator.getGraphType()) {
                 return "circle";
-            } else {
-                return "oval";
             }
-        } else if (node instanceof ControlFlowNode.ConditionNode) {
-            return "diamond";
-        } else {
-            return "box";
+            return "oval";
         }
+        if (node instanceof ControlFlowNode.ConditionNode) {
+            return "diamond";
+        }
+        return "box";
     }
 
     private static String getFont(ControlFlowNode node) {
         if (node instanceof ControlFlowNode.Start || node instanceof ControlFlowNode.End) {
             return "Arial";
-        } else {
-            return "Courier";
         }
+        return "Courier";
     }
 }
