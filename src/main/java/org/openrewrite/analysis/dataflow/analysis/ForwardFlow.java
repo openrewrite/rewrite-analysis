@@ -164,25 +164,27 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             J.If _if = (J.If) j;
             if (_if.getElsePart() != null) {
                 return Stream.of(_if.getThenPart(), _if.getElsePart().getBody()).collect(Collectors.toSet());
-            } else {
-                return Collections.singleton(_if.getThenPart());
             }
+            return Collections.singleton(_if.getThenPart());
         }
         if (j instanceof J.WhileLoop) {
             return Collections.singleton(((J.WhileLoop) j).getBody());
-        } else if (j instanceof J.DoWhileLoop) {
+        }
+        if (j instanceof J.DoWhileLoop) {
             return Collections.singleton(((J.DoWhileLoop) j).getBody());
-        } else if (j instanceof J.ForLoop) {
+        }
+        if (j instanceof J.ForLoop) {
             return Collections.singleton(((J.ForLoop) j).getBody());
-        } else if (j instanceof J.ForEachLoop) {
+        }
+        if (j instanceof J.ForEachLoop) {
             return Collections.singleton(((J.ForEachLoop) j).getBody());
         } else if (j instanceof J.Try) {
             J.Try _try = (J.Try) j;
             return Stream.concat(
-                            Stream.of(_try.getBody(), _try.getFinally()),
-                            _try.getCatches().stream().map(J.Try.Catch::getBody)
-                    )
-                    .collect(Collectors.toSet());
+                    Stream.of(_try.getBody(), _try.getFinally()),
+                    _try.getCatches().stream().map(J.Try.Catch::getBody)
+            )
+            .collect(Collectors.toSet());
         } else {
             return Collections.emptySet();
         }

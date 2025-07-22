@@ -66,10 +66,9 @@ final class MethodTypeUtils {
             if (declaredType instanceof JavaType.GenericTypeVariable) {
                 // If we've already solved for this type variable, return the solved type
                 return typeVariableMap.computeIfAbsent((JavaType.GenericTypeVariable) declaredType, __ -> accessType);
-            } else {
-                // If this is not a GenericTypeVariable, then we can just return the declared type
-                return declaredType;
             }
+            // If this is not a GenericTypeVariable, then we can just return the declared type
+            return declaredType;
         }
     }
 }

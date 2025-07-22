@@ -120,9 +120,8 @@ public final class ControlFlow {
             }
             if (current.size() == 1 && current.iterator().next() instanceof ControlFlowNode.BasicBlock) {
                 return (ControlFlowNode.BasicBlock) current.iterator().next();
-            } else {
-                return addBasicBlockToCurrent();
             }
+            return addBasicBlockToCurrent();
         }
 
         /**
@@ -133,10 +132,9 @@ public final class ControlFlow {
             if (currentBasicBlock.hasLeader()) {
                 // The current basic block is already non-empty. Create a new one.
                 return currentBasicBlock.addBasicBlock();
-            } else {
-                // The current basic block is empty. Return it.
-                return currentBasicBlock;
             }
+            // The current basic block is empty. Return it.
+            return currentBasicBlock;
         }
 
         ControlFlowNode.BasicBlock addBasicBlockToCurrent() {
@@ -391,9 +389,8 @@ public final class ControlFlow {
             return nodes.stream().map(controlFlowNode -> {
                 if (controlFlowNode instanceof ControlFlowNode.ConditionNode) {
                     return (ControlFlowNode.ConditionNode) controlFlowNode;
-                } else {
-                    return controlFlowNode.addConditionNodeTruthFirst();
                 }
+                return controlFlowNode.addConditionNodeTruthFirst();
             }).collect(Collectors.toSet());
         }
 
@@ -401,9 +398,8 @@ public final class ControlFlow {
             return nodes.stream().map(controlFlowNode -> {
                 if (controlFlowNode instanceof ControlFlowNode.ConditionNode) {
                     return (ControlFlowNode.ConditionNode) controlFlowNode;
-                } else {
-                    return controlFlowNode.addConditionNodeFalseFirst();
                 }
+                return controlFlowNode.addConditionNodeFalseFirst();
             }).collect(Collectors.toSet());
         }
 
@@ -877,9 +873,8 @@ public final class ControlFlow {
                 currentAsBasicBlock().addSuccessor(summary.start);
                 current = Collections.singleton(summary.end);
                 return lambda;
-            } else {
-                return super.visitLambda(lambda, p);
             }
+            return super.visitLambda(lambda, p);
         }
 
         @Override

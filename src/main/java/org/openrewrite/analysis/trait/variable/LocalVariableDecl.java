@@ -113,9 +113,8 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
                 J.Block block = (J.Block) t;
                 if (block.isStatic()) {
                     return StaticInitializerMethod.viewOf(c.getParentTreeCursor()).map(m -> m);
-                } else {
-                    return InstanceInitializer.viewOf(c.getParentTreeCursor()).map(m -> m);
                 }
+                return InstanceInitializer.viewOf(c.getParentTreeCursor()).map(m -> m);
             }
             if (t instanceof J.MethodDeclaration) {
                 J.MethodDeclaration m = (J.MethodDeclaration) t;

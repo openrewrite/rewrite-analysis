@@ -519,11 +519,10 @@ public class FileUtils {
     public static @Nullable File toFile(URL url) {
         if (url == null || !"file".equalsIgnoreCase(url.getProtocol())) {
             return null;
-        } else {
-            String filename = url.getFile().replace('/', File.separatorChar);
-            filename = decodeUrl(filename);
-            return new File(filename);
         }
+        String filename = url.getFile().replace('/', File.separatorChar);
+        filename = decodeUrl(filename);
+        return new File(filename);
     }
 
     /**
@@ -1768,9 +1767,8 @@ public class FileUtils {
 
         if (file.isDirectory()) {
             return sizeOfDirectory(file);
-        } else {
-            return file.length();
         }
+        return file.length();
 
     }
 

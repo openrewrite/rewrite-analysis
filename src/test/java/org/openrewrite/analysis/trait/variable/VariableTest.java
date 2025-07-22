@@ -47,12 +47,11 @@ class VariableTest implements RewriteTest {
                               .viewOf(getCursor()).map(var -> {
                                   if (v.getVarAccesses().contains(var)) {
                                       return SearchResult.found(
-                                        identifier,
-                                        v.getName() + ": " + thisVariableIndex
+                                              identifier,
+                                              v.getName() + ": " + thisVariableIndex
                                       );
-                                  } else {
-                                      return identifier;
                                   }
+                                  return identifier;
                               })
                               .orSuccess(identifier);
                         }

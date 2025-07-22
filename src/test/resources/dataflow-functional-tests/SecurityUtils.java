@@ -72,9 +72,8 @@ public final class SecurityUtils {
         if (host.endsWith(".amazonaws.com")) {
             String defaultHost = apiId + ".execute-api." + region + ".amazonaws.com";
             return host.equals(defaultHost);
-        } else {
-            return LambdaContainerHandler.getContainerConfig().getCustomDomainNames().contains(host);
         }
+        return LambdaContainerHandler.getContainerConfig().getCustomDomainNames().contains(host);
     }
 
     /**

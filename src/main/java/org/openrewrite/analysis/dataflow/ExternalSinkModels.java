@@ -220,7 +220,8 @@ public final class ExternalSinkModels {
         public FullyQualifiedNameToSinkModels merge(FullyQualifiedNameToSinkModels other) {
             if (other.isEmpty()) {
                 return this;
-            } else if (isEmpty()) {
+            }
+            if (isEmpty()) {
                 return other;
             }
             Map<String, List<SinkModel>> merged = new HashMap<>(this.fqnToSinkModels);

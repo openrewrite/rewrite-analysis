@@ -246,7 +246,8 @@ public abstract class ControlFlowNode {
                 String caseString = caseStatement.toString();
                 if (caseStatement.getType() == J.Case.Type.Statement) {
                     return caseString.substring(0, caseString.indexOf(":") + 1);
-                } else if (caseStatement.getType() == J.Case.Type.Rule) {
+                }
+                if (caseStatement.getType() == J.Case.Type.Rule) {
                     return caseString.substring(0, caseString.indexOf("->") + 2);
                 }
             }
@@ -398,18 +399,16 @@ public abstract class ControlFlowNode {
             String statementsWithinBlock = getStatementsWithinBlock();
             if (statementsWithinBlock.contains("\n")) {
                 return "BasicBlock { contents=```\n" + statementsWithinBlock + "\n``` }";
-            } else {
-                return "BasicBlock { contents=`" + statementsWithinBlock + "` }";
             }
+            return "BasicBlock { contents=`" + statementsWithinBlock + "` }";
         }
 
         @Override
         public String toString() {
             if (node.isEmpty()) {
                 return "BasicBlock { No leader yet! }";
-            } else {
-                return "BasicBlock { leader=" + getLeader() + " }";
             }
+            return "BasicBlock { leader=" + getLeader() + " }";
         }
 
         private static List<Cursor> computeBlockList(Cursor cursor) {
@@ -445,9 +444,8 @@ public abstract class ControlFlowNode {
         String internalToDescriptiveString() {
             if (successor == null) {
                 return this + " { No successor yet! }";
-            } else {
-                return this + " { successor=" + successor.toDescriptiveString() + " }";
             }
+            return this + " { successor=" + successor.toDescriptiveString() + " }";
         }
 
         @Override

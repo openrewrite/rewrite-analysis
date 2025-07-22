@@ -98,9 +98,8 @@ public interface GenericExternalModel extends BasicInvocationMatcher {
             if (argumentMatcher.group(2) != null) {
                 int argumentIndexEnd = Integer.parseInt(argumentMatcher.group(2));
                 return Optional.of(new ArgumentRange(argumentIndexStart, argumentIndexEnd));
-            } else {
-                return Optional.of(new ArgumentRange(argumentIndexStart, argumentIndexStart));
             }
+            return Optional.of(new ArgumentRange(argumentIndexStart, argumentIndexStart));
         }
         return Optional.empty();
     }
@@ -147,11 +146,14 @@ class Internal {
                 return ((JavaType.Primitive) type).getClassName();
             }
             return ((JavaType.Primitive) type).getKeyword();
-        } else if (type instanceof JavaType.Unknown) {
+        }
+        if (type instanceof JavaType.Unknown) {
             return "*";
-        } else if (type instanceof JavaType.FullyQualified) {
+        }
+        if (type instanceof JavaType.FullyQualified) {
             return ((JavaType.FullyQualified) type).getFullyQualifiedName();
-        } else if (type instanceof JavaType.Array) {
+        }
+        if (type instanceof JavaType.Array) {
             JavaType elemType = ((JavaType.Array) type).getElemType();
             return typePattern(elemType) + "[]";
         }
