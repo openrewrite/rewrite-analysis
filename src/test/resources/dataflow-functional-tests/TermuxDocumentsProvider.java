@@ -32,8 +32,9 @@ import com.termux.shared.termux.TermuxConstants;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedList;
+
+import static java.util.Collections.addAll;
 
 /**
  * A document provider for the Storage Access Framework which exposes the files in the
@@ -192,7 +193,7 @@ public class TermuxDocumentsProvider extends DocumentsProvider {
             }
             if (isInsideHome) {
                 if (file.isDirectory()) {
-                    Collections.addAll(pending, file.listFiles());
+                    addAll(pending, file.listFiles());
                 } else {
                     if (file.getName().toLowerCase().contains(query)) {
                         includeFile(result, null, file);

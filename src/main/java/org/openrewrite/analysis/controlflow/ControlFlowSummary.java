@@ -24,7 +24,8 @@ import org.openrewrite.java.tree.Expression;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * To create an instance call {@link ControlFlow#findControlFlow()}.
@@ -61,7 +62,7 @@ public final class ControlFlowSummary {
                 .stream()
                 .filter(ControlFlowNode.BasicBlock.class::isInstance)
                 .map(ControlFlowNode.BasicBlock.class::cast)
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     public Set<ControlFlowNode.ConditionNode> getConditionNodes() {
@@ -69,7 +70,7 @@ public final class ControlFlowSummary {
                 .stream()
                 .filter(ControlFlowNode.ConditionNode.class::isInstance)
                 .map(ControlFlowNode.ConditionNode.class::cast)
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     public Set<Expression> computeReachableExpressions(BarrierGuardPredicate predicate) {
@@ -77,14 +78,14 @@ public final class ControlFlowSummary {
                 .stream()
                 .filter(cursor -> cursor.getValue() instanceof Expression)
                 .map(cursor -> (Expression) cursor.getValue())
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     public Set<Cursor> computeExecutableCodePoints(BarrierGuardPredicate predicate) {
         return computeReachableBasicBlock(predicate)
                 .stream()
                 .flatMap(b -> b.getNodeCursors().stream())
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     public Set<ControlFlowNode.BasicBlock> computeReachableBasicBlock(BarrierGuardPredicate predicate) {
@@ -94,7 +95,7 @@ public final class ControlFlowSummary {
                 .stream()
                 .filter(ControlFlowNode.BasicBlock.class::isInstance)
                 .map(ControlFlowNode.BasicBlock.class::cast)
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     private void recurseComputeReachableBasicBlock(ControlFlowNode visit, BarrierGuardPredicate predicate, Set<ControlFlowNode> reachable) {

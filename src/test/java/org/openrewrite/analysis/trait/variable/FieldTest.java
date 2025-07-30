@@ -27,10 +27,10 @@ import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
-import java.util.Collections;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.openrewrite.java.Assertions.java;
@@ -138,7 +138,7 @@ class FieldTest implements RewriteTest {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(field -> {
               assertNotNull(field.getName(), "Field callable is null");
-              assertEquals(Collections.singleton(Flag.Static), field.getFlags(), "Field should be static");
+              assertEquals(singleton(Flag.Static), field.getFlags(), "Field should be static");
               return SearchResult.found(variable);
           }).orSuccess(variable)))),
           java(

@@ -34,8 +34,9 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.UUID;
+
+import static java.util.Collections.emptySet;
 
 /**
  * Represents a parameter in a {@link org.openrewrite.java.tree.J.MethodDeclaration} or
@@ -122,7 +123,7 @@ class ParameterBase extends Top.Base implements Parameter {
     @Override
     public Collection<VarAccess> getVarAccesses() {
         if (methodDeclaration.getBody() == null) {
-            return Collections.emptySet();
+            return emptySet();
         }
         return VarAccess.findAllInScope(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
     }
@@ -130,7 +131,7 @@ class ParameterBase extends Top.Base implements Parameter {
     @Override
     public Collection<Expr> getAssignedValues() {
         if (methodDeclaration.getBody() == null) {
-            return Collections.emptySet();
+            return emptySet();
         }
         return VariableUtil.findAssignedValues(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
     }

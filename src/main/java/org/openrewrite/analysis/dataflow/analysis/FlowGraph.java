@@ -22,9 +22,12 @@ import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.java.tree.J;
 
 import javax.annotation.CheckReturnValue;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.*;
 
 @Incubating(since = "7.24.0")
 @RequiredArgsConstructor
@@ -34,13 +37,13 @@ public class FlowGraph {
     @Getter
     private final DataFlowNode node;
 
-    private Map<J, FlowGraph> edges = Collections.emptyMap();
+    private Map<J, FlowGraph> edges = emptyMap();
 
     public List<FlowGraph> getEdges() {
         if (edges.isEmpty()) {
             return emptyList();
         }
-        return Collections.unmodifiableList(new ArrayList<>(edges.values()));
+        return unmodifiableList(new ArrayList<>(edges.values()));
     }
 
     /**

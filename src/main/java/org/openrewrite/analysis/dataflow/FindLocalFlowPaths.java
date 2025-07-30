@@ -27,8 +27,12 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.marker.SearchResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 
+import static java.util.Collections.newSetFromMap;
 import static java.util.Objects.requireNonNull;
 
 @Incubating(since = "7.24.0")
@@ -43,7 +47,7 @@ public class FindLocalFlowPaths<P> extends JavaIsoVisitor<P> {
             getCursor().putMessage(FLOW_GRAPHS, new ArrayList<>());
             JavaSourceFile c = (JavaSourceFile) super.visit(tree, p);
 
-            Set<J> flowSteps = Collections.newSetFromMap(new IdentityHashMap<>());
+            Set<J> flowSteps = newSetFromMap(new IdentityHashMap<>());
             List<SinkFlowSummary> sinkFlows = getCursor().getMessage(FLOW_GRAPHS);
             for (SinkFlowSummary flowGraphSummary : requireNonNull(sinkFlows)) {
                 flowSteps.addAll(flowGraphSummary.getFlowParticipants());

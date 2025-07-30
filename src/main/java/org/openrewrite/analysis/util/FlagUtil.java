@@ -20,7 +20,8 @@ import org.openrewrite.java.tree.Flag;
 import org.openrewrite.java.tree.J;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class FlagUtil {
@@ -56,6 +57,6 @@ public final class FlagUtil {
     }
 
     public static Collection<Flag> fromModifiers(Collection<J.Modifier> modifiers) {
-        return modifiers.stream().map(J.Modifier::getType).map(FlagUtil::fromModifierType).collect(Collectors.toSet());
+        return modifiers.stream().map(J.Modifier::getType).map(FlagUtil::fromModifierType).collect(toSet());
     }
 }

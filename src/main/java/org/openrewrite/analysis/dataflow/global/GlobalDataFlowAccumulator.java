@@ -35,7 +35,9 @@ import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.MethodCall;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static java.util.Collections.newSetFromMap;
+import static java.util.stream.Collectors.toSet;
 
 @AllArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 @Value
@@ -108,7 +110,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                 n.asExprParent(Call.class).bind(Call::getMethodType).forEach(methodType -> {
                     JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
                     methodCallFlowGraphs
-                            .computeIfAbsent(declaredMethodType, __ -> Collections.newSetFromMap(new IdentityHashMap<>()))
+                            .computeIfAbsent(declaredMethodType, __ -> newSetFromMap(new IdentityHashMap<>()))
                             .add(flowGraph);
                     if (methodReturnFlowGraphs.containsKey(declaredMethodType)) {
                         methodReturnFlowGraphs.get(declaredMethodType).forEach(returnGraph -> returnGraph.addEdge(flowGraph));
@@ -124,7 +126,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                         List<Set<FlowGraph>> flowGraphs = argumentFlowGraphs
                                 .computeIfAbsent(declaredMethodType, __ -> flowGraphList(methodCall.getArguments().size()));
                         while (argumentIndex >= flowGraphs.size()) {
-                            flowGraphs.add(Collections.newSetFromMap(new IdentityHashMap<>()));
+                            flowGraphs.add(newSetFromMap(new IdentityHashMap<>()));
                         }
                         flowGraphs.get(argumentIndex).add(flowGraph);
                         if (parameterFlowGraphs.containsKey(declaredMethodType)) {
@@ -142,7 +144,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                     JavaType.Method methodType = methodDeclaration.getMethodType();
                     if (methodType != null) {
                         methodReturnFlowGraphs
-                                .computeIfAbsent(methodType, __ -> Collections.newSetFromMap(new IdentityHashMap<>()))
+                                .computeIfAbsent(methodType, __ -> newSetFromMap(new IdentityHashMap<>()))
                                 .add(flowGraph);
                         if (methodCallFlowGraphs.containsKey(methodType)) {
                             methodCallFlowGraphs.get(methodType).forEach(flowGraph::addEdge);
@@ -157,7 +159,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
     }
 
     private Set<Cursor> pruneFlowGraphs() {
-        Set<FlowGraph> copiedSourceFlowGraphs = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<FlowGraph> copiedSourceFlowGraphs = newSetFromMap(new IdentityHashMap<>());
         for (FlowGraph source : sourceFlowGraphs) {
             firstPassPruneDepthFirst(
                     source,
@@ -176,7 +178,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                 .stream()
                 .map(FlowGraph::getNode)
                 .map(DataFlowNode::getCursor)
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     private static FlowGraph copy(FlowGraph flowGraph) {
@@ -361,7 +363,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                 prunedParticipatingCursors
                         .stream()
                         .map(Cursor::<J>getValue)
-                        .collect(Collectors.toSet());
+                        .collect(toSet());
 
         @Override
         public boolean isSource() {
@@ -426,7 +428,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
     private static List<Set<FlowGraph>> flowGraphList(int size) {
         List<Set<FlowGraph>> flowGraphs = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            flowGraphs.add(Collections.newSetFromMap(new IdentityHashMap<>()));
+            flowGraphs.add(newSetFromMap(new IdentityHashMap<>()));
         }
         return flowGraphs;
     }

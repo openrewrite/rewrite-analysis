@@ -26,11 +26,12 @@ import org.openrewrite.analysis.trait.variable.Parameter;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
+
+import static java.util.Collections.emptyList;
 
 /**
  * A compiler-generated initializer method (could be static or
@@ -49,7 +50,7 @@ public interface InitializerMethod extends Callable {
      */
     @Override
     default List<Parameter> getParameters() {
-        return Collections.emptyList();
+        return emptyList();
     }
 }
 

@@ -22,7 +22,8 @@ import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerator {
     @Override
@@ -43,7 +44,7 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
                         .stream()
                         .map(NodeToNodeText::new)
                         .sorted()
-                        .collect(Collectors.toList());
+                        .collect(toList());
         int vizSrc = -1;
         int vizSink = -1;
         for (int i = 0; i < nodeToNodeText.size(); i++) {

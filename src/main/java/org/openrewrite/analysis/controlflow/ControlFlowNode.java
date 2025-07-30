@@ -29,9 +29,11 @@ import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.openrewrite.analysis.controlflow.ControlFlowIllegalStateException.exceptionMessageBuilder;
 
 /**
@@ -44,14 +46,14 @@ import static org.openrewrite.analysis.controlflow.ControlFlowIllegalStateExcept
 @Incubating(since = "7.25.0")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public abstract class ControlFlowNode {
-    final Set<ControlFlowNode> predecessors = Collections.newSetFromMap(new IdentityHashMap<>());
+    final Set<ControlFlowNode> predecessors = newSetFromMap(new IdentityHashMap<>());
 
     abstract Set<ControlFlowNode> getSuccessors();
 
     protected abstract void _addSuccessorInternal(ControlFlowNode successor);
 
     Set<ControlFlowNode> getPredecessors() {
-        return Collections.unmodifiableSet(predecessors);
+        return unmodifiableSet(predecessors);
     }
 
     <C extends ControlFlowNode> C addSuccessor(C successor) {
@@ -175,12 +177,12 @@ public abstract class ControlFlowNode {
         Set<ControlFlowNode> getSuccessors() {
             verifyState();
             if (isAlwaysTrue()) {
-                return Collections.singleton(truthySuccessor);
+                return singleton(truthySuccessor);
             }
             if (isAlwaysFalse()) {
-                return Collections.singleton(falsySuccessor);
+                return singleton(falsySuccessor);
             }
-            return Stream.of(truthySuccessor, falsySuccessor).collect(Collectors.toSet());
+            return Stream.of(truthySuccessor, falsySuccessor).collect(toSet());
         }
 
         private void verifyState() {
@@ -293,7 +295,7 @@ public abstract class ControlFlowNode {
         }
 
         public List<Cursor> getNodeCursors() {
-            return Collections.unmodifiableList(node);
+            return unmodifiableList(node);
         }
 
         String getStatementsWithinBlock() {
@@ -311,7 +313,7 @@ public abstract class ControlFlowNode {
                                 }
                                 return Stream.of(v);
                             })
-                            .collect(Collectors.toList());
+                            .collect(toList());
             ControlFlowJavaPrinter<Integer> printer = new ControlFlowJavaPrinter<>(nodeValuesExpanded);
             Cursor commonBlock = getCommonBlock();
             printer.visit(commonBlock.getValue(), capture, commonBlock.getParentOrThrow());
@@ -337,7 +339,7 @@ public abstract class ControlFlowNode {
         }
 
         private List<J> getNodeValues() {
-            return node.stream().map(Cursor::<J>getValue).collect(Collectors.toList());
+            return node.stream().map(Cursor::<J>getValue).collect(toList());
         }
 
         void addCursorToBasicBlock(Cursor expression) {
@@ -384,9 +386,9 @@ public abstract class ControlFlowNode {
         @Override
         Set<ControlFlowNode> getSuccessors() {
             if (successor == null) {
-                return  Collections.emptySet(); // e.g. a switch statement without a break / return
+                return  emptySet(); // e.g. a switch statement without a break / return
             }
-            return Collections.singleton(successor);
+            return singleton(successor);
         }
 
         @Override
@@ -415,7 +417,7 @@ public abstract class ControlFlowNode {
             List<Cursor> blocks = new ArrayList<>();
             cursor.getPathAsCursors(c -> c.getValue() instanceof J.Block)
                     .forEachRemaining(blocks::add);
-            Collections.reverse(blocks);
+            reverse(blocks);
             return blocks;
         }
     }
@@ -437,7 +439,7 @@ public abstract class ControlFlowNode {
 
         @Override
         Set<ControlFlowNode> getSuccessors() {
-            return Collections.singleton(successor);
+            return singleton(successor);
         }
 
         @Override
@@ -479,9 +481,9 @@ public abstract class ControlFlowNode {
                 if (successor == null) {
                     throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Lambda End node has no successor").thisNode(this).addPredecessors(this));
                 }
-                return Collections.singleton(successor);
+                return singleton(successor);
             }
-            return Collections.emptySet();
+            return emptySet();
         }
 
         @Override

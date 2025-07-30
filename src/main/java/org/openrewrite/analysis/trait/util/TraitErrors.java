@@ -20,9 +20,16 @@ import fj.data.Validation;
 import org.openrewrite.Cursor;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
+
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 @Immutable
 public final class TraitErrors implements Iterable<TraitError> {
@@ -31,7 +38,7 @@ public final class TraitErrors implements Iterable<TraitError> {
     private TraitErrors(List<TraitError> errors) {
         // Defensive copy
         this.errors =
-                Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(errors, "errors cannot be null")));
+                unmodifiableList(new ArrayList<>(Objects.requireNonNull(errors, "errors cannot be null")));
     }
 
     @Override
@@ -47,11 +54,11 @@ public final class TraitErrors implements Iterable<TraitError> {
     public String toString() {
         return "TraitErrors: " + errors.stream()
                 .map(TraitError::getError)
-                .collect(Collectors.joining("\n\t- ", "\n\t- ", ""));
+                .collect(joining("\n\t- ", "\n\t- ", ""));
     }
 
     public static TraitErrors fromSingle(TraitError error) {
-        return new TraitErrors(Collections.singletonList(error));
+        return new TraitErrors(singletonList(error));
     }
 
     public static TraitErrors fromSingleError(String error) {
@@ -81,6 +88,6 @@ public final class TraitErrors implements Iterable<TraitError> {
     }
 
     public static Semigroup<TraitErrors> semigroup = Semigroup.semigroupDef((a, b) -> new TraitErrors(
-            Stream.concat(a.errors.stream(), b.errors.stream()).collect(Collectors.toList())
+            Stream.concat(a.errors.stream(), b.errors.stream()).collect(toList())
     ));
 }

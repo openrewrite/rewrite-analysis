@@ -29,7 +29,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * The most basic version of a {@link MethodMatcher} that allows implementers to craft custom matching logic.
@@ -97,7 +98,7 @@ public interface InvocationMatcher {
     }
 
     static InvocationMatcher fromMethodMatchers(Collection<? extends MethodMatcher> matchers) {
-        return from(matchers.stream().map(InvocationMatcher::fromMethodMatcher).collect(Collectors.toSet()));
+        return from(matchers.stream().map(InvocationMatcher::fromMethodMatcher).collect(toSet()));
     }
 
     default AdvancedInvocationMatcher advanced() {
