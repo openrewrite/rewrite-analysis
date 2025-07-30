@@ -24,7 +24,10 @@ import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static java.util.Collections.newSetFromMap;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 @AllArgsConstructor
 public class SinkFlowSummary {
@@ -53,7 +56,7 @@ public class SinkFlowSummary {
             getSinkCursors()
                     .stream()
                     .map(Cursor::<J>getValue)
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
     /**
      * A restricted set of sinks that are always {@link Expression}s.
@@ -66,21 +69,21 @@ public class SinkFlowSummary {
                     .stream()
                     .filter(Expression.class::isInstance)
                     .map(Expression.class::cast)
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
     @Getter(lazy = true)
     private final Set<Cursor> flowCursorParticipants =
             getFlows()
                     .stream()
                     .flatMap(Collection::stream)
-                    .collect(Collectors.toCollection(() -> Collections.newSetFromMap(new IdentityHashMap<>())));
+                    .collect(toCollection(() -> newSetFromMap(new IdentityHashMap<>())));
 
     @Getter(lazy = true)
     private final Set<J> flowParticipants =
             getFlowCursorParticipants()
                     .stream()
                     .map(Cursor::<J>getValue)
-                    .collect(Collectors.toCollection(() -> Collections.newSetFromMap(new IdentityHashMap<>())));
+                    .collect(toCollection(() -> newSetFromMap(new IdentityHashMap<>())));
 
     public J getSource() {
         return getSourceCursor().getValue();

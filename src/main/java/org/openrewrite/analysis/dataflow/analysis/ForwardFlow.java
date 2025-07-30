@@ -30,8 +30,10 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Collections.*;
+import static java.util.stream.Collectors.toSet;
 
 @Incubating(since = "7.24.0")
 public class ForwardFlow extends JavaVisitor<Integer> {
@@ -163,30 +165,30 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         if (j instanceof J.If) {
             J.If _if = (J.If) j;
             if (_if.getElsePart() != null) {
-                return Stream.of(_if.getThenPart(), _if.getElsePart().getBody()).collect(Collectors.toSet());
+                return Stream.of(_if.getThenPart(), _if.getElsePart().getBody()).collect(toSet());
             }
-            return Collections.singleton(_if.getThenPart());
+            return singleton(_if.getThenPart());
         }
         if (j instanceof J.WhileLoop) {
-            return Collections.singleton(((J.WhileLoop) j).getBody());
+            return singleton(((J.WhileLoop) j).getBody());
         }
         if (j instanceof J.DoWhileLoop) {
-            return Collections.singleton(((J.DoWhileLoop) j).getBody());
+            return singleton(((J.DoWhileLoop) j).getBody());
         }
         if (j instanceof J.ForLoop) {
-            return Collections.singleton(((J.ForLoop) j).getBody());
+            return singleton(((J.ForLoop) j).getBody());
         }
         if (j instanceof J.ForEachLoop) {
-            return Collections.singleton(((J.ForEachLoop) j).getBody());
+            return singleton(((J.ForEachLoop) j).getBody());
         } else if (j instanceof J.Try) {
             J.Try _try = (J.Try) j;
             return Stream.concat(
                     Stream.of(_try.getBody(), _try.getFinally()),
                     _try.getCatches().stream().map(J.Try.Catch::getBody)
             )
-            .collect(Collectors.toSet());
+            .collect(toSet());
         } else {
-            return Collections.emptySet();
+            return emptySet();
         }
     }
 
@@ -199,7 +201,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
 
         public void put(String identifier, FlowGraph flow) {
-            identifierToFlows.computeIfAbsent(identifier, k -> Collections.newSetFromMap(new IdentityHashMap<>())).add(flow);
+            identifierToFlows.computeIfAbsent(identifier, k -> newSetFromMap(new IdentityHashMap<>())).add(flow);
         }
 
         public void putAll(IdentifierToFlows other) {
@@ -227,7 +229,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
 
         public Set<FlowGraph> get(String identifier) {
-            return identifierToFlows.getOrDefault(identifier, Collections.emptySet());
+            return identifierToFlows.getOrDefault(identifier, emptySet());
         }
 
         public boolean hasFlows(String identifier) {

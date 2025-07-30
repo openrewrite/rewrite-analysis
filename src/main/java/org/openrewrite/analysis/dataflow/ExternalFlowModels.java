@@ -31,8 +31,11 @@ import org.openrewrite.java.tree.JavaType;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Loads and stores models from the `model.csv` file to be used for data flow and taint tracking analysis.
@@ -114,11 +117,11 @@ final class ExternalFlowModels {
         }
 
         Set<FlowModel> getValueFlowModels() {
-            return value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+            return value.values().stream().flatMap(Collection::stream).collect(toSet());
         }
 
         Set<FlowModel> getTaintFlowModels() {
-            return taint.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+            return taint.values().stream().flatMap(Collection::stream).collect(toSet());
         }
     }
 
@@ -264,7 +267,7 @@ final class ExternalFlowModels {
 
             Stream<PredicateToFlowModels> s1 = Stream.concat(flowFromArgumentIndexToReturnStream, flowFromArgumentIndexToQualifierStream);
             return Stream.concat(s1, flowFromArgumentIndexToArgumentIndexStream)
-                    .collect(Collectors.toMap(PredicateToFlowModels::getPredicate,
+                    .collect(toMap(PredicateToFlowModels::getPredicate,
                             PredicateToFlowModels::getModels,
                             (a, b) -> {
                                 throw new IllegalStateException("Not expecting duplicate keys");
@@ -313,8 +316,8 @@ final class ExternalFlowModels {
 
         FlowModels forAll() {
             return new FlowModels(
-                    this.value.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()),
-                    this.taint.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())
+                    this.value.values().stream().flatMap(Collection::stream).collect(toSet()),
+                    this.taint.values().stream().flatMap(Collection::stream).collect(toSet())
             );
         }
 
@@ -339,11 +342,11 @@ final class ExternalFlowModels {
                     .forEach(fqn -> {
                         value.addAll(this.value.getOrDefault(
                                 fqn,
-                                Collections.emptyList()
+                                emptyList()
                         ));
                         taint.addAll(this.taint.getOrDefault(
                                 fqn,
-                                Collections.emptyList()
+                                emptyList()
                         ));
                     });
             return new FlowModels(

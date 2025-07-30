@@ -28,9 +28,10 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+import static java.util.Collections.unmodifiableList;
 
 /** A method is a particular kind of callable. */
 public interface Method extends Callable {
@@ -101,6 +102,6 @@ class MethodDeclarationMethod extends Top.Base implements Method {
                 return variable;
             }
         }.visit(methodDeclaration.getParameters(), parameters);
-        return Collections.unmodifiableList(parameters);
+        return unmodifiableList(parameters);
     }
 }

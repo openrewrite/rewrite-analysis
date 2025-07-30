@@ -27,7 +27,9 @@ import org.openrewrite.marker.SearchResult;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @AllArgsConstructor
 @Incubating(since = "7.26.0")
@@ -63,12 +65,12 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                         controlFlow
                                 .getBasicBlocks()
                                 .stream()
-                                .collect(Collectors.toMap(ControlFlowNode.BasicBlock::getLeader, Function.identity()));
+                                .collect(toMap(ControlFlowNode.BasicBlock::getLeader, Function.identity()));
                 Map<J, ControlFlowNode.ConditionNode> conditionToConditionNodes =
                         controlFlow
                                 .getConditionNodes()
                                 .stream()
-                                .collect(Collectors.toMap(ControlFlowNode.ConditionNode::getCondition, Function.identity()));
+                                .collect(toMap(ControlFlowNode.ConditionNode::getCondition, Function.identity()));
                 // Sanity check for unit testing purposes to ensure all control flow nodes are well-formed
                 //noinspection ConstantConditions
                 assert conditionToConditionNodes.values().stream().map(ControlFlowNode.ConditionNode::asGuard).allMatch(Objects::nonNull) : "Condition nodes must all be guards";
@@ -228,7 +230,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                             .stream()
                             .map(blockNumbers::get)
                             .map(Object::toString)
-                            .collect(Collectors.toList());
+                            .collect(toList());
             return "Predecessors: " + String.join(", ", predecessors);
         }
 
@@ -239,7 +241,7 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                         .stream()
                         .map(blockNumbers::get)
                         .map(Object::toString)
-                        .collect(Collectors.toList());
+                        .collect(toList());
         return "Predecessors: " + String.join(", ", predecessors);
     }
 }

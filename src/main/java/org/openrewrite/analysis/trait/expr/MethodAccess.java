@@ -29,7 +29,8 @@ import org.openrewrite.java.tree.JavaType;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A method access is an invocation of a method with a list of arguments.
@@ -75,7 +76,7 @@ class MethodAccessBase extends Top.Base implements MethodAccess {
                 .getArguments()
                 .stream()
                 .map(e -> Expr.viewOf(new Cursor(cursor, e)).on(TraitErrors::doThrow))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override

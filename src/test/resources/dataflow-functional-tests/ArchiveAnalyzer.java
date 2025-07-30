@@ -47,9 +47,14 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.*;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.addAll;
+import static java.util.Collections.unmodifiableSet;
 import static org.owasp.dependencycheck.analyzer.AbstractNpmAnalyzer.shouldProcess;
 
 /**
@@ -87,7 +92,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
     /**
      * The set of things we can handle with Zip methods
      */
-    private static final Set<String> KNOWN_ZIP_EXT = Collections.unmodifiableSet(
+    private static final Set<String> KNOWN_ZIP_EXT = unmodifiableSet(
             newHashSet("zip", "ear", "war", "jar", "sar", "apk", "nupkg", "aar"));
     /**
      * The set of additional extensions we can handle with Zip methods
@@ -98,7 +103,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
      * developers, any additions to this list will need to be explicitly handled
      * in {@link #extractFiles(File, File, Engine)}.
      */
-    private static final Set<String> EXTENSIONS = Collections.unmodifiableSet(
+    private static final Set<String> EXTENSIONS = unmodifiableSet(
             newHashSet("tar", "gz", "tgz", "bz2", "tbz2", "rpm"));
 
     /**
@@ -686,8 +691,8 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
         final String additionalZipExt = getSettings().getString(Settings.KEYS.ADDITIONAL_ZIP_EXTENSIONS);
         if (additionalZipExt != null) {
             final String[] ext = additionalZipExt.split("\\s*,\\s*");
-            Collections.addAll(extensions, ext);
-            Collections.addAll(ADDITIONAL_ZIP_EXT, ext);
+            addAll(extensions, ext);
+            addAll(ADDITIONAL_ZIP_EXT, ext);
         }
         fileFilter = FileFilterBuilder.newInstance().addExtensions(extensions).build();
     }

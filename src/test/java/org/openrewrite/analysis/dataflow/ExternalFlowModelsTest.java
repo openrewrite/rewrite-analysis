@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ExternalFlowModelsTest {
@@ -41,8 +41,8 @@ class ExternalFlowModelsTest {
         taint.removeAll(optimizedModels.getTaintFlowModels());
 
         // Filter out unwanted data/taint flow models
-        value = value.stream().filter(ExternalFlowModelsTest::filterModels).collect(Collectors.toSet());
-        taint = taint.stream().filter(ExternalFlowModelsTest::filterModels).collect(Collectors.toSet());
+        value = value.stream().filter(ExternalFlowModelsTest::filterModels).collect(toSet());
+        taint = taint.stream().filter(ExternalFlowModelsTest::filterModels).collect(toSet());
 
         // Ensure that there are no unchecked values
         assertThat(value.size()).as("All value models should be optimized").isEqualTo(0);

@@ -27,10 +27,10 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RewriteTest;
 
-import java.util.Collections;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
@@ -59,7 +59,7 @@ class ParameterTest implements RewriteTest {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals(0, p.getPosition(), "Parameter position is incorrect");
                 assertFalse(p.isVarArgs(), "Parameter isVarArgs is incorrect");
-                assertEquals(Collections.emptySet(), p.getFlags(), "Parameter flags are incorrect");
+                assertEquals(emptySet(), p.getFlags(), "Parameter flags are incorrect");
                 assertEquals("i", p.getName(), "Parameter name is incorrect");
                 assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
                 Method method = Method.Factory.F.firstEnclosingViewOf(cursor).on(TraitErrors::doThrow);
@@ -81,7 +81,7 @@ class ParameterTest implements RewriteTest {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
                 assertEquals(0, p.getPosition(), "Parameter position is incorrect");
                 assertTrue(p.isVarArgs(), "Parameter isVarArgs is incorrect");
-                assertEquals(Collections.emptySet(), p.getFlags(), "Parameter flags are incorrect");
+                assertEquals(emptySet(), p.getFlags(), "Parameter flags are incorrect");
                 assertEquals("i", p.getName(), "Parameter name is incorrect");
                 assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
                 return SearchResult.found(variable);

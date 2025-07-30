@@ -30,8 +30,12 @@ import org.openrewrite.java.tree.JavaType;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 @Incubating(since = "7.25.0")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -115,7 +119,7 @@ public final class ExternalSinkModels {
         private final Map<String, Set<PredicateToSinkModels>> sinkKindToPredicates;
 
         private Set<? extends SinkNodePredicate> forKind(String kind) {
-            return sinkKindToPredicates.getOrDefault(kind, Collections.emptySet());
+            return sinkKindToPredicates.getOrDefault(kind, emptySet());
         }
 
         Set<SinkModel> getSinkModels() {
@@ -124,7 +128,7 @@ public final class ExternalSinkModels {
                     .flatMap(Collection::stream)
                     .map(PredicateToSinkModels::getSinkModels)
                     .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
+                    .collect(toSet());
         }
 
     }
@@ -177,7 +181,7 @@ public final class ExternalSinkModels {
                     ));
             return Stream
                     .concat(predicateToSinkModelsStream, returnValuePredicateToSinkModelsStream)
-                    .collect(Collectors.toSet());
+                    .collect(toSet());
         }
 
         static OptimizedSinkModels optimize(SinkModels sinkModels) {
@@ -191,7 +195,7 @@ public final class ExternalSinkModels {
                                     e.getKey(),
                                     optimizer.optimize(e.getValue())
                             ))
-                            .collect(Collectors.toMap(
+                            .collect(toMap(
                                     AbstractMap.SimpleEntry::getKey,
                                     AbstractMap.SimpleEntry::getValue
                             ));
@@ -204,7 +208,7 @@ public final class ExternalSinkModels {
         Map<String /* SinkModel.kind */, Set<SinkModel>> sinkModels;
 
         Set<SinkModel> getSinkModels() {
-            return sinkModels.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+            return sinkModels.values().stream().flatMap(Collection::stream).collect(toSet());
         }
     }
 
@@ -247,7 +251,7 @@ public final class ExternalSinkModels {
                     .distinct()
                     .flatMap(fqn -> fqnToSinkModels.getOrDefault(
                                     fqn,
-                                    Collections.emptyList()
+                                    emptyList()
                             ).stream()
                     ).forEach(sinkModel ->
                             sinkModels.computeIfAbsent(sinkModel.kind, k -> new HashSet<>(1)).add(sinkModel)
@@ -256,7 +260,7 @@ public final class ExternalSinkModels {
         }
 
         SinkModels forAll() {
-            return new SinkModels(fqnToSinkModels.entrySet().stream().collect(Collectors.toMap(
+            return new SinkModels(fqnToSinkModels.entrySet().stream().collect(toMap(
                     Map.Entry::getKey,
                     e -> new HashSet<>(e.getValue())
             )));
