@@ -180,16 +180,16 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
         if (j instanceof J.ForEachLoop) {
             return singleton(((J.ForEachLoop) j).getBody());
-        } else if (j instanceof J.Try) {
+        }
+        if (j instanceof J.Try) {
             J.Try _try = (J.Try) j;
             return Stream.concat(
                     Stream.of(_try.getBody(), _try.getFinally()),
                     _try.getCatches().stream().map(J.Try.Catch::getBody)
             )
             .collect(toSet());
-        } else {
-            return emptySet();
         }
+        return emptySet();
     }
 
     @AllArgsConstructor
