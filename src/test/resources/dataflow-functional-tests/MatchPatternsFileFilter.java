@@ -18,6 +18,7 @@ package org.jsonschema2pojo.maven;
 
 import org.apache.maven.shared.utils.io.DirectoryScanner;
 import org.apache.maven.shared.utils.io.MatchPatterns;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -54,7 +55,7 @@ public class MatchPatternsFileFilter implements FileFilter {
             return this;
         }
 
-        public Builder addIncludes(String... includes) {
+        public Builder addIncludes(@Nullable String... includes) {
             if (includes != null) {
                 addIncludes(of(includes));
             }
@@ -66,7 +67,7 @@ public class MatchPatternsFileFilter implements FileFilter {
             return this;
         }
 
-        public Builder addExcludes(String... excludes) {
+        public Builder addExcludes(@Nullable String... excludes) {
             if (excludes != null) {
                 addExcludes(of(excludes));
             }

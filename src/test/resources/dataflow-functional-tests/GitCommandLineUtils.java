@@ -42,6 +42,7 @@ import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -62,7 +63,7 @@ public final class GitCommandLineUtils
     {
     }
 
-    public static void addTarget( Commandline cl, List<File> files )
+    public static void addTarget( Commandline cl, @Nullable List<File> files )
     {
         if ( files == null || files.isEmpty() )
         {

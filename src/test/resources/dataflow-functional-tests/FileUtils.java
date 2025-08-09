@@ -338,7 +338,7 @@ public class FileUtils {
      * @see org.apache.commons.io.filefilter.NameFileFilter
      */
     public static Collection<File> listFiles(
-            File directory, IOFileFilter fileFilter, IOFileFilter dirFilter) {
+            File directory, @Nullable IOFileFilter fileFilter, @Nullable IOFileFilter dirFilter) {
         if (!directory.isDirectory()) {
             throw new IllegalArgumentException(
                     "Parameter 'directory' is not a directory");
@@ -417,7 +417,7 @@ public class FileUtils {
      * @return an collection of java.io.File with the matching files
      */
     public static Collection<File> listFiles(
-            File directory, String[] extensions, boolean recursive) {
+            File directory, String @Nullable[] extensions, boolean recursive) {
         IOFileFilter filter;
         if (extensions == null) {
             filter = TrueFileFilter.INSTANCE;
@@ -516,7 +516,7 @@ public class FileUtils {
      * @return the equivalent <code>File</code> object, or <code>null</code>
      *  if the URL's protocol is not <code>file</code>
      */
-    public static @Nullable File toFile(URL url) {
+    public static @Nullable File toFile(@Nullable URL url) {
         if (url == null || !"file".equalsIgnoreCase(url.getProtocol())) {
             return null;
         }
@@ -591,7 +591,7 @@ public class FileUtils {
      * @throws IllegalArgumentException if any file is incorrectly encoded
      * @since Commons IO 1.1
      */
-    public static File[] toFiles(URL[] urls) {
+    public static File[] toFiles(URL @Nullable[] urls) {
         if (urls == null || urls.length == 0) {
             return EMPTY_FILE_ARRAY;
         }
@@ -679,7 +679,7 @@ public class FileUtils {
      * @see #copyFile(File, File, boolean)
      * @since Commons IO 1.3
      */
-    public static void copyFileToDirectory(File srcFile, File destDir, boolean preserveFileDate) throws IOException {
+    public static void copyFileToDirectory(File srcFile, @Nullable File destDir, boolean preserveFileDate) throws IOException {
         if (destDir == null) {
             throw new NullPointerException("Destination must not be null");
         }
@@ -739,7 +739,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs during copying
      * @see #copyFileToDirectory(File, File, boolean)
      */
-    public static void copyFile(File srcFile, File destFile,
+    public static void copyFile(@Nullable File srcFile, @Nullable File destFile,
                                 boolean preserveFileDate) throws IOException {
         if (srcFile == null) {
             throw new NullPointerException("Source must not be null");
@@ -836,7 +836,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs during copying
      * @since Commons IO 1.2
      */
-    public static void copyDirectoryToDirectory(File srcDir, File destDir) throws IOException {
+    public static void copyDirectoryToDirectory(@Nullable File srcDir, @Nullable File destDir) throws IOException {
         if (srcDir == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -1006,7 +1006,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs during copying
      * @since Commons IO 1.4
      */
-    public static void copyDirectory(File srcDir, File destDir,
+    public static void copyDirectory(@Nullable File srcDir, @Nullable File destDir,
                                      FileFilter filter, boolean preserveFileDate) throws IOException {
         if (srcDir == null) {
             throw new NullPointerException("Source must not be null");
@@ -1207,7 +1207,7 @@ public class FileUtils {
      *
      * @since Commons IO 1.4
      */
-    public static boolean deleteQuietly(File file) {
+    public static boolean deleteQuietly(@Nullable File file) {
         if (file == null) {
             return false;
         }
@@ -1817,7 +1817,7 @@ public class FileUtils {
      * @throws IllegalArgumentException if the file is <code>null</code>
      * @throws IllegalArgumentException if the reference file is <code>null</code> or doesn't exist
      */
-    public static boolean isFileNewer(File file, File reference) {
+    public static boolean isFileNewer(File file, @Nullable File reference) {
         if (reference == null) {
             throw new IllegalArgumentException("No specified reference file");
         }
@@ -1840,7 +1840,7 @@ public class FileUtils {
      * @throws IllegalArgumentException if the file is <code>null</code>
      * @throws IllegalArgumentException if the date is <code>null</code>
      */
-    public static boolean isFileNewer(File file, Date date) {
+    public static boolean isFileNewer(File file, @Nullable Date date) {
         if (date == null) {
             throw new IllegalArgumentException("No specified date");
         }
@@ -1859,7 +1859,7 @@ public class FileUtils {
      * the given time reference.
      * @throws IllegalArgumentException if the file is <code>null</code>
      */
-    public static boolean isFileNewer(File file, long timeMillis) {
+    public static boolean isFileNewer(@Nullable File file, long timeMillis) {
         if (file == null) {
             throw new IllegalArgumentException("No specified file");
         }
@@ -1884,7 +1884,7 @@ public class FileUtils {
      * @throws IllegalArgumentException if the file is <code>null</code>
      * @throws IllegalArgumentException if the reference file is <code>null</code> or doesn't exist
      */
-    public static boolean isFileOlder(File file, File reference) {
+    public static boolean isFileOlder(File file, @Nullable File reference) {
         if (reference == null) {
             throw new IllegalArgumentException("No specified reference file");
         }
@@ -1907,7 +1907,7 @@ public class FileUtils {
      * @throws IllegalArgumentException if the file is <code>null</code>
      * @throws IllegalArgumentException if the date is <code>null</code>
      */
-    public static boolean isFileOlder(File file, Date date) {
+    public static boolean isFileOlder(File file, @Nullable Date date) {
         if (date == null) {
             throw new IllegalArgumentException("No specified date");
         }
@@ -1926,7 +1926,7 @@ public class FileUtils {
      * the given time reference.
      * @throws IllegalArgumentException if the file is <code>null</code>
      */
-    public static boolean isFileOlder(File file, long timeMillis) {
+    public static boolean isFileOlder(@Nullable File file, long timeMillis) {
         if (file == null) {
             throw new IllegalArgumentException("No specified file");
         }
@@ -1997,7 +1997,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs moving the file
      * @since Commons IO 1.4
      */
-    public static void moveDirectory(File srcDir, File destDir) throws IOException {
+    public static void moveDirectory(@Nullable File srcDir, @Nullable File destDir) throws IOException {
         if (srcDir == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -2036,7 +2036,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs moving the file
      * @since Commons IO 1.4
      */
-    public static void moveDirectoryToDirectory(File src, File destDir, boolean createDestDir) throws IOException {
+    public static void moveDirectoryToDirectory(@Nullable File src, @Nullable File destDir, boolean createDestDir) throws IOException {
         if (src == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -2069,7 +2069,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs moving the file
      * @since Commons IO 1.4
      */
-    public static void moveFile(File srcFile, File destFile) throws IOException {
+    public static void moveFile(@Nullable File srcFile, @Nullable File destFile) throws IOException {
         if (srcFile == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -2111,7 +2111,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs moving the file
      * @since Commons IO 1.4
      */
-    public static void moveFileToDirectory(File srcFile, File destDir, boolean createDestDir) throws IOException {
+    public static void moveFileToDirectory(@Nullable File srcFile, @Nullable File destDir, boolean createDestDir) throws IOException {
         if (srcFile == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -2145,7 +2145,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs moving the file
      * @since Commons IO 1.4
      */
-    public static void moveToDirectory(File src, File destDir, boolean createDestDir) throws IOException {
+    public static void moveToDirectory(@Nullable File src, @Nullable File destDir, boolean createDestDir) throws IOException {
         if (src == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -2173,7 +2173,7 @@ public class FileUtils {
      * @throws IOException if an IO error occurs while checking the file
      * @since Commons IO 2.0
      */
-    public static boolean isSymlink(File file) throws IOException {
+    public static boolean isSymlink(@Nullable File file) throws IOException {
         if (file == null) {
             throw new NullPointerException("File must not be null");
         }

@@ -27,7 +27,7 @@ public class SecurityUtils {
      * @param s The string to be cleaned
      * @return The escaped string
      */
-    public static @Nullable String encode(String s) {
+    public static @Nullable String encode(@Nullable String s) {
         if (s == null) {
             return null;
         }
