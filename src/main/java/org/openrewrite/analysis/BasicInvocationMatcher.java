@@ -15,7 +15,7 @@
  */
 package org.openrewrite.analysis;
 
-import io.micrometer.core.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.internal.LoathingOfOthers;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.TypeUtils;
@@ -52,7 +52,7 @@ public interface BasicInvocationMatcher extends InvocationMatcher {
     boolean matchesParameterTypes(List<JavaType> parameterTypes);
 
     @Override
-    default boolean matches(@Nullable JavaType.Method type) {
+    default boolean matches(JavaType.@Nullable Method type) {
         if (type == null) {
             return false;
         }
@@ -74,7 +74,7 @@ public interface BasicInvocationMatcher extends InvocationMatcher {
      *
      * @implNote {@link #isMatchOverrides()} will be used to determine if parent types should also be checked
      */
-    default boolean matchesTargetType(@Nullable JavaType.FullyQualified type) {
+    default boolean matchesTargetType(JavaType.@Nullable FullyQualified type) {
         return TypeUtils.isOfTypeWithName(
                 type,
                 isMatchOverrides(),
