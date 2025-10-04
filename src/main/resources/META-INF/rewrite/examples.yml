@@ -15,7 +15,7 @@
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.analysis.controlflow.ControlFlowVisualization
 examples:
-- description: ''
+- description: '`ControlFlowTest#displayControlFlowGraphForSingleBasicBlock`'
   parameters:
   - 'false'
   - 'true'
@@ -41,28 +41,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.analysis.dataflow.global.MockGlobalDataFlowRecipe
 examples:
-- description: ''
-  parameters:
-  - TAINT_FLOW_SPEC
-  sources:
-  - before: |
-      class Test {
-          void test() {
-              String s = "42";
-              String t = s.substring(1);
-              System.out.println(t);
-          }
-      }
-    after: |
-      class Test {
-          void test() {
-              String s = /*~~(source)~~>*/"42";
-              String t = /*~~>*//*~~>*/s.substring(1);
-              System.out.println(/*~~(sink)~~>*/t);
-          }
-      }
-    language: java
-- description: ''
+- description: '`GlobalDataFlowTest#identityFunction`'
   parameters:
   - DATA_FLOW_SPEC
   sources:
@@ -93,11 +72,32 @@ examples:
           }
       }
     language: java
+- description: '`GlobalTaintFlowTest#normalTaintFlowStillWorks`'
+  parameters:
+  - TAINT_FLOW_SPEC
+  sources:
+  - before: |
+      class Test {
+          void test() {
+              String s = "42";
+              String t = s.substring(1);
+              System.out.println(t);
+          }
+      }
+    after: |
+      class Test {
+          void test() {
+              String s = /*~~(source)~~>*/"42";
+              String t = /*~~>*//*~~>*/s.substring(1);
+              System.out.println(/*~~(sink)~~>*/t);
+          }
+      }
+    language: java
 ---
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.analysis.search.FindFlowBetweenMethods
 examples:
-- description: ''
+- description: '`FindFlowBetweenMethodsTest#taintFlowBetweenSubjectOnly`'
   parameters:
   - java.util.LinkedList <constructor>()
   - 'true'
@@ -131,7 +131,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.analysis.search.FindMethods
 examples:
-- description: ''
+- description: '`FindMethodsTest#findConstructors`'
   parameters:
   - A <constructor>(String)
   - 'false'
@@ -155,7 +155,7 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.analysis.search.UriCreatedWithHttpScheme
 examples:
-- description: ''
+- description: '`UriCreatedWithHttpSchemeTest#findInsecureUri`'
   sources:
   - before: |
       import java.net.URI;

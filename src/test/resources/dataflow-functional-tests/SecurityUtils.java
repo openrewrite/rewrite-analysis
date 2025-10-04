@@ -168,7 +168,7 @@ public final class SecurityUtils {
         return buffer.toString();
     }
 
-    public static String getValidFilePath(String inputPath) {
+    public static @Nullable String getValidFilePath(String inputPath) {
         return getValidFilePath(inputPath, false);
     }
 
