@@ -28,7 +28,7 @@ import java.util.function.Function;
 public class CsvLoader {
     public static <R extends Mergeable<R>, E> R loadFromFile(String csvFileName, R emptyModel, Function<Iterable<E>, R> merger, Function<String[], E> csvMapper) {
         AtomicReference<R> model = new AtomicReference<>(emptyModel);
-        try (ScanResult scanResult = new ClassGraph().acceptPaths("data-flow").enableMemoryMapping().scan()) {
+        try (ScanResult scanResult = new ClassGraph().acceptPaths("data-flow").scan()) {
             scanResult.getResourcesWithLeafName(csvFileName)
                     .forEachInputStreamIgnoringIOException((res, input) -> model.set(model.get().merge(loadCsv(input, res.getURI(), merger, csvMapper))));
         }
