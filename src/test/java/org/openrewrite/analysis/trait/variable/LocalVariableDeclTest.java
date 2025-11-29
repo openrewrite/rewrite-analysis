@@ -30,8 +30,7 @@ import org.openrewrite.test.RewriteTest;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
@@ -54,7 +53,7 @@ class LocalVariableDeclTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(visitVariable((variable, cursor) -> LocalVariableDecl.viewOf(cursor).map(localVariableDecl -> {
-            assertNotNull(localVariableDecl.getCallable(), "LocalVariableDecl callable is null");
+            assertThat(localVariableDecl.getCallable()).as("LocalVariableDecl callable is null").isNotNull();
             return SearchResult.found(variable);
         }).orSuccess(variable))));
     }
@@ -65,8 +64,8 @@ class LocalVariableDeclTest implements RewriteTest {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
-                assertEquals("i", p.getName(), "LocalVariableDecl name is incorrect");
-                assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
+              assertThat(p.getName()).as("LocalVariableDecl name is incorrect").isEqualTo("i");
+              assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("test");
                 return SearchResult.found(variable);
             }
           ))),
@@ -83,8 +82,8 @@ class LocalVariableDeclTest implements RewriteTest {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
-                assertEquals("i", p.getName(), "LocalVariableDecl name is incorrect");
-                assertEquals("<obinit>", p.getCallable().getName(), "Parameter callable name is incorrect");
+              assertThat(p.getName()).as("LocalVariableDecl name is incorrect").isEqualTo("i");
+              assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("<obinit>");
                 return SearchResult.found(variable);
             }
           ))),
@@ -100,8 +99,8 @@ class LocalVariableDeclTest implements RewriteTest {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 LocalVariableDecl p = LocalVariableDecl.viewOf(cursor).on(TraitErrors::doThrow);
-                assertEquals("i", p.getName(), "LocalVariableDecl name is incorrect");
-                assertEquals("<clinit>", p.getCallable().getName(), "Parameter callable name is incorrect");
+              assertThat(p.getName()).as("LocalVariableDecl name is incorrect").isEqualTo("i");
+              assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("<clinit>");
                 return SearchResult.found(variable);
             }
           ))),

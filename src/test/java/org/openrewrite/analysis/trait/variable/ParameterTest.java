@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptySet;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
@@ -57,13 +57,13 @@ class ParameterTest implements RewriteTest {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
-                assertEquals(0, p.getPosition(), "Parameter position is incorrect");
-                assertFalse(p.isVarArgs(), "Parameter isVarArgs is incorrect");
-                assertEquals(emptySet(), p.getFlags(), "Parameter flags are incorrect");
-                assertEquals("i", p.getName(), "Parameter name is incorrect");
-                assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
+              assertThat(p.getPosition()).as("Parameter position is incorrect").isZero();
+              assertThat(p.isVarArgs()).as("Parameter isVarArgs is incorrect").isFalse();
+              assertThat(p.getFlags()).as("Parameter flags are incorrect").isEqualTo(emptySet());
+              assertThat(p.getName()).as("Parameter name is incorrect").isEqualTo("i");
+              assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("test");
                 Method method = Method.Factory.F.firstEnclosingViewOf(cursor).on(TraitErrors::doThrow);
-                assertEquals(p.getCallable(), method, "Parameter callable is incorrect");
+              assertThat(method).as("Parameter callable is incorrect").isEqualTo(p.getCallable());
                 return SearchResult.found(variable);
             }
           ))),
@@ -79,11 +79,11 @@ class ParameterTest implements RewriteTest {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
-                assertEquals(0, p.getPosition(), "Parameter position is incorrect");
-                assertTrue(p.isVarArgs(), "Parameter isVarArgs is incorrect");
-                assertEquals(emptySet(), p.getFlags(), "Parameter flags are incorrect");
-                assertEquals("i", p.getName(), "Parameter name is incorrect");
-                assertEquals("test", p.getCallable().getName(), "Parameter callable name is incorrect");
+              assertThat(p.getPosition()).as("Parameter position is incorrect").isZero();
+              assertThat(p.isVarArgs()).as("Parameter isVarArgs is incorrect").isTrue();
+              assertThat(p.getFlags()).as("Parameter flags are incorrect").isEqualTo(emptySet());
+              assertThat(p.getName()).as("Parameter name is incorrect").isEqualTo("i");
+              assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("test");
                 return SearchResult.found(variable);
             }
           ))),

@@ -45,8 +45,8 @@ class ExternalFlowModelsTest {
         taint = taint.stream().filter(ExternalFlowModelsTest::filterModels).collect(toSet());
 
         // Ensure that there are no unchecked values
-        assertThat(value.size()).as("All value models should be optimized").isEqualTo(0);
-        assertThat(taint.size()).as("All taint models should be optimized").isEqualTo(0);
+        assertThat(value).size().as("All value models should be optimized").isZero();
+        assertThat(taint).size().as("All taint models should be optimized").isZero();
     }
 
     static boolean filterModels(ExternalFlowModels.FlowModel model) {

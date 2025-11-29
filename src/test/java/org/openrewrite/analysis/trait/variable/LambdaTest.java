@@ -26,7 +26,7 @@ import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
@@ -38,7 +38,7 @@ class LambdaTest implements RewriteTest {
             public J preVisit(J tree, ExecutionContext executionContext) {
                 return VarAccess.viewOf(getCursor())
                   .map(var -> {
-                      assertNotNull(var.getVariable(), "VarAccess.getVariable() is null");
+                      assertThat(var.getVariable()).as("VarAccess.getVariable() is null").isNotNull();
                       return SearchResult.found(tree);
                   })
                   .orSuccess(tree);

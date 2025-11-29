@@ -37,7 +37,7 @@ class ExternalSinkModelsTest {
         // Remove all optimized sink flow models
         models.removeAll(optimizedModels.getSinkModels());
 
-        assertThat(models.size()).as("All sink models should be optimized").isEqualTo(0);
+        assertThat(models).size().as("All sink models should be optimized").isZero();
     }
 
 }

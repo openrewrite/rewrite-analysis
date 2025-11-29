@@ -31,8 +31,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static java.util.Collections.singleton;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
@@ -55,7 +54,7 @@ class FieldTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(field -> {
-            assertNotNull(field.getName(), "Field callable is null");
+            assertThat(field.getName()).as("Field callable is null").isNotNull();
             return SearchResult.found(variable);
         }).orSuccess(variable))));
     }
@@ -137,8 +136,8 @@ class FieldTest implements RewriteTest {
     void findsStaticField() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> Field.viewOf(cursor).map(field -> {
-              assertNotNull(field.getName(), "Field callable is null");
-              assertEquals(singleton(Flag.Static), field.getFlags(), "Field should be static");
+              assertThat(field.getName()).as("Field callable is null").isNotNull();
+              assertThat(field.getFlags()).as("Field should be static").isEqualTo(singleton(Flag.Static));
               return SearchResult.found(variable);
           }).orSuccess(variable)))),
           java(
