@@ -254,7 +254,16 @@ public final class ControlFlow {
             visit(newClass.getEnclosing(), p); // First the enclosing is invoked
             visit(newClass.getArguments(), p); // Then the arguments are invoked
             addCursorToBasicBlock(); // Then the new class
-            // TODO: Maybe invoke a visitor on the body? (Anonymous inner classes)
+            // For anonymous classes, visit the body to ensure expressions inside
+            // are marked as reachable for dataflow analysis (similar to lambda handling)
+            J.Block body = newClass.getBody();
+            if (body != null) {
+                // Create a new control flow graph for the anonymous class body
+                // and connect it as a successor, similar to how lambdas are handled
+                ControlFlowSimpleSummary summary = findControlFlowInternal(new Cursor(getCursor(), body), ControlFlowNode.GraphType.LAMBDA);
+                currentAsBasicBlock().addSuccessor(summary.start);
+                current = singleton(summary.end);
+            }
             return newClass;
         }
 

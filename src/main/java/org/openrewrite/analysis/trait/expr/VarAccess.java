@@ -290,7 +290,10 @@ class VarAccessBase extends Top.Base implements VarAccess {
                 checkType(parent, J.Ternary.class, parentTernary -> parentTernary.getCondition() == ident ||
                         parentTernary.getTruePart() == ident ||
                         parentTernary.getFalsePart() == ident) ||
-                checkType(parent, J.Annotation.class, parentAnnotation -> parentAnnotation.getArguments() != null && parentAnnotation.getArguments().contains(ident))) {
+                checkType(parent, J.Annotation.class, parentAnnotation -> parentAnnotation.getArguments() != null && parentAnnotation.getArguments().contains(ident)) ||
+                checkType(parent, J.Return.class, parentReturn -> parentReturn.getExpression() == ident) ||
+                checkType(parent, J.Throw.class, parentThrow -> parentThrow.getException() == ident) ||
+                checkType(parent, J.Assert.class, parentAssert -> parentAssert.getCondition() == ident || parentAssert.getDetail() != null && parentAssert.getDetail().getElement() == ident)) {
             return Validation.success(new VarAccessBase(cursor, ident));
         }
 

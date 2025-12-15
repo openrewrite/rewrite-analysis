@@ -25,6 +25,7 @@ import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
+import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
@@ -331,7 +332,44 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
 
         @Override
+        public J visitMethodDeclaration(J.MethodDeclaration method, Integer p) {
+            // Handle method declarations inside anonymous classes
+            // Remove flows for method parameters that shadow outer variables
+            for (Statement param : method.getParameters()) {
+                new JavaIsoVisitor<Integer>() {
+                    @Override
+                    public J.Identifier visitIdentifier(J.Identifier identifier, Integer integer) {
+                        flowsByIdentifier.peek().remove(identifier.getSimpleName());
+                        return identifier;
+                    }
+                }.visit(param, 0);
+            }
+            return super.visitMethodDeclaration(method, p);
+        }
+
+        @Override
         public J visitNewClass(J.NewClass newClass, Integer integer) {
+            // For anonymous classes, explicitly visit the body to ensure
+            // dataflow tracking through captured variables from the enclosing scope.
+            // The default visitor may not traverse the anonymous class body
+            // in a way that allows captured variables to be tracked.
+            J.Block body = newClass.getBody();
+            if (body != null) {
+                // Push a new scope for the anonymous class body
+                flowsByIdentifier.push(flowsByIdentifier.peek().copy());
+                try {
+                    // Create a proper cursor chain: current -> newClass -> body
+                    Cursor newClassCursor = new Cursor(getCursor(), newClass);
+                    Cursor bodyCursor = new Cursor(newClassCursor, body);
+                    // Visit the body statements with the correct cursor chain
+                    for (Statement statement : body.getStatements()) {
+                        visit(statement, integer, bodyCursor);
+                    }
+                } finally {
+                    flowsByIdentifier.pop();
+                }
+            }
+            // Visit non-body parts (arguments, enclosing)
             return super.visitNewClass(newClass, integer);
         }
     }
