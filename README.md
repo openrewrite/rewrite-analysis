@@ -1,12 +1,6 @@
 <h1 align="center">OpenRewrite Analysis</h1>
 <p align="center"><i></i><b>🎉 Automate software refactoring 🎉</b></i></p>
 
----
-
-<p align="center">
-    <img src="doc/OpenRewrite.gif" alt="OpenRewrite"/>
-</p>
-
 <div align="center">
 
 <!-- Keep the gap above this line, otherwise they won't render correctly! -->
@@ -15,6 +9,10 @@
 [![Maven Central](https://img.shields.io/maven-central/v/org.openrewrite.meta/rewrite-analysis.svg)](https://mvnrepository.com/artifact/org.openrewrite.meta/rewrite-analysis)
 [![Revved up by Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A)](https://ge.openrewrite.org/scans)
 </div>
+
+> [!WARNING]  
+> There are some fundamental limitations to the implementation in this module, and we are currently [exploring an alternative implementation](https://docs.moderne.io/openrewrite-advanced-program-analysis/control-flow).
+> We advise against starting new efforts using `rewrite-analysis`. 
 
 ## What is this?
 
