@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.DocumentExample;
 import org.openrewrite.Issue;
 import org.openrewrite.analysis.trait.expr.Literal;
 import org.openrewrite.test.RecipeSpec;
@@ -55,6 +56,7 @@ class FindLocalFlowPathsAnonymousClassTest implements RewriteTest {
         }))).expectedCyclesThatMakeChanges(1).cycles(1);
     }
 
+    @DocumentExample
     @Test
     void dataflowThroughLambdaExpressionBody() {
         // This test demonstrates that dataflow works correctly through lambda expressions

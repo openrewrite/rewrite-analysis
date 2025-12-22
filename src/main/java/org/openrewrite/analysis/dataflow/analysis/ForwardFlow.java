@@ -25,7 +25,6 @@ import org.openrewrite.analysis.dataflow.DataFlowSpec;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
-import org.openrewrite.internal.ListUtils;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
