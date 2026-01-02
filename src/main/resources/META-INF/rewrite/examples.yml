@@ -41,6 +41,27 @@ examples:
 type: specs.openrewrite.org/v1beta/example
 recipeName: org.openrewrite.analysis.dataflow.global.MockGlobalDataFlowRecipe
 examples:
+- description: '`GlobalTaintFlowTest#normalTaintFlowStillWorks`'
+  parameters:
+  - TAINT_FLOW_SPEC
+  sources:
+  - before: |
+      class Test {
+          void test() {
+              String s = "42";
+              String t = s.substring(1);
+              System.out.println(t);
+          }
+      }
+    after: |
+      class Test {
+          void test() {
+              String s = /*~~(source)~~>*/"42";
+              String t = /*~~>*//*~~>*/s.substring(1);
+              System.out.println(/*~~(sink)~~>*/t);
+          }
+      }
+    language: java
 - description: '`GlobalDataFlowTest#identityFunction`'
   parameters:
   - DATA_FLOW_SPEC
@@ -68,27 +89,6 @@ examples:
           void test() {
               String s = /*~~(source)~~>*/"42";
               String t = /*~~>*/identity(/*~~>*/s);
-              System.out.println(/*~~(sink)~~>*/t);
-          }
-      }
-    language: java
-- description: '`GlobalTaintFlowTest#normalTaintFlowStillWorks`'
-  parameters:
-  - TAINT_FLOW_SPEC
-  sources:
-  - before: |
-      class Test {
-          void test() {
-              String s = "42";
-              String t = s.substring(1);
-              System.out.println(t);
-          }
-      }
-    after: |
-      class Test {
-          void test() {
-              String s = /*~~(source)~~>*/"42";
-              String t = /*~~>*//*~~>*/s.substring(1);
               System.out.println(/*~~(sink)~~>*/t);
           }
       }
