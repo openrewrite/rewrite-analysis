@@ -32,15 +32,9 @@ public class ControlFlowVisualization extends Recipe {
 
     boolean darkMode;
 
-    @Override
-    public String getDisplayName() {
-        return "Control flow visualization";
-    }
+    String displayName = "Control flow visualization";
 
-    @Override
-    public String getDescription() {
-        return "Visualize the control flow of a Java program.";
-    }
+    String description = "Visualize the control flow of a Java program.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {

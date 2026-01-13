@@ -71,15 +71,9 @@ public class FindMethods extends Recipe {
     @Nullable
     String flow;
 
-    @Override
-    public String getDisplayName() {
-        return "Find method usages";
-    }
+    String displayName = "Find method usages";
 
-    @Override
-    public String getDescription() {
-        return "Find method usages by pattern.";
-    }
+    String description = "Find method usages by pattern.";
 
     @Override
     @SuppressWarnings("ConstantConditions")

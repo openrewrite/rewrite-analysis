@@ -59,15 +59,9 @@ public class FindFlowBetweenMethods extends ScanningRecipe<GlobalDataFlow.Accumu
     @Nullable String flow;
 
 
-    @Override
-    public String getDisplayName() {
-        return "Finds flow between two methods";
-    }
+    String displayName = "Finds flow between two methods";
 
-    @Override
-    public String getDescription() {
-        return "Takes two patterns for the start/end methods to find flow between.";
-    }
+    String description = "Takes two patterns for the start/end methods to find flow between.";
 
     @Override
     public GlobalDataFlow.Accumulator getInitialValue(ExecutionContext ctx) {
