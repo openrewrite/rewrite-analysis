@@ -16,6 +16,7 @@
 package org.openrewrite.analysis.dataflow.global;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.ScanningRecipe;
@@ -35,15 +36,9 @@ public class MockGlobalDataFlowRecipe extends ScanningRecipe<GlobalDataFlow.Accu
         this(null);
     }
 
-    @Override
-    public String getDisplayName() {
-        return "blah";
-    }
+    @Getter final String displayName = "blah";
 
-    @Override
-    public String getDescription() {
-        return "blah.";
-    }
+    @Getter final String description = "blah.";
 
     @Override
     public GlobalDataFlow.Accumulator getInitialValue(ExecutionContext ctx) {

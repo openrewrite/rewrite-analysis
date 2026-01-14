@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.search;
 
+import lombok.Getter;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
@@ -63,15 +64,9 @@ public class UriCreatedWithHttpScheme extends Recipe {
         }
     };
 
-    @Override
-    public String getDisplayName() {
-        return "URIs created with an HTTP scheme";
-    }
+    @Getter final String displayName = "URIs created with an HTTP scheme";
 
-    @Override
-    public String getDescription() {
-        return "This is a sample recipe demonstrating a simple application of local data flow analysis.";
-    }
+    @Getter final String description = "This is a sample recipe demonstrating a simple application of local data flow analysis.";
 
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
