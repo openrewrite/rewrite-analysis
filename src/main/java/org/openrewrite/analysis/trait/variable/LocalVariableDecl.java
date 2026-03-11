@@ -67,7 +67,7 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
     final J.VariableDeclarations.NamedVariable variable;
     final J.VariableDeclarations variableDeclarations;
 
-    @Getter(onMethod = @__(@Override))
+    @Getter(onMethod_ =@Override)
     final Callable callable;
 
     @Override

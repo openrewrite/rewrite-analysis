@@ -61,7 +61,7 @@ class MethodDeclarationMethod extends Top.Base implements Method {
 
     J.MethodDeclaration methodDeclaration;
 
-    @Getter(lazy = true, onMethod = @__(@Override))
+    @Getter(lazy = true, onMethod_ =@Override)
     private final List<Parameter> parameters = collectParameters(cursor, methodDeclaration);
 
     @Override

@@ -15,6 +15,9 @@
  */
 package org.openrewrite.java;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -38,12 +41,10 @@ public abstract class JavaTypeGoat<T, S extends PT<S> & C> {
         FUZ
     }
 
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
     public enum EnumTypeB {
         FOO(null);
         private TypeA label;
-        EnumTypeB(TypeA label) {
-            this.label = label;
-        }
     }
 
     public abstract class ExtendsJavaTypeGoat extends JavaTypeGoat<T, S> {

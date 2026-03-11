@@ -106,15 +106,11 @@ public abstract class ControlFlowNode {
     /**
      * A control flow node that represents a branching point in the code.
      */
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     static final class ConditionNode extends ControlFlowNode {
 
         private final Guard guard;
         private final boolean truthFirst;
-
-        private ConditionNode(Guard guard, boolean truthFirst) {
-            this.guard = guard;
-            this.truthFirst = truthFirst;
-        }
 
         /**
          * The successor that will be evaluated if the {@link #getCondition()}} is true.

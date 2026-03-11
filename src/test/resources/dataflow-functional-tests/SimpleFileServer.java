@@ -17,6 +17,7 @@
  ******************************************************************************/
 package org.eclipse.californium.examples;
 
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
@@ -37,7 +38,6 @@ import org.eclipse.californium.plugtests.PlugtestServer.BaseConfig;
 import org.eclipse.californium.plugtests.resources.MyContext;
 import org.eclipse.californium.scandium.config.DtlsConfig;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -53,9 +53,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class SimpleFileServer extends AbstractTestServer {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SimpleFileServer.class);
 
     private static final File CONFIG_FILE = new File("Californium3.properties");
     private static final String CONFIG_HEADER = "Californium CoAP Properties file for Fileserver";
@@ -136,17 +135,17 @@ public class SimpleFileServer extends AbstractTestServer {
             String coapRootPath = config.pathRoot;
 
             if (0 <= coapRootPath.indexOf('/')) {
-                LOG.error("{} don't use '/'! Only one path segment for coap root allowed!", coapRootPath);
+                log.error("{} don't use '/'! Only one path segment for coap root allowed!", coapRootPath);
                 return;
             }
 
             File filesRoot = new File(filesRootPath);
             if (!filesRoot.exists()) {
-                LOG.error("{} doesn't exists!", filesRoot.getAbsolutePath());
+                log.error("{} doesn't exists!", filesRoot.getAbsolutePath());
                 return;
             }
             if (!filesRoot.isDirectory()) {
-                LOG.error("{} is no directory!", filesRoot.getAbsolutePath());
+                log.error("{} is no directory!", filesRoot.getAbsolutePath());
                 return;
             }
 
@@ -162,7 +161,7 @@ public class SimpleFileServer extends AbstractTestServer {
             server.start();
 
         } catch (SocketException e) {
-            LOG.error("Failed to initialize server: ", e);
+            log.error("Failed to initialize server: ", e);
         }
     }
 
@@ -170,7 +169,7 @@ public class SimpleFileServer extends AbstractTestServer {
         File[] files = filesRoot.listFiles();
         for (File file : files) {
             if (file.isFile() && file.canRead()) {
-                LOG.info("GET: coap://<host>/{}/{}", coapRootPath, file.getName());
+                log.info("GET: coap://<host>/{}/{}", coapRootPath, file.getName());
             }
         }
         for (File file : files) {
@@ -226,7 +225,7 @@ public class SimpleFileServer extends AbstractTestServer {
             try {
                 super.handleRequest(exchange);
             } catch (Exception e) {
-                LOG.error("Exception while handling a request on the {} resource", getName(), e);
+                log.error("Exception while handling a request on the {} resource", getName(), e);
                 exchange.sendResponse(new Response(CoAP.ResponseCode.INTERNAL_SERVER_ERROR));
             }
         }
@@ -234,7 +233,7 @@ public class SimpleFileServer extends AbstractTestServer {
         @Override
         public void handleGET(final CoapExchange exchange) {
             Request request = exchange.advanced().getRequest();
-            LOG.info("Get received : {}", request);
+            log.info("Get received : {}", request);
 
             int accept = request.getOptions().getAccept();
             if (MediaTypeRegistry.UNDEFINED == accept) {
@@ -247,37 +246,37 @@ public class SimpleFileServer extends AbstractTestServer {
             String myURI = getURI() + "/";
             String path = "/" + request.getOptions().getUriPathString();
             if (!path.startsWith(myURI)) {
-                LOG.info("Request {} does not match {}!", path, myURI);
+                log.info("Request {} does not match {}!", path, myURI);
                 exchange.respond(CoAP.ResponseCode.INTERNAL_SERVER_ERROR);
                 return;
             }
             path = path.substring(myURI.length());
             if (request.getOptions().hasBlock2()) {
-                LOG.info("Send file {} {}", path, request.getOptions().getBlock2());
+                log.info("Send file {} {}", path, request.getOptions().getBlock2());
             } else {
-                LOG.info("Send file {}", path);
+                log.info("Send file {}", path);
             }
             File file = new File(filesRoot, path);
             if (!file.exists() || !file.isFile()) {
-                LOG.warn("File {} doesn't exist!", file.getAbsolutePath());
+                log.warn("File {} doesn't exist!", file.getAbsolutePath());
                 exchange.respond(CoAP.ResponseCode.NOT_FOUND);
                 return;
             }
             if (!checkFileLocation(file, filesRoot)) {
-                LOG.warn("File {} is not in {}!", file.getAbsolutePath(), filesRoot.getAbsolutePath());
+                log.warn("File {} is not in {}!", file.getAbsolutePath(), filesRoot.getAbsolutePath());
                 exchange.respond(CoAP.ResponseCode.UNAUTHORIZED);
                 return;
             }
 
             if (!file.canRead()) {
-                LOG.warn("File {} is not readable!", file.getAbsolutePath());
+                log.warn("File {} is not readable!", file.getAbsolutePath());
                 exchange.respond(CoAP.ResponseCode.UNAUTHORIZED);
                 return;
             }
             long maxLength = config.get(CoapConfig.MAX_RESOURCE_BODY_SIZE);
             long length = file.length();
             if (length > maxLength) {
-                LOG.warn("File {} is too large {} (max.: {})!", file.getAbsolutePath(), length, maxLength);
+                log.warn("File {} is too large {} (max.: {})!", file.getAbsolutePath(), length, maxLength);
                 exchange.respond(CoAP.ResponseCode.INTERNAL_SERVER_ERROR);
                 return;
             }
@@ -291,11 +290,11 @@ public class SimpleFileServer extends AbstractTestServer {
                     response.getOptions().setContentFormat(accept);
                     exchange.respond(response);
                 } else {
-                    LOG.warn("File {} could not be read in!", file.getAbsolutePath());
+                    log.warn("File {} could not be read in!", file.getAbsolutePath());
                     exchange.respond(CoAP.ResponseCode.INTERNAL_SERVER_ERROR);
                 }
             } catch (IOException ex) {
-                LOG.warn("File {}:", file.getAbsolutePath(), ex);
+                log.warn("File {}:", file.getAbsolutePath(), ex);
                 exchange.respond(CoAP.ResponseCode.INTERNAL_SERVER_ERROR);
             }
         }
@@ -314,7 +313,7 @@ public class SimpleFileServer extends AbstractTestServer {
             try {
                 return file.getCanonicalPath().startsWith(root.getCanonicalPath());
             } catch (IOException ex) {
-                LOG.warn("File {}:", file.getAbsolutePath(), ex);
+                log.warn("File {}:", file.getAbsolutePath(), ex);
                 return false;
             }
         }

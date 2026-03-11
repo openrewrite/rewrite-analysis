@@ -15,6 +15,8 @@
  */
 package org.openrewrite.analysis.controlflow;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.openrewrite.Cursor;
 
@@ -43,16 +45,13 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
         Set<ControlFlowNode> predecessors;
         Cursor cursor;
 
+        @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
         static final class MessageBuilder {
             private final String message;
             // LinkedHashMap to preserve order of insertion1
             private final LinkedHashMap<String, ControlFlowNode> nodes = new LinkedHashMap<>();
             private final Set<ControlFlowNode> predecessors = new LinkedHashSet<>();
             private Cursor cursor;
-
-            private MessageBuilder(String message) {
-                this.message = message;
-            }
 
             MessageBuilder thisNode(ControlFlowNode node) {
                 return addNode("This", node);

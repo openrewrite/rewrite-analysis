@@ -34,6 +34,8 @@ package org.apache.maven.scm.provider.git.gitexe.command;
  * under the License.
  */
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.provider.git.util.GitUtil;
@@ -56,12 +58,9 @@ import java.util.List;
  * @author <a href="mailto:struberg@yahoo.de">Mark Struberg</a>
  *
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class GitCommandLineUtils
 {
-
-    private GitCommandLineUtils()
-    {
-    }
 
     public static void addTarget( Commandline cl, @Nullable List<File> files )
     {

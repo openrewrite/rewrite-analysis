@@ -15,6 +15,7 @@
  */
 package org.openrewrite.analysis.search;
 
+import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
@@ -33,12 +34,9 @@ import org.openrewrite.marker.SearchResult;
  */
 @Incubating(since = "2.2.4")
 @LoathingOfOthers("org.openrewrite.java.MethodMatcher")
+@RequiredArgsConstructor
 public class UsesInvocation<P> extends JavaIsoVisitor<P> {
     private final InvocationMatcher invocationMatcher;
-
-    public UsesInvocation(InvocationMatcher invocationMatcher) {
-        this.invocationMatcher = invocationMatcher;
-    }
 
     @Override
     public J visit(@Nullable Tree tree, P p) {

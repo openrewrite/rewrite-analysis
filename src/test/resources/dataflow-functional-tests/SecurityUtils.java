@@ -14,9 +14,9 @@ package com.amazonaws.serverless.proxy.internal;
 
 import com.amazonaws.serverless.proxy.model.ContainerConfig;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +28,8 @@ import java.util.Set;
  * This class contains utility methods to address FSB security issues found in the application, such as string sanitization
  * and file path validation.
  */
+@Slf4j
 public final class SecurityUtils {
-    private static final Logger log = LoggerFactory.getLogger(SecurityUtils.class);
 
     private static final Set<String> SCHEMES;
     static {

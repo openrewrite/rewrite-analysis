@@ -17,6 +17,10 @@
  */
 package org.owasp.dependencycheck.analyzer;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
@@ -42,7 +46,6 @@ import org.owasp.dependencycheck.utils.FileFilterBuilder;
 import org.owasp.dependencycheck.utils.FileUtils;
 import org.owasp.dependencycheck.utils.Settings;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.*;
@@ -64,13 +67,10 @@ import static org.owasp.dependencycheck.analyzer.AbstractNpmAnalyzer.shouldProce
  *
  * @author Jeremy Long
  */
+@NoArgsConstructor
+@Slf4j
 @ThreadSafe
 public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
-
-    /**
-     * The logger.
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveAnalyzer.class);
     /**
      * The count of directories created during analysis. This is used for
      * creating temporary directories.
@@ -88,7 +88,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
     /**
      * The file filter used to filter supported files.
      */
-    private FileFilter fileFilter;
+    @Getter(AccessLevel.PROTECTED) private FileFilter fileFilter;
     /**
      * The set of things we can handle with Zip methods
      */
@@ -128,12 +128,6 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
     private static final AnalysisPhase ANALYSIS_PHASE = AnalysisPhase.INITIAL;
 
     /**
-     * Make java compiler happy.
-     */
-    public ArchiveAnalyzer() {
-    }
-
-    /**
      * Initializes the analyzer with the configured settings.
      *
      * @param settings the configured settings to use
@@ -142,11 +136,6 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
     public void initialize(Settings settings) {
         super.initialize(settings);
         initializeSettings();
-    }
-
-    @Override
-    protected FileFilter getFileFilter() {
-        return fileFilter;
     }
 
     /**
@@ -219,12 +208,12 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
     @Override
     public void closeAnalyzer() throws Exception {
         if (tempFileLocation != null && tempFileLocation.exists()) {
-            LOGGER.debug("Attempting to delete temporary files from `{}`", tempFileLocation.toString());
+            log.debug("Attempting to delete temporary files from `{}`", tempFileLocation.toString());
             final boolean success = FileUtils.delete(tempFileLocation);
             if (!success && tempFileLocation.exists()) {
                 final String[] l = tempFileLocation.list();
                 if (l != null && l.length > 0) {
-                    LOGGER.warn("Failed to delete the Archive Analyzer's temporary files from `{}`, " +
+                    log.warn("Failed to delete the Archive Analyzer's temporary files from `{}`, " +
                                 "see the log for more details", tempFileLocation.toString());
                 }
             }
@@ -342,7 +331,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
             final File tempDir = getNextTempDirectory();
             final String fileName = dependency.getFileName();
 
-            LOGGER.info("The zip file '{}' appears to be a JAR file, making a copy and analyzing it as a JAR.", fileName);
+            log.info("The zip file '{}' appears to be a JAR file, making a copy and analyzing it as a JAR.", fileName);
             final File tmpLoc = new File(tempDir, fileName.substring(0, fileName.length() - 3) + "jar");
             //store the archives sha1 and change it so that the engine doesn't think the zip and jar file are the same
             // and add it is a related dependency.
@@ -370,7 +359,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                     });
                 }
             } catch (IOException ex) {
-                LOGGER.debug("Unable to perform deep copy on '{}'", dependency.getActualFile().getPath(), ex);
+                log.debug("Unable to perform deep copy on '{}'", dependency.getActualFile().getPath(), ex);
             } finally {
                 dependency.setMd5sum(archiveMd5);
                 dependency.setSha1sum(archiveSha1);
@@ -430,7 +419,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                 fis = new FileInputStream(archive);
             } catch (FileNotFoundException ex) {
                 final String msg = "Error extracting file `%s`: %s".formatted(archive.getAbsolutePath(), ex.getMessage());
-                LOGGER.debug(msg, ex);
+                log.debug(msg, ex);
                 throw new AnalysisException(msg);
             }
             BufferedInputStream in = null;
@@ -487,11 +476,11 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                     extractArchive(cain, destination, engine);
                 }
             } catch (ArchiveExtractionException ex) {
-                LOGGER.warn("Exception extracting archive '{}'.", archive.getName());
-                LOGGER.debug("", ex);
+                log.warn("Exception extracting archive '{}'.", archive.getName());
+                log.debug("", ex);
             } catch (IOException ex) {
-                LOGGER.warn("Exception reading archive '{}'.", archive.getName());
-                LOGGER.debug("", ex);
+                log.warn("Exception reading archive '{}'.", archive.getName());
+                log.debug("", ex);
             } finally {
                 //overly verbose and not needed... but keeping it anyway due to
                 //having issue with file handles being left open
@@ -579,7 +568,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                 //final File file = new File(destination, entry.getName());
                 final Path f = d.resolve(entry.getName()).normalize();
                 if (!f.startsWith(d)) {
-                    LOGGER.debug("ZipSlip detected\n-Destination: " + d + "\n-Path: " + f);
+                    log.debug("ZipSlip detected\n-Destination: " + d + "\n-Path: " + f);
                     final String msg = String.format(
                             "Archive contains a file (%s) that would be extracted outside of the target directory.",
                             entry.getName());
@@ -610,7 +599,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
      * @throws AnalysisException thrown if there is an error
      */
     private static void extractAcceptedFile(ArchiveInputStream input, File file) throws AnalysisException {
-        LOGGER.debug("Extracting '{}'", file.getPath());
+        log.debug("Extracting '{}'", file.getPath());
         final File parent = file.getParentFile();
         if (!parent.isDirectory() && !parent.mkdirs()) {
             final String msg = "Unable to build directory '%s'.".formatted(parent.getAbsolutePath());
@@ -619,11 +608,11 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             IOUtils.copy(input, fos);
         } catch (FileNotFoundException ex) {
-            LOGGER.debug("", ex);
+            log.debug("", ex);
             final String msg = "Unable to find file '%s'.".formatted(file.getName());
             throw new AnalysisException(msg, ex);
         } catch (IOException ex) {
-            LOGGER.debug("", ex);
+            log.debug("", ex);
             final String msg = "IO Exception while parsing file '%s'.".formatted(file.getName());
             throw new AnalysisException(msg, ex);
         }
@@ -638,11 +627,11 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
      * decompressing the file
      */
     private void decompressFile(CompressorInputStream inputStream, File outputFile) throws ArchiveExtractionException {
-        LOGGER.debug("Decompressing '{}'", outputFile.getPath());
+        log.debug("Decompressing '{}'", outputFile.getPath());
         try (FileOutputStream out = new FileOutputStream(outputFile)) {
             IOUtils.copy(inputStream, out);
         } catch (IOException ex) {
-            LOGGER.debug("", ex);
+            log.debug("", ex);
             throw new ArchiveExtractionException(ex);
         }
     }
@@ -673,7 +662,7 @@ public class ArchiveAnalyzer extends AbstractFileTypeAnalyzer {
                 }
             }
         } catch (IOException ex) {
-            LOGGER.debug("Unable to unzip zip file '{}'", dependency.getFilePath(), ex);
+            log.debug("Unable to unzip zip file '{}'", dependency.getFilePath(), ex);
         } finally {
             ZipFile.closeQuietly(zip);
         }
