@@ -39,7 +39,7 @@ class VariableTest implements RewriteTest {
             @Override
             public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, ExecutionContext executionContext) {
                 return Variable.viewOf(getCursor()).map(v -> {
-                    int thisVariableIndex = variableIndex++;
+                    var thisVariableIndex = variableIndex++;
                     doAfterVisit(new JavaIsoVisitor<>() {
                         @Override
                         public J.Identifier visitIdentifier(J.Identifier identifier, ExecutionContext executionContext) {
