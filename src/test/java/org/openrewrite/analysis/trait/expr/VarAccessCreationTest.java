@@ -38,7 +38,7 @@ class VarAccessCreationTest implements RewriteTest {
                 return VarAccess.viewOf(getCursor())
                   .map(var -> {
                       assertThat(var.getVariable()).as("VarAccess.getVariable() is null").isNotNull();
-                      assertThat(var.getVariable().getVarAccesses().contains(var)).as("VarAccess.getVariable().getVarAccesses() does not contain this VarAccess").isTrue();
+                      assertThat(var.getVariable().getVarAccesses()).as("VarAccess.getVariable().getVarAccesses() does not contain this VarAccess").contains(var);
                       return SearchResult.mergingFound(tree, var.getName());
                   })
                   .orSuccess(tree);
