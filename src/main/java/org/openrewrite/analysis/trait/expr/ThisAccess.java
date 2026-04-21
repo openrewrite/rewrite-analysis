@@ -38,7 +38,7 @@ public interface ThisAccess extends InstanceAccess {
         public Validation<TraitErrors, ThisAccess> viewOf(Cursor cursor) {
             return InstanceAccessBase.viewOf(cursor)
                     .bind(iab -> {
-                if ("super".equals(iab.getName())) {
+                if ("this".equals(iab.getName())) {
                     return Validation.success(new ThisAccessBase(iab));
                 }
                 return TraitErrors.invalidTraitCreationError("Instance Access is not a This Access");

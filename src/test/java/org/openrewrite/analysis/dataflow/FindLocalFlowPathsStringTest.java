@@ -2010,4 +2010,32 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void flowWhereThisIsAnotherArgument() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  void consume(String s, Test t) {
+                  }
+                  void test() {
+                      String n = "42";
+                      consume(n, this);
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void consume(String s, Test t) {
+                  }
+                  void test() {
+                      String n = /*~~>*/"42";
+                      consume(/*~~>*/n, this);
+                  }
+              }
+              """
+          )
+        );
+    }
 }

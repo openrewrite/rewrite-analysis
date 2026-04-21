@@ -21,6 +21,7 @@ import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
+import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -86,6 +87,47 @@ class DataFlowNodeTest implements RewriteTest {
             import java.util.*;
             class A {}
             """
+          )
+        );
+    }
+
+    @Test
+    void thisIsADataFlowNode() {
+        rewriteRun(
+          spec -> spec.recipe(toRecipe(() -> new TreeVisitor<>() {
+              @Override
+              public @Nullable Tree preVisit(Tree tree, ExecutionContext executionContext) {
+                  Tree t = super.preVisit(tree, executionContext);
+                  if (tree instanceof J.Identifier && "this".equals(((J.Identifier) tree).getSimpleName())) {
+                      return DataFlowNode
+                        .of(getCursor())
+                        .map(df -> (Tree) SearchResult.found(t))
+                        .orSome(t);
+                  }
+                  return t;
+              }
+          })),
+          java(
+            """
+              import java.util.ArrayList;
+              import java.util.List;
+              class A {
+                  void test() {
+                      List<A> result = new ArrayList<>();
+                      result.add(this);
+                  }
+              }
+              """,
+            """
+              import java.util.ArrayList;
+              import java.util.List;
+              class A {
+                  void test() {
+                      List<A> result = new ArrayList<>();
+                      result.add(/*~~>*/this);
+                  }
+              }
+              """
           )
         );
     }
