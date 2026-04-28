@@ -98,7 +98,7 @@ class DataFlowNodeTest implements RewriteTest {
               @Override
               public @Nullable Tree preVisit(Tree tree, ExecutionContext executionContext) {
                   Tree t = super.preVisit(tree, executionContext);
-                  if (tree instanceof J.Identifier && "this".equals(((J.Identifier) tree).getSimpleName())) {
+                  if (tree instanceof J.Identifier identifier && "this".equals(identifier.getSimpleName())) {
                       return DataFlowNode
                         .of(getCursor())
                         .map(df -> (Tree) SearchResult.found(t))
