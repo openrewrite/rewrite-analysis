@@ -103,11 +103,12 @@ public final class ControlFlowSummary {
         final Queue<ControlFlowNode> toVisit = new LinkedList<>();
         if (visit instanceof ControlFlowNode.ConditionNode) {
             toVisit.addAll(((ControlFlowNode.ConditionNode) visit).visit(predicate));
-        } else if (!(visit instanceof ControlFlowNode.End)) {
-            toVisit.addAll(visit.getSuccessors());
         } else {
-            // End node does not need to be visited
-            return;
+            // For LAMBDA-typed End nodes (used for lambda bodies and anonymous class
+            // bodies), `getSuccessors()` returns the node that follows the sub-flow in
+            // the surrounding control flow, so traversal must continue. METHOD-typed
+            // Ends always return an empty set, so this branch is a no-op for them.
+            toVisit.addAll(visit.getSuccessors());
         }
         toVisit.removeAll(reachable);
         toVisit.forEach(n -> recurseComputeReachableBasicBlock(n, predicate, reachable));

@@ -895,6 +895,20 @@ public final class ControlFlow {
         }
 
         @Override
+        public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration method, P p) {
+            // Method declarations encountered here are nested (e.g. inside an anonymous
+            // class body). Each one is its own callable, so analyze the body as a
+            // separate sub-flow — analogous to how `visitLambda` handles a lambda body.
+            addCursorToBasicBlock();
+            if (method.getBody() != null) {
+                ControlFlowSimpleSummary summary = findControlFlowInternal(new Cursor(getCursor(), method.getBody()), ControlFlowNode.GraphType.LAMBDA);
+                currentAsBasicBlock().addSuccessor(summary.start);
+                current = singleton(summary.end);
+            }
+            return method;
+        }
+
+        @Override
         public J.Empty visitEmpty(J.Empty empty, P p) {
             J.MethodInvocation parent = getCursor().firstEnclosing(J.MethodInvocation.class);
             if (parent != null && parent.getArguments().contains(empty)) {
