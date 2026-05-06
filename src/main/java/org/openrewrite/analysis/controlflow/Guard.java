@@ -70,11 +70,21 @@ public final class Guard {
         }
         return getTypeSafe(cursor, e)
                 .map(type -> {
-            if (TypeUtils.isAssignableTo(JavaType.Primitive.Boolean, type)) {
+            if (isBooleanLike(type)) {
                 return new Guard(cursor, e, null);
             }
             return null;
         });
+    }
+
+    private static boolean isBooleanLike(@Nullable JavaType type) {
+        if (TypeUtils.isAssignableTo(JavaType.Primitive.Boolean, type)) {
+            return true;
+        }
+        // Kotlin's `kotlin.Boolean` is represented as a FullyQualified type that
+        // `TypeUtils.isAssignableTo` does not recognise as boolean. Accept it here so
+        // Kotlin sources work.
+        return TypeUtils.isOfClassType(type, "kotlin.Boolean");
     }
 
     private static Optional<J.ControlParentheses<?>> getControlParenthesesFromParent(Cursor cursor) {
@@ -131,7 +141,7 @@ public final class Guard {
 
     private static Optional<JavaType> getTypeSafe(Cursor c, Expression e) {
         JavaType type = e.getType();
-        if (type != null && !JavaType.Unknown.getInstance().equals(type)) {
+        if (type != null && !JavaType.Unknown.getInstance().equals(type) && isBooleanLike(type)) {
             return Optional.of(type);
         }
         if (e instanceof J.Binary) {
@@ -161,6 +171,15 @@ public final class Guard {
             if ("equals".equals(methodInvocation.getSimpleName())) {
                 return Optional.of(JavaType.Primitive.Boolean);
             }
+            if (methodInvocation.getMethodType() != null) {
+                JavaType returnType = methodInvocation.getMethodType().getReturnType();
+                if (isBooleanLike(returnType)) {
+                    return Optional.of(returnType);
+                }
+            }
+        }
+        if (type != null && !JavaType.Unknown.getInstance().equals(type)) {
+            return Optional.of(type);
         }
         J firstEnclosing = c.getParentOrThrow().firstEnclosing(J.class);
         if (firstEnclosing instanceof J.Binary) {

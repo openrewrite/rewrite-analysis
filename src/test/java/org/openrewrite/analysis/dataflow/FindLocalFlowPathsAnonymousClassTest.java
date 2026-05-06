@@ -392,4 +392,56 @@ class FindLocalFlowPathsAnonymousClassTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void anonymousClassWithMultipleAnnotatedMethods() {
+        // Regression: ControlFlow used to throw "No current node!" when an anonymous
+        // class body contained multiple method declarations and the first one's body
+        // ended in a `return`. The return cleared `current`, so visiting the second
+        // method's leading `@Override` annotation tripped `currentAsBasicBlock()`.
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  Object test() {
+                      String o = "42";
+                      Object r = new Object() {
+                          @Override
+                          public boolean equals(Object obj) {
+                              System.out.println(o);
+                              return obj == this;
+                          }
+
+                          @Override
+                          public String toString() {
+                              return "r";
+                          }
+                      };
+                      return r;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  Object test() {
+                      String o = /*~~>*/"42";
+                      Object r = new Object() {
+                          @Override
+                          public boolean equals(Object obj) {
+                              System.out.println(/*~~>*/o);
+                              return obj == this;
+                          }
+
+                          @Override
+                          public String toString() {
+                              return "r";
+                          }
+                      };
+                      return r;
+                  }
+              }
+              """
+          )
+        );
+    }
 }
