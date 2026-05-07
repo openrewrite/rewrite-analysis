@@ -211,10 +211,14 @@ public final class ControlFlow {
                 continueFlow.addAll(analysis.continueFlow);
                 breakFlow.addAll(analysis.breakFlow);
                 exitFlow.addAll(analysis.exitFlow);
-                if (current.isEmpty() && statement instanceof J.Try) {
-                    // TODO: Support try-catch blocks properly.
-                    // This case occurs when a try block has exhaustive exits,
-                    // and catch blocks handle errors gracefully
+                if (current.isEmpty()) {
+                    // The statement ended in an exhaustive exit — either at the
+                    // top level (return/throw) or inside a sub-expression (e.g.
+                    // Kotlin's `val x = expr ?: return X`, where the Elvis right
+                    // side performs the exit). No subsequent statement has a
+                    // continuation to feed into.
+                    // TODO: Support try-catch blocks where catches handle errors
+                    // gracefully — those should re-enter flow rather than break.
                     break;
                 }
             }
@@ -298,15 +302,27 @@ public final class ControlFlow {
         public J.VariableDeclarations visitVariableDeclarations(J.VariableDeclarations multiVariable, P p) {
             visit(multiVariable.getTypeExpression(), p);
             for (J.VariableDeclarations.NamedVariable variable : multiVariable.getVariables()) {
+                if (current.isEmpty()) {
+                    // A previous variable's initializer exhaustively exited.
+                    return multiVariable;
+                }
                 visit(variable, p);
             }
-            addCursorToBasicBlock(); // Then the variable declaration
+            if (!current.isEmpty()) {
+                addCursorToBasicBlock(); // Then the variable declaration
+            }
             return multiVariable;
         }
 
         @Override
         public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, P p) {
             visit(variable.getInitializer(), p); // First add the initializer
+            if (current.isEmpty()) {
+                // The initializer exhaustively exited (e.g. Kotlin's
+                // `val x = expr ?: return`). Skip the name and the basic-block
+                // closure since there is no flow to attach them to.
+                return variable;
+            }
             visit(variable.getName(), p); // Then add the name
             addCursorToBasicBlock(); // Then add the variable declaration
             return variable;
