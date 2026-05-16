@@ -90,7 +90,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
         private String createMessage() {
             StringBuilder sb = new StringBuilder(message);
             if (cursor != null) {
-                sb.append("\n\tAST: ").append(cursor.getValue());
+                sb.append("\n\tAST: ").append((Object) cursor.getValue());
                 sb.append("\n\tCursor: ").append(cursor);
             }
             nodes.forEach((key, node) ->
