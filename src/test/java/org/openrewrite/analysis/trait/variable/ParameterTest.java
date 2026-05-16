@@ -27,10 +27,10 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RewriteTest;
 
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
@@ -59,7 +59,7 @@ class ParameterTest implements RewriteTest {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
               assertThat(p.getPosition()).as("Parameter position is incorrect").isZero();
               assertThat(p.isVarArgs()).as("Parameter isVarArgs is incorrect").isFalse();
-              assertThat(p.getFlags()).as("Parameter flags are incorrect").isEqualTo(emptySet());
+              assertThat(p.getFlags()).as("Parameter flags are incorrect").isEqualTo(Set.of());
               assertThat(p.getName()).as("Parameter name is incorrect").isEqualTo("i");
               assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("test");
                 Method method = Method.Factory.F.firstEnclosingViewOf(cursor).on(TraitErrors::doThrow);
@@ -81,7 +81,7 @@ class ParameterTest implements RewriteTest {
                 Parameter p = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
               assertThat(p.getPosition()).as("Parameter position is incorrect").isZero();
               assertThat(p.isVarArgs()).as("Parameter isVarArgs is incorrect").isTrue();
-              assertThat(p.getFlags()).as("Parameter flags are incorrect").isEqualTo(emptySet());
+              assertThat(p.getFlags()).as("Parameter flags are incorrect").isEqualTo(Set.of());
               assertThat(p.getName()).as("Parameter name is incorrect").isEqualTo("i");
               assertThat(p.getCallable().getName()).as("Parameter callable name is incorrect").isEqualTo("test");
                 return SearchResult.found(variable);

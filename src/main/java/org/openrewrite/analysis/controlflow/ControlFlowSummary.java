@@ -41,7 +41,7 @@ public final class ControlFlowSummary {
 
     private static Set<ControlFlowNode> getAllControlFlowNodes(ControlFlowNode.Start start, ControlFlowNode.End end) {
         // LinkedHashSet to preserve insertion order of nodes
-        LinkedHashSet<ControlFlowNode> all = new LinkedHashSet<>();
+        Set<ControlFlowNode> all = new LinkedHashSet<>();
         recurseGetAllControlFlowNodes(start, all, ControlFlowNode::getSuccessors);
         // Sometimes the end may not be reachable because of an infinite loop.
         // In this case, we need to add the end node and look backwards as well to capture 'all' nodes.

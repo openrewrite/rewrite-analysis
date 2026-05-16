@@ -253,7 +253,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
 
     private static class Analysis extends JavaVisitor<Integer> {
         final DataFlowSpec dataFlowSpec;
-        Stack<IdentifierToFlows> flowsByIdentifier = new Stack<>();
+        Deque<IdentifierToFlows> flowsByIdentifier = new ArrayDeque<>();
 
         Analysis(DataFlowSpec dataFlowSpec, IdentifierToFlows initial) {
             this.dataFlowSpec = dataFlowSpec;

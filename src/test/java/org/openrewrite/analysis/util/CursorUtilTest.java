@@ -15,9 +15,7 @@
  */
 package org.openrewrite.analysis.util;
 
-import fj.data.Option;
 import org.junit.jupiter.api.Test;
-import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.tree.J;
@@ -32,7 +30,7 @@ class CursorUtilTest implements RewriteTest {
 
         @Override
         public J visitMethodInvocation(J.MethodInvocation method, ExecutionContext executionContext) {
-            Option<Cursor> found = CursorUtil.findCursorForTree(getCursor(), method.getArguments().getFirst());
+            var found = CursorUtil.findCursorForTree(getCursor(), method.getArguments().getFirst());
 
             assertThat(found.isSome()).as("Cursor for the sub-tree tree not found").isTrue();
             assertThat(found.some().<J>getValue()).isEqualTo(method.getArguments().getFirst());

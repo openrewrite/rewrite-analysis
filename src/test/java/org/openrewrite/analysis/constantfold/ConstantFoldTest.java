@@ -15,13 +15,11 @@
  */
 package org.openrewrite.analysis.constantfold;
 
-import fj.data.Option;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
-import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -41,7 +39,7 @@ class ConstantFoldTest implements RewriteTest {
         @Override
         public Expression visitExpression(Expression expression, P p) {
             if (ALL_MATCHER.advanced().isFirstArgument(getCursor())) {
-                Option<J> constantValue = ConstantFold.findConstantJ(getCursor());
+                var constantValue = ConstantFold.findConstantJ(getCursor());
                 if (constantValue.isSome() && constantValue.map(j -> j.getMarkers().findFirst(SearchResult.class).isEmpty()).orSome(false)) {
                     return SearchResult.found(expression, constantValue.some().print(getCursor()).trim());
                 }

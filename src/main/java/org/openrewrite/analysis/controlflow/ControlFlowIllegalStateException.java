@@ -22,6 +22,7 @@ import org.openrewrite.Cursor;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 final class ControlFlowIllegalStateException extends IllegalStateException {
@@ -41,7 +42,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
     @Value
     static class Message {
         String message;
-        LinkedHashMap<String, ControlFlowNode> nodes;
+        Map<String, ControlFlowNode> nodes;
         Set<ControlFlowNode> predecessors;
         Cursor cursor;
 
@@ -49,7 +50,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
         static final class MessageBuilder {
             private final String message;
             // LinkedHashMap to preserve order of insertion1
-            private final LinkedHashMap<String, ControlFlowNode> nodes = new LinkedHashMap<>();
+            private final Map<String, ControlFlowNode> nodes = new LinkedHashMap<>();
             private final Set<ControlFlowNode> predecessors = new LinkedHashSet<>();
             private Cursor cursor;
 
@@ -89,7 +90,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
         private String createMessage() {
             StringBuilder sb = new StringBuilder(message);
             if (cursor != null) {
-                sb.append("\n\tAST: ").append((Object) cursor.getValue());
+                sb.append("\n\tAST: ").append(cursor.getValue());
                 sb.append("\n\tCursor: ").append(cursor);
             }
             nodes.forEach((key, node) ->

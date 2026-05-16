@@ -56,7 +56,7 @@ public class CsvLoader {
             return new String[0];
         }
 
-        ArrayList<String> result = new ArrayList<>();
+        List<String> result = new ArrayList<>();
         for (int i = 0; i < line.length(); i++) {
             if (line.charAt(i) == ',') {
                 result.add("");
