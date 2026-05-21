@@ -245,7 +245,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
         }
 
         public IdentifierToFlows copy() {
-            HashMap<String, Set<FlowGraph>> newIdentifierToFlows = new HashMap<>();
+            Map<String, Set<FlowGraph>> newIdentifierToFlows = new HashMap<>();
             identifierToFlows.forEach((identifier, flows) -> newIdentifierToFlows.put(identifier, new HashSet<>(flows)));
             return new IdentifierToFlows(newIdentifierToFlows);
         }
