@@ -26,7 +26,6 @@ dependencies {
     testImplementation("org.openrewrite:rewrite-test:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-java-tck:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-kotlin:${rewriteVersion}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.14.2")
     testImplementation("com.tngtech.archunit:archunit-junit5:latest.release")
 
     testImplementation("org.assertj:assertj-core:latest.release")
