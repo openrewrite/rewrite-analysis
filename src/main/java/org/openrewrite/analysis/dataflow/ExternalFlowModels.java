@@ -168,9 +168,9 @@ final class ExternalFlowModels {
          */
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToReturn(
                 int argumentIndex,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher callMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
                 return (srcNode, sinkNode) ->
@@ -187,9 +187,9 @@ final class ExternalFlowModels {
          */
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToQualifier(
                 int argumentIndex,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher callMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             assert argumentIndex != -1 : "Argument[-1] is the 'select' or 'qualifier' of a method call. Flow would be cyclic.";
             return (srcNode, sinkNode) ->
                     callMatcher.advanced().isSelect(sinkNode.getCursor()) &&
@@ -198,9 +198,9 @@ final class ExternalFlowModels {
 
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToArgumentIndex(
                 ArgumentIndices argumentIndices,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher callMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             if (argumentIndices.inputIndex == -1) {
                 return (srcNode, sinkNode) ->
                         callMatcher.advanced().isSelect(srcNode.getCursor()) &&

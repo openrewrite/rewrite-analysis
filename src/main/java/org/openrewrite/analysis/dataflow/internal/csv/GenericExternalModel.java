@@ -19,13 +19,57 @@ import lombok.Data;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.analysis.BasicInvocationMatcher;
+import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.java.tree.JavaType;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
 public interface GenericExternalModel extends BasicInvocationMatcher {
+
+    /**
+     * Builds an {@link InvocationMatcher} that matches any of {@code models}, indexed by method name.
+     * <p>
+     * A model can only match a call when its (effective) method name equals the call's name — see
+     * {@link #matchesMethodName(String)} — so dispatching on {@link JavaType.Method#getName()} and only
+     * checking the models registered under that name yields exactly the same result as scanning every
+     * model, but turns the per-call cost from O(models of this flow shape) into O(1) plus the handful of
+     * same-named models. This matters because the model set is large (tens of thousands of rows).
+     */
+    static InvocationMatcher indexedMatcher(Collection<? extends GenericExternalModel> models) {
+        if (models.isEmpty()) {
+            return type -> false;
+        }
+        if (models.size() == 1) {
+            return models.iterator().next();
+        }
+        Map<String, List<GenericExternalModel>> byName = new HashMap<>();
+        for (GenericExternalModel model : models) {
+            // Constructors are invoked with the synthetic name "<constructor>".
+            String name = model.isConstructor() ? "<constructor>" : model.getName();
+            byName.computeIfAbsent(name, __ -> new ArrayList<>(1)).add(model);
+        }
+        return type -> {
+            if (type == null) {
+                return false;
+            }
+            List<GenericExternalModel> candidates = byName.get(type.getName());
+            if (candidates == null) {
+                return false;
+            }
+            for (GenericExternalModel candidate : candidates) {
+                if (candidate.matches(type)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    }
 
     String getNamespace();
     String getType();

@@ -137,18 +137,18 @@ public final class ExternalSinkModels {
 
         private SinkNodePredicate sinkNodePredicateForArgumentIndex(
                 int argumentIndex,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher invocationMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             return argumentIndex == -1 ?
                     (sinkNode -> invocationMatcher.advanced().isSelect(sinkNode.getCursor())) :
                     (sinkNode -> invocationMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndex));
         }
 
         private SinkNodePredicate sinkNodePredicateForReturnValue(
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher invocationMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             return sinkNode -> sinkNode.asExprParent(Call.class).map(call -> call.matches(invocationMatcher)).orSome(false);
         }
 

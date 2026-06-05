@@ -49,3 +49,28 @@ tasks.withType<Javadoc> {
     // 1 error
     exclude("**/trait/**")
 }
+
+// JMH micro-benchmarks (isolated source set; not wired into `check`/`build`).
+// Run with: gw jmh --args "<BenchmarkNameFilter> -f 1 -wi 3 -i 5"
+sourceSets {
+    create("jmh") {
+        compileClasspath += sourceSets["main"].output
+        runtimeClasspath += sourceSets["main"].output
+    }
+}
+
+configurations["jmhImplementation"].extendsFrom(configurations["implementation"], configurations["runtimeOnly"])
+
+dependencies {
+    "jmhImplementation"("org.openjdk.jmh:jmh-core:1.37")
+    "jmhAnnotationProcessor"("org.openjdk.jmh:jmh-generator-annprocess:1.37")
+    "jmhRuntimeOnly"("org.openrewrite:rewrite-java-21")
+}
+
+tasks.register<JavaExec>("jmh") {
+    group = "verification"
+    description = "Run JMH benchmarks (pass JMH args via --args)."
+    dependsOn(tasks.named("jmhClasses"))
+    mainClass.set("org.openjdk.jmh.Main")
+    classpath = sourceSets["jmh"].runtimeClasspath
+}
