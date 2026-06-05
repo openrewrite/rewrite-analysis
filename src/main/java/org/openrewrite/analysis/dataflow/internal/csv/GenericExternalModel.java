@@ -227,6 +227,16 @@ class Internal {
     }
 
     static boolean matches(JavaType parameter, String parameterSignature) {
+        // CodeQL signatures use erased types, so a type-variable position (e.g. the `K`/`V` of
+        // `Map.put(K, V)`) is written as `Object`. At a call site the type argument is substituted in
+        // (`Map<String, String>.put` has parameter types `String, String`) or the parameter is itself
+        // a type variable, neither of which equals `Object` by name. Treat an `Object` signature as
+        // matching any reference type so these models match; primitives still require an exact match.
+        if (("Object".equals(parameterSignature) || "java.lang.Object".equals(parameterSignature)) &&
+            !(parameter instanceof JavaType.Primitive)) {
+            return true;
+        }
+
         String parameterString = typePattern(parameter);
 
         if (parameterString == null) {
