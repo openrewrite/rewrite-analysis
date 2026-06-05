@@ -234,7 +234,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             }
             Iterator<FlowGraph> iterator = get(identifier).iterator();
             FlowGraph flow = iterator.next();
-            DataFlowNode flowNode = DataFlowNode.ofOrThrow(cursor, "identifier is not a DataFlowNode: " + cursor);
+            DataFlowNode flowNode = DataFlowNode.ofOrThrow(cursor);
             // Create a FlowGraph for the current identifier being visited
             FlowGraph newFlowGraph = flow.addEdge(flowNode);
             while (iterator.hasNext()) {
@@ -457,7 +457,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                         // Select may not be a data flow node if it's a static access
                         Option<DataFlowNode> selectNode = DataFlowNode.of(selectCursor);
                         if (selectNode.isSome() && spec.isFlowStep(
-                                DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                                DataFlowNode.ofOrThrow(previousCursor),
                                 selectNode.some()
                         )) {
                             nextFlowGraph = nextFlowGraph.addEdge(selectNode.some());
@@ -483,10 +483,10 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                             }
 
                             Cursor argumentCursor = new Cursor(parentCursor, expr);
-                            DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor, "Unable to create DataFlowNode for " + argumentCursor);
+                            DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor);
 
                             if (spec.isFlowStep(
-                                    DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                                    DataFlowNode.ofOrThrow(previousCursor),
                                     argumentNode
                             )) {
                                 nextFlowGraph = nextFlowGraph.addEdge(argumentNode);
@@ -522,10 +522,10 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                             }
 
                             Cursor argumentCursor = new Cursor(parentCursor, expr);
-                            DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor, "Unable to create DataFlowNode for " + argumentCursor);
+                            DataFlowNode argumentNode = DataFlowNode.ofOrThrow(argumentCursor);
 
                             if (spec.isFlowStep(
-                                    DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                                    DataFlowNode.ofOrThrow(previousCursor),
                                     argumentNode
                             )) {
                                 nextFlowGraph = nextFlowGraph.addEdge(argumentNode);
@@ -543,7 +543,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     }
                 }
                 if (spec.isFlowStep(
-                        DataFlowNode.ofOrThrow(previousCursor, "Unable to create DataFlowNode for " + previousCursor),
+                        DataFlowNode.ofOrThrow(previousCursor),
                         ancestorNode
                 )) {
                     nextFlowGraph = nextFlowGraph.addEdge(ancestorNode);
