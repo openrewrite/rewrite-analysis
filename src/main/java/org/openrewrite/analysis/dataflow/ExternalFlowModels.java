@@ -233,30 +233,58 @@ final class ExternalFlowModels {
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
             Map<ArgumentIndices, Set<FlowModel>> flowFromArgumentIndexToArgumentIndex = new HashMap<>();
             models.forEach(model -> {
-                Optional<GenericExternalModel.ArgumentRange> inputRange = GenericExternalModel.computeArgumentRange(model.input);
-                Optional<GenericExternalModel.ArgumentRange> outputRange = GenericExternalModel.computeArgumentRange(model.output);
-                if ("ReturnValue".equals(model.output) || model.isConstructor()) {
-                    inputRange.ifPresent(argumentRange -> {
-                        for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
-                            flowFromArgumentIndexToReturn.computeIfAbsent(i, __ -> new HashSet<>())
-                                    .add(model);
-                        }
-                    });
+                // Parse both endpoints as access paths, which collapse any content component
+                // (`Element`, `MapValue`, `Field[...]`, ...) onto its container. A content store/read
+                // thereby becomes an ordinary container-level flow that the predicates below already
+                // handle: e.g. `Collection.add: Argument[0] -> Argument[this].Element` collapses to
+                // `Argument[0] -> Argument[this]` (the value taints the whole collection) and
+                // `List.get: Argument[this].Element -> ReturnValue` to `Argument[this] -> ReturnValue`.
+                // This is content-insensitive (an over-approximation), but sound only because every
+                // store and read collapses uniformly, so the two halves still reconnect.
+                Optional<AccessPath> maybeInput = AccessPath.parse(model.input);
+                Optional<AccessPath> maybeOutput = AccessPath.parse(model.output);
+                if (!maybeInput.isPresent() || !maybeOutput.isPresent()) {
+                    // Unparseable (e.g. a `WithElement`/`WithoutElement` typestate path) -> ignore.
+                    return;
+                }
+                AccessPath input = maybeInput.get();
+                AccessPath output = maybeOutput.get();
+                if (input.isCallback() || output.isCallback()) {
+                    // Higher-order ("lambda call") endpoints are owned by buildCallbackModels.
+                    return;
+                }
+                Optional<GenericExternalModel.ArgumentRange> inputRange = input.getRoot() == AccessPath.Root.ARGUMENT ?
+                        Optional.ofNullable(input.getRootRange()) : Optional.empty();
+                Optional<GenericExternalModel.ArgumentRange> outputRange = output.getRoot() == AccessPath.Root.ARGUMENT ?
+                        Optional.ofNullable(output.getRootRange()) : Optional.empty();
+                boolean outputIsReturnValue = output.getRoot() == AccessPath.Root.RETURN_VALUE;
+                if ((outputIsReturnValue || model.isConstructor()) && inputRange.isPresent()) {
+                    GenericExternalModel.ArgumentRange argumentRange = inputRange.get();
+                    for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
+                        flowFromArgumentIndexToReturn.computeIfAbsent(i, __ -> new HashSet<>())
+                                .add(model);
+                    }
                 }
                 // Flow into the receiver, spelled `Argument[-1]` (older dialect) or `Argument[this]`
                 // (current dialect); both resolve to position -1.
-                if (isReceiver(outputRange) && !model.isConstructor()) {
-                    inputRange.ifPresent(argumentRange -> {
-                        for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
+                if (isReceiver(outputRange) && !model.isConstructor() && inputRange.isPresent()) {
+                    GenericExternalModel.ArgumentRange argumentRange = inputRange.get();
+                    for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
+                        // Skip a collapsed receiver -> receiver self-flow (e.g. `Argument[this].Element
+                        // -> Argument[this].MapValue`); it carries no information, and the predicate
+                        // forbids a qualifier-to-qualifier step.
+                        if (i != -1) {
                             flowFromArgumentIndexToQualifier.computeIfAbsent(i, __ -> new HashSet<>())
                                     .add(model);
                         }
-                    });
+                    }
                 }
                 if (inputRange.isPresent() && outputRange.isPresent()) {
                     for (int i = inputRange.get().getStart(); i <= inputRange.get().getEnd(); i++) {
                         for (int j = outputRange.get().getStart(); j <= outputRange.get().getEnd(); j++) {
-                            if (j >= 0) {
+                            // j >= 0 excludes the receiver (handled above); i != j skips a collapsed
+                            // self-flow (e.g. `Argument[0].MapKey -> Argument[0].MapValue`).
+                            if (j >= 0 && i != j) {
                                 flowFromArgumentIndexToArgumentIndex.computeIfAbsent(new ArgumentIndices(i, j), __ -> new HashSet<>())
                                         .add(model);
                             }
