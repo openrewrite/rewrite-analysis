@@ -37,7 +37,23 @@ class ExternalSinkModelsTest {
         // Remove all optimized sink flow models
         models.removeAll(optimizedModels.getSinkModels());
 
-        assertThat(models).size().as("All sink models should be optimized").isZero();
+        // Every plain sink (a bare `Argument[...]` position or `ReturnValue`) must be optimized. The
+        // only sinks that may remain are those whose input is a content or higher-order ("callback")
+        // access path — e.g. `Argument[0].ReturnValue` (the return value of a functional argument) or
+        // `Argument[this].MapValue` — which this content-insensitive engine does not model.
+        assertThat(models)
+                .as("Only content/callback sinks may remain unoptimized")
+                .allMatch(model -> model.input.contains("."));
+    }
+
+    @Test
+    void deprecatedSinkKindsAreAliasedToCurrentNames() {
+        // CodeQL standardized its sink-kind names; the alias keeps callers on the old names working.
+        assertThat(ExternalSinkModels.canonicalKinds("create-file")).containsExactly("path-injection");
+        assertThat(ExternalSinkModels.canonicalKinds("logging")).containsExactly("log-injection");
+        assertThat(ExternalSinkModels.canonicalKinds("xss")).containsExactlyInAnyOrder("html-injection", "js-injection");
+        // A current (non-legacy) kind passes through unchanged.
+        assertThat(ExternalSinkModels.canonicalKinds("path-injection")).containsExactly("path-injection");
     }
 
 }

@@ -48,8 +48,6 @@ class ExternalModelMethodMatcherTest implements RewriteTest {
             signature,
             null,
             null,
-            null,
-            null,
             null
           )
         );

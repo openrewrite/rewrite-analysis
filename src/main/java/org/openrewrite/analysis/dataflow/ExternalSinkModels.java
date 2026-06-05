@@ -28,12 +28,13 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -55,18 +56,56 @@ public final class ExternalSinkModels {
         return instance;
     }
 
-    private WeakReference<FullyQualifiedNameToSinkModels> fullyQualifiedNameToSinkModel;
+    /**
+     * Legacy sink-kind names (used before CodeQL standardized its threat-model taxonomy) mapped to the
+     * current name(s). Consulted by {@link #isSinkNode} so callers written against the old names keep
+     * matching. Derived by following each old sink to the same method/position in the regenerated model.
+     */
+    private static final Map<String, Set<String>> DEPRECATED_KIND_ALIASES;
+
+    static {
+        Map<String, Set<String>> aliases = new HashMap<>();
+        aliases.put("create-file", singleton("path-injection"));
+        aliases.put("read-file", singleton("path-injection[read]"));
+        aliases.put("write-file", singleton("file-content-store"));
+        aliases.put("logging", singleton("log-injection"));
+        aliases.put("sql", singleton("sql-injection"));
+        aliases.put("xss", new HashSet<>(Arrays.asList("html-injection", "js-injection")));
+        aliases.put("open-url", singleton("request-forgery"));
+        aliases.put("url-open-stream", singleton("request-forgery"));
+        aliases.put("jdbc-url", singleton("request-forgery"));
+        aliases.put("url-redirect", singleton("url-redirection"));
+        aliases.put("ldap", singleton("ldap-injection"));
+        aliases.put("xpath", singleton("xpath-injection"));
+        aliases.put("xslt", singleton("xslt-injection"));
+        aliases.put("groovy", singleton("groovy-injection"));
+        aliases.put("jexl", singleton("jexl-injection"));
+        aliases.put("mvel", singleton("mvel-injection"));
+        aliases.put("ssti", singleton("template-injection"));
+        aliases.put("header-splitting", singleton("response-splitting"));
+        aliases.put("set-hostname-verifier", singleton("hostname-verification"));
+        aliases.put("intent-start", singleton("intent-redirection"));
+        aliases.put("pending-intent-sent", singleton("pending-intents"));
+        DEPRECATED_KIND_ALIASES = aliases;
+    }
+
+    /** The current sink-kind name(s) for a possibly-legacy {@code kind} (the kind itself when not legacy). */
+    static Set<String> canonicalKinds(String kind) {
+        return DEPRECATED_KIND_ALIASES.getOrDefault(kind, singleton(kind));
+    }
+
+    private SoftReference<FullyQualifiedNameToSinkModels> fullyQualifiedNameToSinkModel;
 
     FullyQualifiedNameToSinkModels getFullyQualifiedNameToSinkModel() {
         FullyQualifiedNameToSinkModels f;
         if (fullyQualifiedNameToSinkModel == null) {
             f = Loader.load();
-            fullyQualifiedNameToSinkModel = new WeakReference<>(f);
+            fullyQualifiedNameToSinkModel = new SoftReference<>(f);
         } else {
             f = fullyQualifiedNameToSinkModel.get();
             if (f == null) {
                 f = Loader.load();
-                fullyQualifiedNameToSinkModel = new WeakReference<>(f);
+                fullyQualifiedNameToSinkModel = new SoftReference<>(f);
             }
         }
         return f;
@@ -87,13 +126,20 @@ public final class ExternalSinkModels {
     /**
      * True if the {@code expression} {@code cursor} is specified as a sink with the given {@code kind} in the
      * CSV flow model.
+     * <p>
+     * Accepts the legacy sink-kind names used before CodeQL standardized its threat-model taxonomy (see
+     * {@link #DEPRECATED_KIND_ALIASES}), so callers written against the older model keep matching. Prefer
+     * the current names.
      *
      * @return If this is a sink of the given {@code kind}.
      */
     public boolean isSinkNode(DataFlowNode sinkNode, String kind) {
-        for (SinkNodePredicate predicate : getOrComputeOptimizedSinkModels(sinkNode.getCursor()).forKind(kind)) {
-            if (predicate.isSinkNode(sinkNode)) {
-                return true;
+        OptimizedSinkModels optimized = getOrComputeOptimizedSinkModels(sinkNode.getCursor());
+        for (String canonicalKind : canonicalKinds(kind)) {
+            for (SinkNodePredicate predicate : optimized.forKind(canonicalKind)) {
+                if (predicate.isSinkNode(sinkNode)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -137,18 +183,18 @@ public final class ExternalSinkModels {
 
         private SinkNodePredicate sinkNodePredicateForArgumentIndex(
                 int argumentIndex,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher invocationMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             return argumentIndex == -1 ?
                     (sinkNode -> invocationMatcher.advanced().isSelect(sinkNode.getCursor())) :
                     (sinkNode -> invocationMatcher.advanced().isParameter(sinkNode.getCursor(), argumentIndex));
         }
 
         private SinkNodePredicate sinkNodePredicateForReturnValue(
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher invocationMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher invocationMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             return sinkNode -> sinkNode.asExprParent(Call.class).map(call -> call.matches(invocationMatcher)).orSome(false);
         }
 
@@ -274,7 +320,9 @@ public final class ExternalSinkModels {
     @AllArgsConstructor
     @ToString
     static class SinkModel implements GenericExternalModel {
-        // package, type, subtypes, name, signature, ext, input, kind, provenance
+        // CSV columns: package, type, subtypes, name, signature, ext, input, kind, provenance.
+        // `ext` and `provenance` are not read by the engine, so they are dropped rather than retained
+        // across every row of the (large) sink set.
         @Getter
         String namespace;
 
@@ -290,10 +338,8 @@ public final class ExternalSinkModels {
         @Getter
         String signature;
 
-        String ext;
         String input;
         String kind;
-        String provenance;
 
         @Override
         public String getArguments() {
@@ -313,10 +359,10 @@ public final class ExternalSinkModels {
                             Boolean.parseBoolean(tokens[2]),
                             tokens[3],
                             tokens[4],
-                            tokens[5],
+                            // tokens[5] = ext (unused)
                             tokens[6],
-                            tokens[7],
-                            tokens[8]
+                            tokens[7]
+                            // tokens[8] = provenance (unused)
                     )
             );
         }

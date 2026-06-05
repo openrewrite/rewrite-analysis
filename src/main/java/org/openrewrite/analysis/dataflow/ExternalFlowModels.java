@@ -30,7 +30,7 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -51,18 +51,18 @@ final class ExternalFlowModels {
         return instance;
     }
 
-    private WeakReference<FullyQualifiedNameToFlowModels> fullyQualifiedNameToFlowModels;
+    private SoftReference<FullyQualifiedNameToFlowModels> fullyQualifiedNameToFlowModels;
 
     FullyQualifiedNameToFlowModels getFullyQualifiedNameToFlowModels() {
         FullyQualifiedNameToFlowModels f;
         if (this.fullyQualifiedNameToFlowModels == null) {
             f = Loader.create().load();
-            this.fullyQualifiedNameToFlowModels = new WeakReference<>(f);
+            this.fullyQualifiedNameToFlowModels = new SoftReference<>(f);
         } else {
             f = this.fullyQualifiedNameToFlowModels.get();
             if (f == null) {
                 f = Loader.create().load();
-                this.fullyQualifiedNameToFlowModels = new WeakReference<>(f);
+                this.fullyQualifiedNameToFlowModels = new SoftReference<>(f);
             }
         }
         return f;
@@ -168,9 +168,9 @@ final class ExternalFlowModels {
          */
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToReturn(
                 int argumentIndex,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher callMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             if (argumentIndex == -1) {
                 // Argument[-1] is the 'select' or 'qualifier' of a method call
                 return (srcNode, sinkNode) ->
@@ -187,9 +187,9 @@ final class ExternalFlowModels {
          */
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToQualifier(
                 int argumentIndex,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher callMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             assert argumentIndex != -1 : "Argument[-1] is the 'select' or 'qualifier' of a method call. Flow would be cyclic.";
             return (srcNode, sinkNode) ->
                     callMatcher.advanced().isSelect(sinkNode.getCursor()) &&
@@ -198,9 +198,9 @@ final class ExternalFlowModels {
 
         private AdditionalFlowStepPredicate forFlowFromArgumentIndexToArgumentIndex(
                 ArgumentIndices argumentIndices,
-                Collection<? extends InvocationMatcher> methodMatchers
+                Collection<? extends GenericExternalModel> methodMatchers
         ) {
-            InvocationMatcher callMatcher = InvocationMatcher.from(methodMatchers);
+            InvocationMatcher callMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
             if (argumentIndices.inputIndex == -1) {
                 return (srcNode, sinkNode) ->
                         callMatcher.advanced().isSelect(srcNode.getCursor()) &&
@@ -223,29 +223,36 @@ final class ExternalFlowModels {
             int outputIndex;
         }
 
+        /** Holds if the access path denotes exactly the receiver — {@code Argument[-1]} or {@code Argument[this]}. */
+        private static boolean isReceiver(Optional<GenericExternalModel.ArgumentRange> range) {
+            return range.map(r -> r.getStart() == -1 && r.getEnd() == -1).orElse(false);
+        }
+
         private Map<AdditionalFlowStepPredicate, Set<FlowModel>> optimize(Collection<FlowModel> models) {
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToReturn = new HashMap<>();
             Map<Integer, Set<FlowModel>> flowFromArgumentIndexToQualifier = new HashMap<>();
             Map<ArgumentIndices, Set<FlowModel>> flowFromArgumentIndexToArgumentIndex = new HashMap<>();
             models.forEach(model -> {
+                Optional<GenericExternalModel.ArgumentRange> inputRange = GenericExternalModel.computeArgumentRange(model.input);
+                Optional<GenericExternalModel.ArgumentRange> outputRange = GenericExternalModel.computeArgumentRange(model.output);
                 if ("ReturnValue".equals(model.output) || model.isConstructor()) {
-                    model.getArgumentRange().ifPresent(argumentRange -> {
+                    inputRange.ifPresent(argumentRange -> {
                         for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
                             flowFromArgumentIndexToReturn.computeIfAbsent(i, __ -> new HashSet<>())
                                     .add(model);
                         }
                     });
                 }
-                if ("Argument[-1]".equals(model.output) && !model.isConstructor()) {
-                    model.getArgumentRange().ifPresent(argumentRange -> {
+                // Flow into the receiver, spelled `Argument[-1]` (older dialect) or `Argument[this]`
+                // (current dialect); both resolve to position -1.
+                if (isReceiver(outputRange) && !model.isConstructor()) {
+                    inputRange.ifPresent(argumentRange -> {
                         for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
                             flowFromArgumentIndexToQualifier.computeIfAbsent(i, __ -> new HashSet<>())
                                     .add(model);
                         }
                     });
                 }
-                Optional<GenericExternalModel.ArgumentRange> inputRange = GenericExternalModel.computeArgumentRange(model.input);
-                Optional<GenericExternalModel.ArgumentRange> outputRange = GenericExternalModel.computeArgumentRange(model.output);
                 if (inputRange.isPresent() && outputRange.isPresent()) {
                     for (int i = inputRange.get().getStart(); i <= inputRange.get().getEnd(); i++) {
                         for (int j = outputRange.get().getStart(); j <= outputRange.get().getEnd(); j++) {
@@ -312,6 +319,12 @@ final class ExternalFlowModels {
         private static List<CallbackFlowModel> buildCallbackModels(Collection<FlowModel> models) {
             List<CallbackFlowModel> callbacks = new ArrayList<>();
             for (FlowModel model : models) {
+                // A callback path is always `Argument[i].ReturnValue` (OUT) or `Argument[i].Parameter[j]`
+                // (INTO), both of which contain a '.'. The plain-flow majority has none, so skip it here
+                // rather than allocating two access-path parses per model on this per-compilation-unit path.
+                if (model.input.indexOf('.') < 0 && model.output.indexOf('.') < 0) {
+                    continue;
+                }
                 Optional<AccessPath> maybeIn = AccessPath.parse(model.input);
                 Optional<AccessPath> maybeOut = AccessPath.parse(model.output);
                 if (!maybeIn.isPresent() || !maybeOut.isPresent()) {
@@ -459,7 +472,9 @@ final class ExternalFlowModels {
     @AllArgsConstructor
     @ToString
     static class FlowModel implements GenericExternalModel {
-        // package, type, subtypes, name, signature, ext, input, output, kind, provenance
+        // CSV columns: package, type, subtypes, name, signature, ext, input, output, kind, provenance.
+        // `ext` and `provenance` are not read by the engine, so they are dropped rather than retained
+        // across every row of the (large) model set.
         @Getter
         String namespace;
 
@@ -475,11 +490,9 @@ final class ExternalFlowModels {
         @Getter
         String signature;
 
-        String ext;
         String input;
         String output;
         String kind;
-        String provenance;
 
         @Override
         public String getArguments() {
@@ -508,11 +521,11 @@ final class ExternalFlowModels {
                             Boolean.parseBoolean(tokens[2]),
                             tokens[3],
                             tokens[4],
-                            tokens[5],
+                            // tokens[5] = ext (unused)
                             tokens[6],
                             tokens[7],
-                            tokens[8],
-                            tokens[9]
+                            tokens[8]
+                            // tokens[9] = provenance (unused)
                     )
             );
         }
