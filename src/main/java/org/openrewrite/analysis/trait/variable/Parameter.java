@@ -60,14 +60,20 @@ public interface Parameter extends LocalScopeVariable {
         public Validation<TraitErrors, Parameter> viewOf(Cursor c) {
             if (c.getValue() instanceof J.VariableDeclarations.NamedVariable) {
                 Cursor variableDeclarationsCursor = c.getParentTreeCursor();
-                Cursor methodDeclarationCursor = variableDeclarationsCursor.getParentTreeCursor();
-                return Method.viewOf(methodDeclarationCursor).map(callable -> new ParameterBase(
+                Cursor maybeCallableCursor = variableDeclarationsCursor.getParentTreeCursor();
+                // A lambda parameter is declared on the lambda's implicit method (its single
+                // abstract method), not on the lambda itself. The cursor path for such a parameter
+                // is NamedVariable -> VariableDeclarations -> J.Lambda.Parameters -> J.Lambda.
+                if (maybeCallableCursor.getValue() instanceof J.Lambda.Parameters) {
+                    maybeCallableCursor = maybeCallableCursor.getParentTreeCursor();
+                }
+                Cursor callableCursor = maybeCallableCursor;
+                return Method.viewOf(callableCursor).map(callable -> new ParameterBase(
                         c,
                         c.getValue(),
                         variableDeclarationsCursor.getValue(),
                         callable,
-                        methodDeclarationCursor,
-                        methodDeclarationCursor.getValue()
+                        callableCursor
                 ));
             }
             return TraitErrors.invalidTraitCreationType(Parameter.class, c, J.VariableDeclarations.NamedVariable.class);
@@ -89,8 +95,8 @@ class ParameterBase extends Top.Base implements Parameter {
     @Getter(onMethod_ =@Override)
     Method callable;
 
-    Cursor methodDeclarationCursor;
-    J.MethodDeclaration methodDeclaration;
+    /** The cursor of the enclosing callable, either a {@link J.MethodDeclaration} or a {@link J.Lambda}. */
+    Cursor callableCursor;
 
     @Override
     public UUID getId() {
@@ -110,7 +116,8 @@ class ParameterBase extends Top.Base implements Parameter {
     @Override
     public boolean isVarArgs() {
         if (this.namedVariable.getVariableType() == null) {
-            throw new IllegalStateException("Variable type is null for " + this.namedVariable);
+            // Lambda parameters may have no resolved variable type; they can never be varargs.
+            return false;
         }
         return this.namedVariable.getVariableType().hasFlags(Flag.Varargs);
     }
@@ -122,22 +129,36 @@ class ParameterBase extends Top.Base implements Parameter {
 
     @Override
     public Collection<VarAccess> getVarAccesses() {
-        if (methodDeclaration.getBody() == null) {
-            return emptySet();
-        }
-        return VarAccess.findAllInScope(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
+        return bodyScope()
+                .map(scope -> VarAccess.findAllInScope(scope, this))
+                .orSome(emptySet());
     }
 
     @Override
     public Collection<Expr> getAssignedValues() {
-        if (methodDeclaration.getBody() == null) {
-            return emptySet();
-        }
-        return VariableUtil.findAssignedValues(new Cursor(methodDeclarationCursor, methodDeclaration.getBody()), this);
+        return bodyScope()
+                .map(scope -> VariableUtil.findAssignedValues(scope, this))
+                .orSome(emptySet());
     }
 
     @Override
     public Collection<Flag> getFlags() {
         return FlagUtil.fromModifiers(variableDeclarations.getModifiers());
+    }
+
+    /**
+     * The cursor pointing at the body in which this parameter is in scope: a method body or a
+     * lambda body. Empty for abstract methods, which have no body.
+     */
+    private Option<Cursor> bodyScope() {
+        Object callableTree = callableCursor.getValue();
+        if (callableTree instanceof J.MethodDeclaration) {
+            J.Block body = ((J.MethodDeclaration) callableTree).getBody();
+            return body == null ? Option.none() : Option.some(new Cursor(callableCursor, body));
+        }
+        if (callableTree instanceof J.Lambda) {
+            return Option.some(new Cursor(callableCursor, ((J.Lambda) callableTree).getBody()));
+        }
+        return Option.none();
     }
 }

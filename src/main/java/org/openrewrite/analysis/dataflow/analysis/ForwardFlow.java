@@ -59,11 +59,20 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             taintStmtCursorParentParent = variableNameToFlowGraph.currentCursor.getParent();
             taintStmtCursorParent = variableNameToFlowGraph.currentCursor;
         }
+        boolean rootIsParameter = root.getNode().isParameter();
         Iterator<Cursor> remainingPath = variableNameToFlowGraph.remainingCursorPath;
         while (remainingPath.hasNext()) {
             taintStmtCursorParentParent = remainingPath.next();
             Object next = taintStmtCursorParentParent.getValue();
             if (next instanceof J.Block) {
+                break;
+            }
+            // A lambda parameter is in scope within the lambda body, which is reached by walking up
+            // through the lambda (NamedVariable -> VariableDeclarations -> Lambda.Parameters -> Lambda)
+            // rather than down into a method body. Stop at the lambda so its body becomes the scope.
+            if (rootIsParameter && next instanceof J.Lambda) {
+                taintStmt = next;
+                taintStmtCursorParent = taintStmtCursorParentParent;
                 break;
             }
             if (next instanceof J) {
@@ -100,6 +109,12 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             J.MethodDeclaration methodDeclaration = (J.MethodDeclaration) taintStmt;
             assert taintStmtCursorParent.getValue() instanceof J.MethodDeclaration : "taintStmtCursorParent is not a method declaration";
             analysis.visit(methodDeclaration.getBody(), 0, taintStmtCursorParent);
+        } else if (taintStmt instanceof J.Lambda) {
+            // The source is a lambda parameter; flow begins in the lambda body, which may be a
+            // single expression or a block.
+            J.Lambda lambda = (J.Lambda) taintStmt;
+            assert taintStmtCursorParent.getValue() instanceof J.Lambda : "taintStmtCursorParent is not a lambda";
+            analysis.visit(lambda.getBody(), 0, taintStmtCursorParent);
         } else {
             // This is when assignment occurs within the body of a block
             assert taintStmt != null : "taintStmt is null";

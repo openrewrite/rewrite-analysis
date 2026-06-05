@@ -66,6 +66,126 @@ class ParameterDataflowTest implements RewriteTest {
     }
 
     @Test
+    void dataflowFromLambdaParameterExpressionBody() {
+        rewriteRun(
+          java(
+            """
+              interface Fun {
+                  String message(String source);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (source) -> source;
+                  }
+              }
+              """,
+            """
+              interface Fun {
+                  String message(String source);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (/*~~>*/source) -> /*~~>*/source;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void dataflowFromLambdaParameterBlockBody() {
+        rewriteRun(
+          java(
+            """
+              interface Fun {
+                  String message(String source);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (source) -> {
+                          return source;
+                      };
+                  }
+              }
+              """,
+            """
+              interface Fun {
+                  String message(String source);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (/*~~>*/source) -> {
+                          return /*~~>*/source;
+                      };
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void dataflowFromLambdaParameterIntoMethodCall() {
+        rewriteRun(
+          java(
+            """
+              import java.util.function.Function;
+
+              class Test {
+                  void test() {
+                      Function<String, String> f = (source) -> source.trim();
+                  }
+              }
+              """,
+            """
+              import java.util.function.Function;
+
+              class Test {
+                  void test() {
+                      Function<String, String> f = (/*~~>*/source) -> /*~~>*//*~~>*/source.trim();
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void dataflowFromTypedLambdaParameter() {
+        rewriteRun(
+          java(
+            """
+              interface Fun {
+                  String message(String s);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (String source) -> source;
+                  }
+              }
+              """,
+            """
+              interface Fun {
+                  String message(String s);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (String /*~~>*/source) -> /*~~>*/source;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void dataflowFromSourceArgumentToExpressions() {
         rewriteRun(
           java(

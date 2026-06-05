@@ -18,12 +18,14 @@ package org.openrewrite.analysis.trait.expr;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.marker.SearchResult;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
@@ -134,6 +136,94 @@ class LambdaExprTest implements RewriteTest {
                               return e;
                           }
                       });
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void asMethodResolvesFunctionalInterfaceMethod() {
+        // LambdaExpr.asMethod() models the lambda's implicit method as the single abstract method
+        // of its functional interface (here Function.apply), whose parameters are the lambda's.
+        rewriteRun(
+          spec -> spec.recipe(toRecipe(() -> new JavaIsoVisitor<ExecutionContext>() {
+              @Override
+              public J preVisit(J tree, ExecutionContext ctx) {
+                  return LambdaExpr.viewOf(getCursor()).map(lambda -> {
+                      Method method = lambda.asMethod();
+                      assertThat(method.getName()).as("SAM name").isEqualTo("apply");
+                      assertThat(method.getParameters()).singleElement().satisfies(p -> {
+                          assertThat(p.getName()).isEqualTo("s");
+                          assertThat(p.getPosition()).isZero();
+                          assertThat(p.getCallable()).isEqualTo(method);
+                      });
+                      return (J) SearchResult.found(tree);
+                  }).orSuccess(tree);
+              }
+          })).cycles(1).expectedCyclesThatMakeChanges(1),
+          java(
+            """
+              import java.util.function.Function;
+
+              class Test {
+                  void test() {
+                      Function<String, String> f = s -> s;
+                  }
+              }
+              """,
+            """
+              import java.util.function.Function;
+
+              class Test {
+                  void test() {
+                      Function<String, String> f = /*~~>*/s -> s;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void asMethodResolvesMultiParameterFunctionalInterface() {
+        rewriteRun(
+          spec -> spec.recipe(toRecipe(() -> new JavaIsoVisitor<ExecutionContext>() {
+              @Override
+              public J preVisit(J tree, ExecutionContext ctx) {
+                  return LambdaExpr.viewOf(getCursor()).map(lambda -> {
+                      Method method = lambda.asMethod();
+                      assertThat(method.getName()).as("SAM name").isEqualTo("combine");
+                      assertThat(method.getParameters()).hasSize(2);
+                      assertThat(method.getParameters().get(0).getName()).isEqualTo("a");
+                      assertThat(method.getParameters().get(0).getPosition()).isZero();
+                      assertThat(method.getParameters().get(1).getName()).isEqualTo("b");
+                      assertThat(method.getParameters().get(1).getPosition()).isEqualTo(1);
+                      return (J) SearchResult.found(tree);
+                  }).orSuccess(tree);
+              }
+          })).cycles(1).expectedCyclesThatMakeChanges(1),
+          java(
+            """
+              interface Two {
+                  String combine(String a, String b);
+              }
+
+              class Test {
+                  void test() {
+                      Two t = (a, b) -> a + b;
+                  }
+              }
+              """,
+            """
+              interface Two {
+                  String combine(String a, String b);
+              }
+
+              class Test {
+                  void test() {
+                      Two t = /*~~>*/(a, b) -> a + b;
                   }
               }
               """

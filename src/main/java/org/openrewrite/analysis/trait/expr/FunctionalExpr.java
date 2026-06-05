@@ -18,17 +18,26 @@ package org.openrewrite.analysis.trait.expr;
 import fj.data.Validation;
 import org.openrewrite.Cursor;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 
 /**
  * A functional expression is either a lambda expression or a member reference expression.
  */
 public interface FunctionalExpr extends ClassInstanceExpr {
+
+    /**
+     * Gets the implicit method corresponding to this functional expression. The parameters of the
+     * functional expression are the parameters of this method, and its body is the method body.
+     */
+    Method asMethod();
+
     enum Factory implements TraitFactory<FunctionalExpr> {
         F;
 
         @Override
         public Validation<TraitErrors, FunctionalExpr> viewOf(Cursor cursor) {
+            // TODO: also resolve member reference expressions (the other kind of FunctionalExpr).
             return TraitFactory.findFirstViewOf(
                     cursor,
                     LambdaExpr.Factory.F

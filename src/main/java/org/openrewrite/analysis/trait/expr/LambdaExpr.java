@@ -22,6 +22,7 @@ import org.openrewrite.Cursor;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.trait.Top;
 import org.openrewrite.analysis.trait.TraitFactory;
+import org.openrewrite.analysis.trait.member.Method;
 import org.openrewrite.analysis.trait.util.TraitErrors;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -65,8 +66,13 @@ class LambdaExprBase extends Top.Base implements LambdaExpr {
     }
 
     @Override
+    public Method asMethod() {
+        return Method.viewOf(cursor).on(TraitErrors::doThrow);
+    }
+
+    @Override
     public Option<JavaType.Method> getMethodType() {
-        return Option.none();
+        return asMethod().getMethodType();
     }
 
     static Validation<TraitErrors, LambdaExprBase> viewOf(Cursor cursor) {
