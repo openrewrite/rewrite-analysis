@@ -77,6 +77,20 @@ public abstract class DataFlowNode {
         }
         return maybeNode.some();
     }
+
+    /**
+     * Like {@link #ofOrThrow(Cursor, String)} but builds the failure message lazily. The hot data-flow
+     * traversal calls this on every candidate node and never actually throws here; eagerly concatenating
+     * {@code cursor} (whose {@link Cursor#toString()} prints the enclosing tree) dominated allocation, so
+     * the message is only constructed on the never-taken failure path.
+     */
+    public static DataFlowNode ofOrThrow(Cursor cursor) {
+        Option<DataFlowNode> maybeNode = of(cursor);
+        if (maybeNode.isNone()) {
+            throw new RuntimeException("Unable to create DataFlowNode for " + cursor);
+        }
+        return maybeNode.some();
+    }
 }
 
 class ExpressionDataFlowNode extends DataFlowNode {
