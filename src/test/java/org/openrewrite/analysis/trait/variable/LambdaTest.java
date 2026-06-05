@@ -15,7 +15,6 @@
  */
 package org.openrewrite.analysis.trait.variable;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.DocumentExample;
 import org.openrewrite.ExecutionContext;
@@ -86,7 +85,6 @@ class LambdaTest implements RewriteTest {
         );
     }
 
-    @Disabled("https://github.com/openrewrite/rewrite-analysis/issues/31")
     @Test
     void lambdaNewInstance() {
         //language=java
@@ -126,7 +124,6 @@ class LambdaTest implements RewriteTest {
         );
     }
 
-    @Disabled("https://github.com/openrewrite/rewrite-analysis/issues/31")
     @Test
     void lambdaReturn() {
         //language=java

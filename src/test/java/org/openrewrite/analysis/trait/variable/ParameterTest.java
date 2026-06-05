@@ -75,6 +75,48 @@ class ParameterTest implements RewriteTest {
     }
 
     @Test
+    void lambdaParameter() {
+        rewriteRun(
+          spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {
+                if (!"p".equals(variable.getSimpleName())) {
+                    return variable;
+                }
+                Parameter param = Parameter.viewOf(cursor).on(TraitErrors::doThrow);
+                assertThat(param.getPosition()).as("Lambda parameter position is incorrect").isZero();
+                assertThat(param.isVarArgs()).as("Lambda parameter isVarArgs is incorrect").isFalse();
+                assertThat(param.getName()).as("Lambda parameter name is incorrect").isEqualTo("p");
+                assertThat(param.getCallable().getName()).as("Lambda callable (SAM) name is incorrect").isEqualTo("message");
+                return SearchResult.found(variable);
+            }
+          ))),
+          java(
+            """
+              interface Fun {
+                  String message(String s);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (p) -> p;
+                  }
+              }
+              """,
+            """
+              interface Fun {
+                  String message(String s);
+              }
+
+              class Test {
+                  void test() {
+                      Fun foobar = (/*~~>*/p) -> p;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void variableVisitVarargs() {
         rewriteRun(
           spec -> spec.recipe(toRecipe(visitVariable((variable, cursor) -> {

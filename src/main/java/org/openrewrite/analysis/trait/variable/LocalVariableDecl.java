@@ -125,9 +125,13 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
             } else if (t instanceof J.Lambda) {
                 J.Lambda l = (J.Lambda) t;
                 assert previous != null : "previous should not be null";
-                if (l.getParameters().getParameters().contains(previous.<Statement>getValue())) {
+                if (l.getParameters() == previous.getValue()) {
+                    // This variable is a lambda parameter, which is modeled by Parameter rather
+                    // than LocalVariableDecl. The cursor reached the lambda via its Parameters node.
                     break;
                 }
+                // Otherwise this is a variable declared in the lambda body; the lambda's implicit
+                // method is its enclosing callable, so let Method.viewOf(lambda) resolve it below.
             }
             Validation<TraitErrors, Method> v = Method.viewOf(c);
             if (v.isSuccess()) {
