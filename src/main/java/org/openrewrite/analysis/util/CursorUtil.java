@@ -33,13 +33,25 @@ public class CursorUtil {
     public static Option<Cursor> findCallableBlockCursor(Cursor start) {
         Iterator<Cursor> cursorPath = start.getPathAsCursors();
         Cursor methodDeclarationBlockCursor = null;
+        Cursor lambdaBodyBlockCursor = null;
         while (cursorPath.hasNext()) {
             Cursor nextCursor = cursorPath.next();
             Object next = nextCursor.getValue();
             if (next instanceof J.Block) {
                 methodDeclarationBlockCursor = nextCursor;
-                if (J.Block.isStaticOrInitBlock(nextCursor) || nextCursor.getParentTreeCursor().getValue() instanceof J.Lambda) {
+                if (J.Block.isStaticOrInitBlock(nextCursor)) {
                     return Option.some(nextCursor);
+                }
+                if (nextCursor.getParentTreeCursor().getValue() instanceof J.Lambda) {
+                    // A block-body lambda forms its own control-flow region. Remember the innermost
+                    // such block as a fallback, but keep walking up so a source inside the lambda is
+                    // scoped to its enclosing method body — this lets data flow escape the lambda's
+                    // `return` to the enclosing call result (higher-order "OUT" flow). When the lambda
+                    // has no enclosing method (e.g. a field-initializer lambda), there is no method
+                    // body to widen to, so we fall back to this block below.
+                    if (lambdaBodyBlockCursor == null) {
+                        lambdaBodyBlockCursor = nextCursor;
+                    }
                 }
             } else if (next instanceof J.MethodDeclaration) {
                 if (methodDeclarationBlockCursor == null && ((J.MethodDeclaration) next).getBody() != null) {
@@ -48,7 +60,7 @@ public class CursorUtil {
                 return Option.some(methodDeclarationBlockCursor);
             }
         }
-        return Option.none();
+        return Option.fromNull(lambdaBodyBlockCursor);
     }
 
 

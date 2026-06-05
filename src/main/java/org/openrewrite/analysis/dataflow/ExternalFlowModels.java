@@ -19,6 +19,7 @@ import lombok.*;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.dataflow.internal.csv.AccessPath;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
@@ -103,10 +104,27 @@ final class ExternalFlowModels {
         return false;
     }
 
+    /**
+     * The higher-order ("lambda call") value-flow models applicable to the compilation unit
+     * enclosing {@code cursor}. Callers should filter these to the ones whose matcher matches a
+     * particular call.
+     */
+    List<CallbackFlowModel> valueCallbackFlowModels(Cursor cursor) {
+        return getOrComputeOptimizedFlowModels(cursor).getValueCallbacks();
+    }
+
+    List<CallbackFlowModel> taintCallbackFlowModels(Cursor cursor) {
+        return getOrComputeOptimizedFlowModels(cursor).getTaintCallbacks();
+    }
+
     @AllArgsConstructor
     static final class OptimizedFlowModels {
         private final Map<AdditionalFlowStepPredicate, Set<FlowModel>> value;
         private final Map<AdditionalFlowStepPredicate, Set<FlowModel>> taint;
+        @Getter
+        private final List<CallbackFlowModel> valueCallbacks;
+        @Getter
+        private final List<CallbackFlowModel> taintCallbacks;
 
         Set<AdditionalFlowStepPredicate> getValuePredicates() {
             return value.keySet();
@@ -279,8 +297,70 @@ final class ExternalFlowModels {
             Optimizer optimizer = new Optimizer();
             return new OptimizedFlowModels(
                     optimizer.optimize(flowModels.value),
-                    optimizer.optimize(flowModels.taint)
+                    optimizer.optimize(flowModels.taint),
+                    buildCallbackModels(flowModels.value),
+                    buildCallbackModels(flowModels.taint)
             );
+        }
+
+        /**
+         * Builds the higher-order ("lambda call") models from rows whose access path references a
+         * functional argument's parameter or return value. Content components have already been
+         * collapsed by {@link AccessPath}. Rows where <em>both</em> sides are callbacks, or where
+         * either side is unparseable, are skipped.
+         */
+        private static List<CallbackFlowModel> buildCallbackModels(Collection<FlowModel> models) {
+            List<CallbackFlowModel> callbacks = new ArrayList<>();
+            for (FlowModel model : models) {
+                Optional<AccessPath> maybeIn = AccessPath.parse(model.input);
+                Optional<AccessPath> maybeOut = AccessPath.parse(model.output);
+                if (!maybeIn.isPresent() || !maybeOut.isPresent()) {
+                    continue;
+                }
+                AccessPath in = maybeIn.get();
+                AccessPath out = maybeOut.get();
+                InvocationMatcher matcher = InvocationMatcher.from(java.util.Collections.singletonList(model));
+                if (out.getCallbackKind() == AccessPath.CallbackKind.PARAMETER &&
+                    !in.isCallback() && in.getRoot() == AccessPath.Root.ARGUMENT) {
+                    // INTO: in (an argument/qualifier) flows to Argument[i].Parameter[j].
+                    forEachIndex(out.getRootRange(), i ->
+                            forEachIndex(out.getCallbackRange(), j ->
+                                    forEachIndex(in.getRootRange(), k ->
+                                            callbacks.add(new CallbackFlowModel(
+                                                    matcher,
+                                                    CallbackFlowModel.Direction.INTO,
+                                                    i,
+                                                    j,
+                                                    CallbackFlowModel.Position.argument(k))))));
+                } else if (in.getCallbackKind() == AccessPath.CallbackKind.RETURN_VALUE && !out.isCallback()) {
+                    // OUT: Argument[i].ReturnValue flows to out (the return value or an argument/qualifier).
+                    forEachIndex(in.getRootRange(), i -> {
+                        if (out.getRoot() == AccessPath.Root.RETURN_VALUE) {
+                            callbacks.add(new CallbackFlowModel(
+                                    matcher,
+                                    CallbackFlowModel.Direction.OUT,
+                                    i,
+                                    -1,
+                                    CallbackFlowModel.Position.returnValue()));
+                        } else {
+                            forEachIndex(out.getRootRange(), k ->
+                                    callbacks.add(new CallbackFlowModel(
+                                            matcher,
+                                            CallbackFlowModel.Direction.OUT,
+                                            i,
+                                            -1,
+                                            CallbackFlowModel.Position.argument(k))));
+                        }
+                    });
+                }
+            }
+            return callbacks;
+        }
+
+        private static void forEachIndex(GenericExternalModel.ArgumentRange range, java.util.function.IntConsumer consumer) {
+            for (int i = range.getStart(); i <= range.getEnd(); i++) {
+                consumer.accept(i);
+            }
         }
     }
 

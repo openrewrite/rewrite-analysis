@@ -110,6 +110,16 @@ class ParameterBase extends Top.Base implements Parameter {
 
     @Override
     public int getPosition() {
+        // Compute the index directly from the LST rather than via callable.getParameters().indexOf(this).
+        // The latter rebuilds the callable's full Parameter list on every call and, for a lambda, mints a
+        // fresh Method per parameter (whose lazy caches are never shared), making positioning O(n^2).
+        Object callableTree = callableCursor.getValue();
+        if (callableTree instanceof J.MethodDeclaration) {
+            return ((J.MethodDeclaration) callableTree).getParameters().indexOf(variableDeclarations);
+        }
+        if (callableTree instanceof J.Lambda) {
+            return ((J.Lambda) callableTree).getParameters().getParameters().indexOf(variableDeclarations);
+        }
         return callable.getParameters().indexOf(this);
     }
 
