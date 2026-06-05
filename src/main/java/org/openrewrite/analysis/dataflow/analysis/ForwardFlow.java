@@ -25,6 +25,7 @@ import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.analysis.dataflow.CallbackFlowModel;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.DataFlowSpec;
+import org.openrewrite.analysis.dataflow.internal.LambdaReturns;
 import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -645,7 +646,7 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                 continue;
             }
             J.Lambda lambda = (J.Lambda) unwrapped;
-            if (!isAncestor(lambda, currentCursor) || !isLambdaResult(currentCursor, lambda)) {
+            if (!isAncestor(lambda, currentCursor) || !LambdaReturns.isLambdaResult(currentCursor, lambda)) {
                 continue;
             }
             // A single call/argument can match several OUT models. Map.computeIfAbsent, for instance,
@@ -802,21 +803,5 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             }
         }
         return false;
-    }
-
-    /** Holds if the node at {@code nodeCursor} is (the expression of) the lambda's return value. */
-    private static boolean isLambdaResult(Cursor nodeCursor, J.Lambda lambda) {
-        J node = nodeCursor.getValue();
-        J body = lambda.getBody();
-        if (!(body instanceof J.Block)) {
-            return body instanceof Expression && Expression.unwrap((Expression) body) == node;
-        }
-        J.Return aReturn = nodeCursor.firstEnclosing(J.Return.class);
-        if (aReturn == null || aReturn.getExpression() == null ||
-            Expression.unwrap(aReturn.getExpression()) != node) {
-            return false;
-        }
-        // The return must belong to this lambda, not a nested lambda or anonymous-class method.
-        return nodeCursor.firstEnclosing(J.Lambda.class) == lambda;
     }
 }
