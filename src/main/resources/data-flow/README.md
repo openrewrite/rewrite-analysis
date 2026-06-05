@@ -9,9 +9,37 @@ Notes:
 - Current CodeQL writes the receiver/qualifier as `Argument[this]` (older versions used `Argument[-1]`);
   the loader understands both. The argument selector may also be a comma-separated union and/or a range,
   e.g. `Argument[this,0]` or `Argument[0..2]`.
-- Content/field-sensitive paths (`Element`, `MapKey`, `MapValue`, `Field[...]`, ...) and higher-order
-  paths on the non-callback side are over-approximations the engine collapses or ignores; they are kept
-  in the files as-is.
+- The files are kept as-is from CodeQL; how the engine interprets content and higher-order paths is
+  described under [Content and higher-order paths](#content-and-higher-order-paths) below.
+
+## Content and higher-order paths
+
+An access path may name a *part* of a value rather than the whole value:
+
+- **Content** components — `Element` (collection/iterable), `ArrayElement`, `MapKey`/`MapValue`,
+  `Field[...]`, `SyntheticField[...]` — name an interior slot of a container.
+- **Callback** components — `Argument[i].Parameter[j]` and `Argument[i].ReturnValue` — describe flow
+  into/out of a functional argument (a lambda).
+
+This engine is **content-insensitive**: it collapses every content component onto its container. A
+store such as `Collection.add: Argument[0] -> Argument[this].Element` becomes `Argument[0] ->
+Argument[this]` (the value taints the whole collection), and a read such as `List.get:
+Argument[this].Element -> ReturnValue` becomes `Argument[this] -> ReturnValue`. The store and read
+still reconnect — at container granularity instead of slot granularity — so this is a sound
+over-approximation: it can add false positives (e.g. a tainted map key makes value reads look tainted)
+but never loses a flow, *provided every store and read collapses uniformly*. Callback paths are handled
+separately (see `CallbackFlowModel`); the few `WithElement`/`WithoutElement` typestate paths are not
+modeled and are ignored.
+
+Two known limitations, each a potential follow-up:
+
+1. **Generic signatures.** A model with an explicit signature at a generic position (e.g.
+   `Map.put` spelled `(Object,Object)` for the declared `put(K,V)`) does not match a generic call site,
+   because the matcher has no erasure for type-variable parameters. So container *writes* through such
+   methods (notably `Map.put`) are not yet tracked, even though the reads are.
+2. **Precision.** True content/field-sensitivity (tracking which slot is tainted, so `MapKey` stores
+   don't leak to `MapValue` reads) would remove the false positives above. It is a larger change that
+   would thread an access-path/content state through the flow graph, mirroring CodeQL.
 
 ## Regenerating the files
 
