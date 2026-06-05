@@ -115,14 +115,9 @@ class HigherOrderFlowTest implements RewriteTest {
     }
 
     @Test
-    void outOfCallbackComputeIfAbsentBlockBodyIsLimited() {
-        // Known limitation: when the source sits inside a *block-body* lambda, control-flow
-        // reachability is scoped to the lambda body (a block body forms its own control-flow
-        // region), so flow does not escape through the lambda's `return` to the enclosing call
-        // result. Expression-body lambdas (see above) are not subject to this. Lifting it requires
-        // reworking how a lambda's `return` reachability connects to the enclosing flow, which has
-        // subtle interactions with the existing expression-body behavior. Mirrors the block-body
-        // limitation documented in FindLocalFlowPathsAnonymousClassTest.
+    void outOfCallbackComputeIfAbsentBlockBody() {
+        // A block-body lambda's `return` escapes to the enclosing call result just like an
+        // expression-body lambda: the source flows out of computeIfAbsent into `v`.
         rewriteRun(
           java(
             """
@@ -142,10 +137,10 @@ class HigherOrderFlowTest implements RewriteTest {
               class Test {
                   String source() { return null; }
                   void test(Map<String, String> map) {
-                      String v = map.computeIfAbsent("k", key -> {
+                      String v = /*~~>*/map.computeIfAbsent("k", key -> {
                           return /*~~>*/source();
                       });
-                      System.out.println(v);
+                      System.out.println(/*~~>*/v);
                   }
               }
               """
