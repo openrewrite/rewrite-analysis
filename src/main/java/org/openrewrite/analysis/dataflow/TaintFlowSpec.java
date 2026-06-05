@@ -18,8 +18,18 @@ package org.openrewrite.analysis.dataflow;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.Guard;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Incubating(since = "7.25.0")
 public abstract class TaintFlowSpec extends DataFlowSpec {
+
+    @Override
+    public final List<CallbackFlowModel> callbackFlowModels(DataFlowNode callNode) {
+        List<CallbackFlowModel> models = new ArrayList<>(super.callbackFlowModels(callNode));
+        models.addAll(ExternalFlowModels.instance().taintCallbackFlowModels(callNode.getCursor()));
+        return models;
+    }
 
     @Override
     public final boolean isAdditionalFlowStep(

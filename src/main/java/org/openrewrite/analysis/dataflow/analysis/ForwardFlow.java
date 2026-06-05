@@ -17,11 +17,15 @@ package org.openrewrite.analysis.dataflow.analysis;
 
 import fj.data.Option;
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.Tree;
+import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.dataflow.CallbackFlowModel;
 import org.openrewrite.analysis.dataflow.DataFlowNode;
 import org.openrewrite.analysis.dataflow.DataFlowSpec;
+import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.analysis.trait.expr.VarAccess;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.JavaVisitor;
@@ -497,6 +501,13 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                             }
                         }
                     }
+
+                    // Into-callback ("lambda call"): route flow from the select or an argument into a
+                    // parameter of a lambda passed as another argument, per any matching model (e.g.
+                    // Iterable.forEach passes the receiver's elements to the consumer's parameter).
+                    if (tryIntoCallbackFlow(nextFlowGraph, parentCursor, previousCursor, spec)) {
+                        break;
+                    }
                 } else if (parentCursor.getValue() instanceof J.NewClass) {
                     // The parent is a J.NewClass, `previousCursor` must be an argument
                     J.NewClass constructorInvocation = parentCursor.getValue();
@@ -574,9 +585,12 @@ public class ForwardFlow extends JavaVisitor<Integer> {
 
             if (ancestor instanceof J.Binary) {
                 break;
-            } else if (ancestor instanceof J.MethodInvocation) {
-                break;
-            } else if (ancestor instanceof J.NewClass) {
+            } else if (ancestor instanceof J.MethodInvocation || ancestor instanceof J.NewClass) {
+                // Out-of-callback ("lambda call"): if the current flow node is the result of a lambda
+                // passed as an argument of this call, route flow to the call's output node per any
+                // matching out-of-callback model (e.g. Map.computeIfAbsent maps the mapping function's
+                // return value to the call result).
+                tryOutOfCallbackFlow(nextFlowGraph, ancestorCursor, spec);
                 break;
             } else if (ancestor instanceof J.Assignment ||
                        ancestor instanceof J.AssignmentOperation ||
@@ -599,5 +613,187 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             }
         }
         return new VariableNameToFlowGraph(identifierToFlow, ancestorCursor, cursorPath);
+    }
+
+    /**
+     * Routes flow out of a lambda's return value to a call's output node, per any matching
+     * out-of-callback model, then continues the flow from that output node in the enclosing scope.
+     */
+    private static void tryOutOfCallbackFlow(FlowGraph currentFlow, Cursor callCursor, DataFlowSpec spec) {
+        Object call = callCursor.getValue();
+        List<Expression> arguments;
+        Expression select = null;
+        if (call instanceof J.MethodInvocation) {
+            arguments = ((J.MethodInvocation) call).getArguments();
+            select = ((J.MethodInvocation) call).getSelect();
+        } else if (call instanceof J.NewClass) {
+            arguments = ((J.NewClass) call).getArguments();
+            if (arguments == null) {
+                return;
+            }
+        } else {
+            return;
+        }
+        List<CallbackFlowModel> models = spec.callbackFlowModels(currentFlow.getNode());
+        if (models.isEmpty()) {
+            return;
+        }
+        Cursor currentCursor = currentFlow.getNode().getCursor();
+        for (int i = 0; i < arguments.size(); i++) {
+            Expression unwrapped = arguments.get(i).unwrap();
+            if (!(unwrapped instanceof J.Lambda)) {
+                continue;
+            }
+            J.Lambda lambda = (J.Lambda) unwrapped;
+            if (!isAncestor(lambda, currentCursor) || !isLambdaResult(currentCursor, lambda)) {
+                continue;
+            }
+            for (CallbackFlowModel model : models) {
+                if (model.getDirection() != CallbackFlowModel.Direction.OUT || model.getCallbackArgument() != i) {
+                    continue;
+                }
+                if (!callMatches(callCursor, model.getMatcher())) {
+                    continue;
+                }
+                DataFlowNode target = resolveCallbackOutput(callCursor, select, arguments, model.getOther());
+                if (target != null) {
+                    // Continue the flow from the call's output node in the enclosing scope (the source
+                    // may sit inside a lambda block body, which `findAllFlows` would not otherwise leave).
+                    findAllFlows(currentFlow.addEdge(target), spec);
+                    return;
+                }
+            }
+        }
+    }
+
+    private static @Nullable DataFlowNode resolveCallbackOutput(
+            Cursor callCursor,
+            @Nullable Expression select,
+            List<Expression> arguments,
+            CallbackFlowModel.Position position
+    ) {
+        switch (position.getKind()) {
+            case RETURN_VALUE:
+                return DataFlowNode.of(callCursor).toNull();
+            case QUALIFIER:
+                if (select == null) {
+                    return null;
+                }
+                return DataFlowNode.of(new Cursor(callCursor, select)).toNull();
+            case ARGUMENT:
+                int k = position.getArgument();
+                if (k < 0 || k >= arguments.size()) {
+                    return null;
+                }
+                return DataFlowNode.of(new Cursor(callCursor, arguments.get(k))).toNull();
+            default:
+                return null;
+        }
+    }
+
+    private static boolean callMatches(Cursor callCursor, InvocationMatcher matcher) {
+        return Call.viewOf(callCursor).map(c -> c.matches(matcher)).orSuccess(false);
+    }
+
+    /**
+     * Routes flow into a lambda argument's parameter, per any matching into-callback model. Seeds a
+     * sub-flow from the lambda parameter (reusing the lambda-parameter-source traversal) so flow
+     * continues through the lambda body. Returns {@code true} when at least one such edge was added.
+     */
+    private static boolean tryIntoCallbackFlow(FlowGraph currentFlow, Cursor callCursor, Cursor inputCursor, DataFlowSpec spec) {
+        if (!(callCursor.getValue() instanceof J.MethodInvocation)) {
+            return false;
+        }
+        J.MethodInvocation mi = callCursor.getValue();
+        List<CallbackFlowModel> models = spec.callbackFlowModels(currentFlow.getNode());
+        if (models.isEmpty()) {
+            return false;
+        }
+        Object input = inputCursor.getValue();
+        boolean added = false;
+        for (CallbackFlowModel model : models) {
+            if (model.getDirection() != CallbackFlowModel.Direction.INTO ||
+                !matchesInputPosition(model.getOther(), input, mi)) {
+                continue;
+            }
+            int i = model.getCallbackArgument();
+            if (i < 0 || i >= mi.getArguments().size()) {
+                continue;
+            }
+            Expression argExpr = mi.getArguments().get(i).unwrap();
+            if (!(argExpr instanceof J.Lambda) || !callMatches(callCursor, model.getMatcher())) {
+                continue;
+            }
+            Cursor paramCursor = lambdaParameterCursor(callCursor, (J.Lambda) argExpr, model.getParameter());
+            if (paramCursor == null) {
+                continue;
+            }
+            DataFlowNode paramNode = DataFlowNode.of(paramCursor).toNull();
+            if (paramNode == null) {
+                continue;
+            }
+            FlowGraph paramFlow = currentFlow.addEdge(paramNode);
+            findAllFlows(paramFlow, spec);
+            added = true;
+        }
+        return added;
+    }
+
+    private static boolean matchesInputPosition(CallbackFlowModel.Position position, Object input, J.MethodInvocation mi) {
+        switch (position.getKind()) {
+            case QUALIFIER:
+                return mi.getSelect() == input;
+            case ARGUMENT:
+                int k = position.getArgument();
+                return k >= 0 && k < mi.getArguments().size() && mi.getArguments().get(k) == input;
+            default:
+                return false;
+        }
+    }
+
+    private static @Nullable Cursor lambdaParameterCursor(Cursor callCursor, J.Lambda lambda, int parameterIndex) {
+        J.Lambda.Parameters parameters = lambda.getParameters();
+        List<J> parameterDeclarations = parameters.getParameters();
+        if (parameterIndex < 0 || parameterIndex >= parameterDeclarations.size()) {
+            return null;
+        }
+        J parameterDeclaration = parameterDeclarations.get(parameterIndex);
+        if (!(parameterDeclaration instanceof J.VariableDeclarations)) {
+            return null;
+        }
+        J.VariableDeclarations variableDeclarations = (J.VariableDeclarations) parameterDeclaration;
+        if (variableDeclarations.getVariables().isEmpty()) {
+            return null;
+        }
+        Cursor lambdaCursor = new Cursor(callCursor, lambda);
+        Cursor parametersCursor = new Cursor(lambdaCursor, parameters);
+        Cursor variableDeclarationsCursor = new Cursor(parametersCursor, variableDeclarations);
+        return new Cursor(variableDeclarationsCursor, variableDeclarations.getVariables().get(0));
+    }
+
+    /** Holds if {@code maybeAncestor} appears on the cursor's path (i.e. encloses it). */
+    private static boolean isAncestor(J maybeAncestor, Cursor cursor) {
+        for (Iterator<Object> it = cursor.getPath(); it.hasNext(); ) {
+            if (it.next() == maybeAncestor) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Holds if the node at {@code nodeCursor} is (the expression of) the lambda's return value. */
+    private static boolean isLambdaResult(Cursor nodeCursor, J.Lambda lambda) {
+        J node = nodeCursor.getValue();
+        J body = lambda.getBody();
+        if (!(body instanceof J.Block)) {
+            return body instanceof Expression && Expression.unwrap((Expression) body) == node;
+        }
+        J.Return aReturn = nodeCursor.firstEnclosing(J.Return.class);
+        if (aReturn == null || aReturn.getExpression() == null ||
+            Expression.unwrap(aReturn.getExpression()) != node) {
+            return false;
+        }
+        // The return must belong to this lambda, not a nested lambda or anonymous-class method.
+        return nodeCursor.firstEnclosing(J.Lambda.class) == lambda;
     }
 }

@@ -18,6 +18,8 @@ package org.openrewrite.analysis.dataflow;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.controlflow.Guard;
 
+import java.util.List;
+
 @Incubating(since = "7.24.0")
 public abstract class DataFlowSpec {
     /**
@@ -68,6 +70,15 @@ public abstract class DataFlowSpec {
 
     public boolean isBarrierGuard(Guard guard, boolean branch) {
         return false;
+    }
+
+    /**
+     * The higher-order ("lambda call") flow models that apply at the given call node. Used by the
+     * flow engine to route data into a lambda argument's parameter or out of its return value.
+     * Callers must still confirm a given model's {@link CallbackFlowModel#getMatcher()} matches the call.
+     */
+    public List<CallbackFlowModel> callbackFlowModels(DataFlowNode callNode) {
+        return ExternalFlowModels.instance().valueCallbackFlowModels(callNode.getCursor());
     }
 
     /**
