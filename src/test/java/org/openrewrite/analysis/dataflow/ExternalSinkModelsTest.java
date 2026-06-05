@@ -37,13 +37,13 @@ class ExternalSinkModelsTest {
         // Remove all optimized sink flow models
         models.removeAll(optimizedModels.getSinkModels());
 
-        // Every plain sink (a bare `Argument[...]` position or `ReturnValue`) must be optimized. The
-        // only sinks that may remain are those whose input is a content or higher-order ("callback")
-        // access path — e.g. `Argument[0].ReturnValue` (the return value of a functional argument) or
-        // `Argument[this].MapValue` — which this content-insensitive engine does not model.
+        // Every sink in the current model set must be optimized: bare `Argument[...]` positions,
+        // `ReturnValue`, and the higher-order `Argument[i].ReturnValue` ("lambda call") sinks. If a new
+        // CodeQL regeneration introduces a sink shape this engine does not yet model (e.g. a content
+        // access path like `Argument[this].MapValue`), it would surface here.
         assertThat(models)
-                .as("Only content/callback sinks may remain unoptimized")
-                .allMatch(model -> model.input.contains("."));
+                .as("Every sink must be optimized")
+                .isEmpty();
     }
 
     @Test

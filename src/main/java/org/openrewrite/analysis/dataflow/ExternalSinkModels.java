@@ -19,14 +19,18 @@ import lombok.*;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.analysis.InvocationMatcher;
+import org.openrewrite.analysis.dataflow.internal.LambdaReturns;
+import org.openrewrite.analysis.dataflow.internal.csv.AccessPath;
 import org.openrewrite.analysis.dataflow.internal.csv.CsvLoader;
 import org.openrewrite.analysis.dataflow.internal.csv.GenericExternalModel;
 import org.openrewrite.analysis.dataflow.internal.csv.Mergeable;
 import org.openrewrite.analysis.trait.expr.Call;
 import org.openrewrite.java.internal.TypesInUse;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.MethodCall;
 
 import java.lang.ref.SoftReference;
 import java.util.*;
@@ -198,18 +202,85 @@ public final class ExternalSinkModels {
             return sinkNode -> sinkNode.asExprParent(Call.class).map(call -> call.matches(invocationMatcher)).orSome(false);
         }
 
+        /**
+         * A predicate for higher-order ("lambda call") sinks spelled {@code Argument[i].ReturnValue}: the
+         * sink is the value <em>returned by the lambda passed as argument {@code callbackArgument}</em>.
+         * Ordinary forward flow already reaches a value captured into a lambda body, so unlike the flow
+         * side this needs no edge routing — only recognizing that the node is such a return value.
+         */
+        private SinkNodePredicate sinkNodePredicateForCallbackReturnValue(
+                int callbackArgument,
+                Collection<? extends GenericExternalModel> methodMatchers
+        ) {
+            InvocationMatcher invocationMatcher = GenericExternalModel.indexedMatcher(methodMatchers);
+            return sinkNode -> isCallbackReturnValueSink(sinkNode.getCursor(), callbackArgument, invocationMatcher);
+        }
+
+        /**
+         * Holds if the node at {@code nodeCursor} is the return value of a lambda that is passed as
+         * argument {@code callbackArgument} of a call matching {@code matcher}.
+         */
+        private static boolean isCallbackReturnValueSink(Cursor nodeCursor, int callbackArgument, InvocationMatcher matcher) {
+            Cursor lambdaCursor = null;
+            for (Iterator<Cursor> it = nodeCursor.getPathAsCursors(); it.hasNext(); ) {
+                Cursor c = it.next();
+                if (c.getValue() instanceof J.Lambda) {
+                    lambdaCursor = c;
+                    break;
+                }
+            }
+            if (lambdaCursor == null) {
+                return false;
+            }
+            J.Lambda lambda = lambdaCursor.getValue();
+            if (!LambdaReturns.isLambdaResult(nodeCursor, lambda)) {
+                return false;
+            }
+            // The lambda may be wrapped (a cast or parentheses), so the enclosing call is its nearest
+            // method call and the argument match is by unwrapped identity, mirroring the flow side.
+            MethodCall call = lambdaCursor.firstEnclosing(MethodCall.class);
+            if (call == null) {
+                return false;
+            }
+            List<Expression> arguments = call.getArguments();
+            if (arguments == null || callbackArgument < 0 || callbackArgument >= arguments.size()) {
+                return false;
+            }
+            if (arguments.get(callbackArgument).unwrap() != lambda) {
+                return false;
+            }
+            return matcher.matches(call.getMethodType());
+        }
+
         private Set<PredicateToSinkModels> optimize(Collection<SinkModel> models) {
             Map<Integer, Set<SinkModel>> sinkForArgument = new HashMap<>();
             // Uncommon, so don't allocate unless needed
             Set<SinkModel> sinkForReturnValue = new HashSet<>(0);
+            // Higher-order ("lambda call") sinks `Argument[i].ReturnValue`, keyed by callback argument
+            // index. Rare, so don't allocate unless needed.
+            Map<Integer, Set<SinkModel>> sinkForCallbackReturnValue = new HashMap<>(0);
             for (SinkModel model : models) {
-                model.getArgumentRange().ifPresent(argumentRange -> {
-                    for (int i = argumentRange.getStart(); i <= argumentRange.getEnd(); i++) {
+                Optional<GenericExternalModel.ArgumentRange> argumentRange = model.getArgumentRange();
+                if (argumentRange.isPresent()) {
+                    GenericExternalModel.ArgumentRange range = argumentRange.get();
+                    for (int i = range.getStart(); i <= range.getEnd(); i++) {
                         sinkForArgument.computeIfAbsent(i, __ -> new HashSet<>()).add(model);
                     }
-                });
-                if ("ReturnValue".equals(model.input)) {
+                } else if ("ReturnValue".equals(model.input)) {
                     sinkForReturnValue.add(model);
+                } else if (model.input.indexOf('.') >= 0) {
+                    // A `.`-containing input that is not a bare argument range. The only higher-order
+                    // sink shape this content-insensitive engine models is `Argument[i].ReturnValue`
+                    // (the value returned by the lambda passed as argument i).
+                    AccessPath.parse(model.input).ifPresent(path -> {
+                        if (path.getRoot() == AccessPath.Root.ARGUMENT &&
+                            path.getCallbackKind() == AccessPath.CallbackKind.RETURN_VALUE) {
+                            GenericExternalModel.ArgumentRange range = path.getRootRange();
+                            for (int i = range.getStart(); i <= range.getEnd(); i++) {
+                                sinkForCallbackReturnValue.computeIfAbsent(i, __ -> new HashSet<>()).add(model);
+                            }
+                        }
+                    });
                 }
             }
             Stream<PredicateToSinkModels> predicateToSinkModelsStream =
@@ -225,8 +296,19 @@ public final class ExternalSinkModels {
                             sinkNodePredicateForReturnValue(sinkForReturnValue),
                             sinkForReturnValue
                     ));
+            Stream<PredicateToSinkModels> callbackReturnValuePredicateToSinkModelsStream =
+                    sinkForCallbackReturnValue
+                            .entrySet()
+                            .stream()
+                            .map(entry -> new PredicateToSinkModels(
+                                    sinkNodePredicateForCallbackReturnValue(entry.getKey(), entry.getValue()),
+                                    entry.getValue()
+                            ));
             return Stream
-                    .concat(predicateToSinkModelsStream, returnValuePredicateToSinkModelsStream)
+                    .concat(
+                            Stream.concat(predicateToSinkModelsStream, returnValuePredicateToSinkModelsStream),
+                            callbackReturnValuePredicateToSinkModelsStream
+                    )
                     .collect(toSet());
         }
 
