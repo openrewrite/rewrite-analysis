@@ -677,14 +677,11 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     otherTargets.add(target);
                 }
             }
-            // Continue the flow from the call's output node in the enclosing scope (the source may sit
-            // inside a lambda block body, which `findAllFlows` would not otherwise leave).
-            if (returnValueTarget != null) {
-                findAllFlows(currentFlow.addEdge(returnValueTarget), spec);
-                return;
-            }
-            if (!otherTargets.isEmpty()) {
-                for (DataFlowNode target : otherTargets) {
+            // Continue the flow from the call's output node(s) in the enclosing scope (the source may
+            // sit inside a lambda block body, which `findAllFlows` would not otherwise leave).
+            List<DataFlowNode> targets = returnValueTarget != null ? singletonList(returnValueTarget) : otherTargets;
+            if (!targets.isEmpty()) {
+                for (DataFlowNode target : targets) {
                     findAllFlows(currentFlow.addEdge(target), spec);
                 }
                 return;
