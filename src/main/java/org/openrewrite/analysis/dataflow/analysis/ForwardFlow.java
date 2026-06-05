@@ -648,6 +648,18 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             if (!isAncestor(lambda, currentCursor) || !isLambdaResult(currentCursor, lambda)) {
                 continue;
             }
+            // A single call/argument can match several OUT models. Map.computeIfAbsent, for instance,
+            // maps the mapping function's return value both to the call result (`Argument[1].ReturnValue
+            // -> ReturnValue`) and into the map's values (`Argument[1].ReturnValue -> Argument[-1].MapValue`,
+            // which this content-insensitive engine resolves to the whole `map` qualifier). Selecting one
+            // deterministically matters: the old code stopped at the first match, so the surviving flow
+            // depended on model iteration order, which is not stable across runs.
+            //
+            // Prefer the call result (the precise forward flow); fall back to the other resolved targets
+            // only when no ReturnValue model applies. Routing to both would also redundantly mark the
+            // qualifier that the result expression already encloses.
+            DataFlowNode returnValueTarget = null;
+            List<DataFlowNode> otherTargets = new ArrayList<>();
             for (CallbackFlowModel model : models) {
                 if (model.getDirection() != CallbackFlowModel.Direction.OUT || model.getCallbackArgument() != i) {
                     continue;
@@ -656,12 +668,26 @@ public class ForwardFlow extends JavaVisitor<Integer> {
                     continue;
                 }
                 DataFlowNode target = resolveCallbackOutput(callCursor, select, arguments, model.getOther());
-                if (target != null) {
-                    // Continue the flow from the call's output node in the enclosing scope (the source
-                    // may sit inside a lambda block body, which `findAllFlows` would not otherwise leave).
-                    findAllFlows(currentFlow.addEdge(target), spec);
-                    return;
+                if (target == null) {
+                    continue;
                 }
+                if (model.getOther().getKind() == CallbackFlowModel.Position.Kind.RETURN_VALUE) {
+                    returnValueTarget = target;
+                } else {
+                    otherTargets.add(target);
+                }
+            }
+            // Continue the flow from the call's output node in the enclosing scope (the source may sit
+            // inside a lambda block body, which `findAllFlows` would not otherwise leave).
+            if (returnValueTarget != null) {
+                findAllFlows(currentFlow.addEdge(returnValueTarget), spec);
+                return;
+            }
+            if (!otherTargets.isEmpty()) {
+                for (DataFlowNode target : otherTargets) {
+                    findAllFlows(currentFlow.addEdge(target), spec);
+                }
+                return;
             }
         }
     }

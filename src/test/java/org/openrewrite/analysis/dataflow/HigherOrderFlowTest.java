@@ -79,6 +79,42 @@ class HigherOrderFlowTest implements RewriteTest {
     }
 
     @Test
+    void outOfCallbackComputeIfAbsentResultFlowsOnward() {
+        // Map.computeIfAbsent has two OUT callback models (the function's return value flows to both
+        // the call result and into the map's values). Both match argument 1, so the engine must pick
+        // the call-result edge deterministically and then keep following the flow through the
+        // subsequent statements; routing to the qualifier instead would dead-end here.
+        rewriteRun(
+          java(
+            """
+              import java.util.Map;
+              class Test {
+                  String source() { return null; }
+                  void sink(Object o) {}
+                  void test(Map<String, String> map) {
+                      String name = map.computeIfAbsent("k", key -> source());
+                      String alias = name;
+                      sink(alias);
+                  }
+              }
+              """,
+            """
+              import java.util.Map;
+              class Test {
+                  String source() { return null; }
+                  void sink(Object o) {}
+                  void test(Map<String, String> map) {
+                      String name = /*~~>*/map.computeIfAbsent("k", key -> /*~~>*/source());
+                      String alias = /*~~>*/name;
+                      sink(/*~~>*/alias);
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void outOfCallbackComputeIfAbsentBlockBodyIsLimited() {
         // Known limitation: when the source sits inside a *block-body* lambda, control-flow
         // reachability is scoped to the lambda body (a block body forms its own control-flow
