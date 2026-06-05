@@ -37,7 +37,13 @@ class ExternalSinkModelsTest {
         // Remove all optimized sink flow models
         models.removeAll(optimizedModels.getSinkModels());
 
-        assertThat(models).size().as("All sink models should be optimized").isZero();
+        // Every plain sink (a bare `Argument[...]` position or `ReturnValue`) must be optimized. The
+        // only sinks that may remain are those whose input is a content or higher-order ("callback")
+        // access path — e.g. `Argument[0].ReturnValue` (the return value of a functional argument) or
+        // `Argument[this].MapValue` — which this content-insensitive engine does not model.
+        assertThat(models)
+                .as("Only content/callback sinks may remain unoptimized")
+                .allMatch(model -> model.input.contains("."));
     }
 
 }

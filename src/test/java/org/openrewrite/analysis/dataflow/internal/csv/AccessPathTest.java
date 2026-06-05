@@ -49,6 +49,38 @@ class AccessPathTest {
     }
 
     @Test
+    void receiverThisIsQualifier() {
+        // CodeQL's current dialect uses `Argument[this]` for the receiver/qualifier where the older
+        // dialect used `Argument[-1]`; both must resolve to position -1.
+        AccessPath ap = AccessPath.parse("Argument[this]").orElseThrow();
+        assertThat(ap.getRoot()).isEqualTo(Root.ARGUMENT);
+        assertThat(ap.getRootRange()).isEqualTo(new GenericExternalModel.ArgumentRange(-1, -1));
+        assertThat(ap.getCallbackKind()).isEqualTo(CallbackKind.NONE);
+    }
+
+    @Test
+    void receiverThisWithContentCollapses() {
+        assertThat(AccessPath.parse("Argument[this].MapValue").orElseThrow().getRootRange())
+                .isEqualTo(new GenericExternalModel.ArgumentRange(-1, -1));
+    }
+
+    @Test
+    void argumentSetUnionIsContiguousRange() {
+        // `Argument[this,0]` is MaD set-notation: the union {receiver, arg 0} = {-1, 0}, which is the
+        // contiguous range [-1, 0]. (CodeQL: `Argument[x,y]` splits on `,`; `this` is position -1.)
+        AccessPath ap = AccessPath.parse("Argument[this,0]").orElseThrow();
+        assertThat(ap.getRoot()).isEqualTo(Root.ARGUMENT);
+        assertThat(ap.getRootRange()).isEqualTo(new GenericExternalModel.ArgumentRange(-1, 0));
+    }
+
+    @Test
+    void nonContiguousArgumentSetIsIgnored() {
+        // A non-contiguous union (e.g. {0, 2}) cannot be represented as a single range without
+        // over-approximating to include position 1, so it is conservatively unparseable.
+        assertThat(AccessPath.parse("Argument[0,2]")).isEmpty();
+    }
+
+    @Test
     void returnValueRoot() {
         AccessPath ap = AccessPath.parse("ReturnValue").orElseThrow();
         assertThat(ap.getRoot()).isEqualTo(Root.RETURN_VALUE);

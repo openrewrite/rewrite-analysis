@@ -28,7 +28,7 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -55,18 +55,18 @@ public final class ExternalSinkModels {
         return instance;
     }
 
-    private WeakReference<FullyQualifiedNameToSinkModels> fullyQualifiedNameToSinkModel;
+    private SoftReference<FullyQualifiedNameToSinkModels> fullyQualifiedNameToSinkModel;
 
     FullyQualifiedNameToSinkModels getFullyQualifiedNameToSinkModel() {
         FullyQualifiedNameToSinkModels f;
         if (fullyQualifiedNameToSinkModel == null) {
             f = Loader.load();
-            fullyQualifiedNameToSinkModel = new WeakReference<>(f);
+            fullyQualifiedNameToSinkModel = new SoftReference<>(f);
         } else {
             f = fullyQualifiedNameToSinkModel.get();
             if (f == null) {
                 f = Loader.load();
-                fullyQualifiedNameToSinkModel = new WeakReference<>(f);
+                fullyQualifiedNameToSinkModel = new SoftReference<>(f);
             }
         }
         return f;
@@ -274,7 +274,9 @@ public final class ExternalSinkModels {
     @AllArgsConstructor
     @ToString
     static class SinkModel implements GenericExternalModel {
-        // package, type, subtypes, name, signature, ext, input, kind, provenance
+        // CSV columns: package, type, subtypes, name, signature, ext, input, kind, provenance.
+        // `ext` and `provenance` are not read by the engine, so they are dropped rather than retained
+        // across every row of the (large) sink set.
         @Getter
         String namespace;
 
@@ -290,10 +292,8 @@ public final class ExternalSinkModels {
         @Getter
         String signature;
 
-        String ext;
         String input;
         String kind;
-        String provenance;
 
         @Override
         public String getArguments() {
@@ -313,10 +313,10 @@ public final class ExternalSinkModels {
                             Boolean.parseBoolean(tokens[2]),
                             tokens[3],
                             tokens[4],
-                            tokens[5],
+                            // tokens[5] = ext (unused)
                             tokens[6],
-                            tokens[7],
-                            tokens[8]
+                            tokens[7]
+                            // tokens[8] = provenance (unused)
                     )
             );
         }

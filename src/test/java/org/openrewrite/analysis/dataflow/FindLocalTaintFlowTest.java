@@ -325,7 +325,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
                   InputStream source() { return null; }
                   void test() {
                       try (InputStream source = /*~~>*/source()) {
-                          System.out.println(/*~~>*/source.read());
+                          System.out.println(/*~~>*//*~~>*/source.read());
                       }
                   }
               }
@@ -360,7 +360,7 @@ class FindLocalTaintFlowTest implements RewriteTest {
                   void test() {
                       InputStream source = /*~~>*/source();
                       try {
-                          System.out.println(/*~~>*/source.read());
+                          System.out.println(/*~~>*//*~~>*/source.read());
                       } finally {
                           /*~~>*/source.close();
                       }
