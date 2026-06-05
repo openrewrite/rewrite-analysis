@@ -41,9 +41,9 @@ class FindLocalTaintFlowToExternalSinkTest implements RewriteTest {
 
             @Override
             public boolean isSink(DataFlowNode sinkNode) {
-                // CodeQL renamed the file-creation sink kind to `path-injection`
-                // (e.g. FileOutputStream(File) Argument[0]).
-                return ExternalSinkModels.instance().isSinkNode(sinkNode, "path-injection");
+                // `create-file` was standardized to `path-injection` in CodeQL; the deprecated-kind
+                // alias in ExternalSinkModels keeps this legacy kind matching for existing callers.
+                return ExternalSinkModels.instance().isSinkNode(sinkNode, "create-file");
             }
         }))).expectedCyclesThatMakeChanges(1).cycles(1);
     }

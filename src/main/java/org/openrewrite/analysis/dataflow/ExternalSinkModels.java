@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -53,6 +54,44 @@ public final class ExternalSinkModels {
 
     public static ExternalSinkModels instance() {
         return instance;
+    }
+
+    /**
+     * Legacy sink-kind names (used before CodeQL standardized its threat-model taxonomy) mapped to the
+     * current name(s). Consulted by {@link #isSinkNode} so callers written against the old names keep
+     * matching. Derived by following each old sink to the same method/position in the regenerated model.
+     */
+    private static final Map<String, Set<String>> DEPRECATED_KIND_ALIASES;
+
+    static {
+        Map<String, Set<String>> aliases = new HashMap<>();
+        aliases.put("create-file", singleton("path-injection"));
+        aliases.put("read-file", singleton("path-injection[read]"));
+        aliases.put("write-file", singleton("file-content-store"));
+        aliases.put("logging", singleton("log-injection"));
+        aliases.put("sql", singleton("sql-injection"));
+        aliases.put("xss", new HashSet<>(Arrays.asList("html-injection", "js-injection")));
+        aliases.put("open-url", singleton("request-forgery"));
+        aliases.put("url-open-stream", singleton("request-forgery"));
+        aliases.put("jdbc-url", singleton("request-forgery"));
+        aliases.put("url-redirect", singleton("url-redirection"));
+        aliases.put("ldap", singleton("ldap-injection"));
+        aliases.put("xpath", singleton("xpath-injection"));
+        aliases.put("xslt", singleton("xslt-injection"));
+        aliases.put("groovy", singleton("groovy-injection"));
+        aliases.put("jexl", singleton("jexl-injection"));
+        aliases.put("mvel", singleton("mvel-injection"));
+        aliases.put("ssti", singleton("template-injection"));
+        aliases.put("header-splitting", singleton("response-splitting"));
+        aliases.put("set-hostname-verifier", singleton("hostname-verification"));
+        aliases.put("intent-start", singleton("intent-redirection"));
+        aliases.put("pending-intent-sent", singleton("pending-intents"));
+        DEPRECATED_KIND_ALIASES = aliases;
+    }
+
+    /** The current sink-kind name(s) for a possibly-legacy {@code kind} (the kind itself when not legacy). */
+    static Set<String> canonicalKinds(String kind) {
+        return DEPRECATED_KIND_ALIASES.getOrDefault(kind, singleton(kind));
     }
 
     private SoftReference<FullyQualifiedNameToSinkModels> fullyQualifiedNameToSinkModel;
@@ -87,13 +126,20 @@ public final class ExternalSinkModels {
     /**
      * True if the {@code expression} {@code cursor} is specified as a sink with the given {@code kind} in the
      * CSV flow model.
+     * <p>
+     * Accepts the legacy sink-kind names used before CodeQL standardized its threat-model taxonomy (see
+     * {@link #DEPRECATED_KIND_ALIASES}), so callers written against the older model keep matching. Prefer
+     * the current names.
      *
      * @return If this is a sink of the given {@code kind}.
      */
     public boolean isSinkNode(DataFlowNode sinkNode, String kind) {
-        for (SinkNodePredicate predicate : getOrComputeOptimizedSinkModels(sinkNode.getCursor()).forKind(kind)) {
-            if (predicate.isSinkNode(sinkNode)) {
-                return true;
+        OptimizedSinkModels optimized = getOrComputeOptimizedSinkModels(sinkNode.getCursor());
+        for (String canonicalKind : canonicalKinds(kind)) {
+            for (SinkNodePredicate predicate : optimized.forKind(canonicalKind)) {
+                if (predicate.isSinkNode(sinkNode)) {
+                    return true;
+                }
             }
         }
         return false;

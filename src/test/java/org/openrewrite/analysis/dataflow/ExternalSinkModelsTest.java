@@ -46,4 +46,14 @@ class ExternalSinkModelsTest {
                 .allMatch(model -> model.input.contains("."));
     }
 
+    @Test
+    void deprecatedSinkKindsAreAliasedToCurrentNames() {
+        // CodeQL standardized its sink-kind names; the alias keeps callers on the old names working.
+        assertThat(ExternalSinkModels.canonicalKinds("create-file")).containsExactly("path-injection");
+        assertThat(ExternalSinkModels.canonicalKinds("logging")).containsExactly("log-injection");
+        assertThat(ExternalSinkModels.canonicalKinds("xss")).containsExactlyInAnyOrder("html-injection", "js-injection");
+        // A current (non-legacy) kind passes through unchanged.
+        assertThat(ExternalSinkModels.canonicalKinds("path-injection")).containsExactly("path-injection");
+    }
+
 }
