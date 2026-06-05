@@ -445,4 +445,70 @@ class ExternalModelMethodMatcherTest implements RewriteTest {
           )
         );
     }
+
+    @Test
+    void methodMatcherOnErasedObjectSignatureTwoParams() {
+        // CodeQL writes erased types, so `Map.put(K, V)` is spelled `(Object,Object)`. At the call site
+        // the type arguments are substituted in, so `Map<String, String>.put` has parameter types
+        // `String, String` -- which an `Object` signature must still match.
+        rewriteRun(
+          spec -> spec
+            .recipe(toRecipe(fromModel(
+              "java.util",
+              "Map",
+              true,
+              "put",
+              "(Object,Object)"))),
+          java(
+            """
+              import java.util.Map;
+              class Test {
+                  void test(Map<String, String> map) {
+                      map.put("k", "v");
+                  }
+              }
+              """,
+            """
+              /*~~>*/import java.util.Map;
+              class Test {
+                  void test(Map<String, String> map) {
+                      map.put("k", "v");
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void methodMatcherOnErasedObjectSignatureOneParam() {
+        // `List.add(E)` is spelled `(Object)`; `List<String>.add` has parameter type `String`.
+        rewriteRun(
+          spec -> spec
+            .recipe(toRecipe(fromModel(
+              "java.util",
+              "List",
+              true,
+              "add",
+              "(Object)"))),
+          java(
+            """
+              import java.util.List;
+              class Test {
+                  void test(List<String> list) {
+                      list.add("x");
+                  }
+              }
+              """,
+            """
+              /*~~>*/import java.util.List;
+              class Test {
+                  void test(List<String> list) {
+                      list.add("x");
+                  }
+              }
+              """
+          )
+        );
+    }
 }
