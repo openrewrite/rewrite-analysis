@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -360,7 +361,7 @@ final class ExternalFlowModels {
                 }
                 AccessPath in = maybeIn.get();
                 AccessPath out = maybeOut.get();
-                InvocationMatcher matcher = InvocationMatcher.from(java.util.Collections.singletonList(model));
+                InvocationMatcher matcher = InvocationMatcher.from(singletonList(model));
                 if (out.getCallbackKind() == AccessPath.CallbackKind.PARAMETER &&
                     !in.isCallback() && in.getRoot() == AccessPath.Root.ARGUMENT) {
                     // INTO: in (an argument/qualifier) flows to Argument[i].Parameter[j].

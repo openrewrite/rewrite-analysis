@@ -159,7 +159,7 @@ class LambdaExprTest implements RewriteTest {
                           assertThat(p.getPosition()).isZero();
                           assertThat(p.getCallable()).isEqualTo(method);
                       });
-                      return (J) SearchResult.found(tree);
+                      return SearchResult.found(tree);
                   }).orSuccess(tree);
               }
           })).cycles(1).expectedCyclesThatMakeChanges(1),
@@ -200,7 +200,7 @@ class LambdaExprTest implements RewriteTest {
                       assertThat(method.getParameters().get(0).getPosition()).isZero();
                       assertThat(method.getParameters().get(1).getName()).isEqualTo("b");
                       assertThat(method.getParameters().get(1).getPosition()).isEqualTo(1);
-                      return (J) SearchResult.found(tree);
+                      return SearchResult.found(tree);
                   }).orSuccess(tree);
               }
           })).cycles(1).expectedCyclesThatMakeChanges(1),

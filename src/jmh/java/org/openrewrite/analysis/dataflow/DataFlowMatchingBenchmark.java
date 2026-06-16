@@ -26,7 +26,8 @@ import org.openrewrite.java.tree.J;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Exercises the external-model matching path: a single compilation unit dense in JDK calls that the
@@ -78,7 +79,7 @@ public class DataFlowMatchingBenchmark {
         ExecutionContext ctx = new InMemoryExecutionContext();
         List<SourceFile> parsed = JavaParser.fromJavaVersion().build()
                 .parse(ctx, source)
-                .collect(Collectors.toList());
+                .collect(toList());
         cu = (J.CompilationUnit) parsed.get(0);
         spec = new TaintFlowSpec() {
             @Override

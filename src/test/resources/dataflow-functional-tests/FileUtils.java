@@ -26,6 +26,7 @@ import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
@@ -103,7 +104,7 @@ public class FileUtils {
     /**
      * The UTF-8 character set, used to decode octets in URLs.
      */
-    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     //-----------------------------------------------------------------------
     /**
@@ -426,7 +427,7 @@ public class FileUtils {
             filter = new SuffixFileFilter(suffixes);
         }
         return listFiles(directory, filter,
-                (recursive ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE));
+                recursive ? TrueFileFilter.INSTANCE : FalseFileFilter.INSTANCE);
     }
 
     /**
@@ -2189,6 +2190,6 @@ public class FileUtils {
             fileInCanonicalDir = new File(canonicalDir, file.getName());
         }
 
-        return !(fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile()));
+        return !fileInCanonicalDir.getCanonicalFile().equals(fileInCanonicalDir.getAbsoluteFile());
     }
 }

@@ -36,9 +36,7 @@ import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
+import static java.util.Collections.*;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
