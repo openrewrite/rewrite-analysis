@@ -94,7 +94,7 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
                     sb.append(" [label=\"Unreachable\", color=\"grey\" fontcolor=\"grey\" style=dashed];");
                 }
             } else {
-                for (ControlFlowNode successor : node.getSuccessors()) {
+                for (ControlFlowNode successor : node.getSuccessorsForTraversal()) {
                     sb.append("\n    ").append(abstractToVisualNodeMapping.get(node))
                             .append(" -> ").append(abstractToVisualNodeMapping.get(successor)).append(";");
                 }

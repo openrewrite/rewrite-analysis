@@ -18,6 +18,7 @@ package org.openrewrite.analysis.controlflow;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 
 import java.util.LinkedHashMap;
@@ -45,6 +46,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
         Map<String, ControlFlowNode> nodes;
         Set<ControlFlowNode> predecessors;
         Cursor cursor;
+        @Nullable String additionalContext;
 
         @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
         static final class MessageBuilder {
@@ -53,6 +55,7 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
             private final Map<String, ControlFlowNode> nodes = new LinkedHashMap<>();
             private final Set<ControlFlowNode> predecessors = new LinkedHashSet<>();
             private Cursor cursor;
+            @Nullable private String additionalContext;
 
             MessageBuilder thisNode(ControlFlowNode node) {
                 return addNode("This", node);
@@ -82,8 +85,13 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
                 return this;
             }
 
+            MessageBuilder additionalContext(String context) {
+                this.additionalContext = context;
+                return this;
+            }
+
             Message build() {
-                return new Message(this.message, this.nodes, this.predecessors, cursor);
+                return new Message(this.message, this.nodes, this.predecessors, cursor, additionalContext);
             }
         }
 
@@ -98,6 +106,9 @@ final class ControlFlowIllegalStateException extends IllegalStateException {
             );
             if (!predecessors.isEmpty()) {
                 sb.append("\n\tPredecessors: ").append(predecessors.stream().map(ControlFlowNode::toDescriptiveString).reduce("\n\t\t", (a, b) -> a + "\n\t\t" + b));
+            }
+            if (additionalContext != null) {
+                sb.append("\n").append(additionalContext);
             }
             return sb.toString();
         }

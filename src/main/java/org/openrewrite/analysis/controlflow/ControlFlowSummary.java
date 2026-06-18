@@ -25,6 +25,7 @@ import org.openrewrite.java.tree.Expression;
 import java.util.*;
 import java.util.function.Function;
 
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -42,7 +43,9 @@ public final class ControlFlowSummary {
     private static Set<ControlFlowNode> getAllControlFlowNodes(ControlFlowNode.Start start, ControlFlowNode.End end) {
         // LinkedHashSet to preserve insertion order of nodes
         Set<ControlFlowNode> all = new LinkedHashSet<>();
-        recurseGetAllControlFlowNodes(start, all, ControlFlowNode::getSuccessors);
+        // Use getSuccessorsForTraversal() so that broken graphs (BasicBlocks with no successor) can
+        // still be fully traversed for visualization and validation — without throwing prematurely.
+        recurseGetAllControlFlowNodes(start, all, ControlFlowNode::getSuccessorsForTraversal);
         // Sometimes the end may not be reachable because of an infinite loop.
         // In this case, we need to add the end node and look backwards as well to capture 'all' nodes.
         recurseGetAllControlFlowNodes(end, all, ControlFlowNode::getPredecessors);
@@ -124,5 +127,31 @@ public final class ControlFlowSummary {
 
     int getExitCount() {
         return end.getPredecessors().size();
+    }
+
+    /**
+     * Validates that the control flow graph satisfies all structural invariants.
+     * On violation, generates a DOT representation of the (possibly malformed) graph and throws
+     * a {@link ControlFlowIllegalStateException} with both the violation details and the DOT embedded,
+     * so the graph can be visualized even when broken.
+     */
+    void validate() {
+        List<ControlFlowNode.BasicBlock> blocksWithNoSuccessor = getAllNodes()
+                .stream()
+                .filter(ControlFlowNode.BasicBlock.class::isInstance)
+                .map(ControlFlowNode.BasicBlock.class::cast)
+                .filter(bb -> !bb.hasSuccessor())
+                .collect(toList());
+        if (!blocksWithNoSuccessor.isEmpty()) {
+            String dot = ControlFlowDotFileGenerator.create().visualizeAsDotfile("broken_graph", false, this);
+            ControlFlowIllegalStateException.Message.MessageBuilder builder =
+                    ControlFlowIllegalStateException.exceptionMessageBuilder(
+                            "Control flow graph has " + blocksWithNoSuccessor.size() + " basic block(s) with no successor"
+                    ).additionalContext("DOT representation of the malformed graph:\n" + dot);
+            for (int i = 0; i < blocksWithNoSuccessor.size(); i++) {
+                builder.addNode("BasicBlock without successor " + (i + 1), blocksWithNoSuccessor.get(i));
+            }
+            throw new ControlFlowIllegalStateException(builder);
+        }
     }
 }
