@@ -50,6 +50,16 @@ public abstract class ControlFlowNode {
 
     abstract Set<ControlFlowNode> getSuccessors();
 
+    /**
+     * Returns the successors of this node for the purpose of graph traversal, without enforcing invariants.
+     * For correctly built graphs this will never return an empty set for a {@link BasicBlock}.
+     * Returning an empty set for a {@link BasicBlock} indicates a broken graph and is only intended
+     * to assist with debugging (e.g., DOT visualization of the malformed graph).
+     */
+    Set<ControlFlowNode> getSuccessorsForTraversal() {
+        return getSuccessors();
+    }
+
     protected abstract void _addSuccessorInternal(ControlFlowNode successor);
 
     Set<ControlFlowNode> getPredecessors() {
@@ -382,9 +392,24 @@ public abstract class ControlFlowNode {
         @Override
         Set<ControlFlowNode> getSuccessors() {
             if (successor == null) {
-                return  emptySet(); // e.g. a switch statement without a break / return
+                throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no successor").thisNode(this));
             }
             return singleton(successor);
+        }
+
+        /**
+         * Returns true if this basic block has a successor.
+         * For correctly built graphs this will always return true.
+         * Returning false indicates a broken graph (e.g., a switch case body not properly wired
+         * to the post-switch continuation).
+         */
+        boolean hasSuccessor() {
+            return successor != null;
+        }
+
+        @Override
+        Set<ControlFlowNode> getSuccessorsForTraversal() {
+            return successor != null ? singleton(successor) : emptySet();
         }
 
         @Override

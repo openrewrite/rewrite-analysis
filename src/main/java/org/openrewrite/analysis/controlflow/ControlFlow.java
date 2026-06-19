@@ -57,7 +57,9 @@ public final class ControlFlow {
         }
         return start.computeMessageIfAbsent(CONTROL_FLOW_MESSAGE_KEY, __ -> {
             ControlFlowSimpleSummary summary = findControlFlowInternal(start, ControlFlowNode.GraphType.METHOD_BODY_OR_STATIC_INITIALIZER_OR_INSTANCE_INITIALIZER);
-            return Option.fromNull(ControlFlowSummary.forGraph(summary.start, summary.end));
+            ControlFlowSummary cfSummary = ControlFlowSummary.forGraph(summary.start, summary.end);
+            cfSummary.validate();
+            return Option.fromNull(cfSummary);
         });
     }
 
@@ -351,12 +353,43 @@ public final class ControlFlow {
         public J.Switch visitSwitch(J.Switch _switch, P p) {
             addCursorToBasicBlock();
             visit(_switch.getSelector(), p);
+            // The switch analysis requires a doubly-nested anonymous-class structure.
+            //
+            // OUTER anonymous class (this 'analysis' object):
+            //   - Holds 'caseFlow': the set of BasicBlocks that fall off the end of a case
+            //     without a break/return. This set is shared across all case analyses via closure.
+            //   - Overrides visitBlock: called exactly ONCE for the J.Block that contains all
+            //     cases (_switch.getCases()). After super.visitBlock() returns (all cases have
+            //     been visited), any remaining caseFlow entries are wired to the post-switch
+            //     continuation by merging them into breakFlow.
+            //   - Overrides createAnalysisForRecursion: the base-class visitStatementList()
+            //     calls visitRecursive() -> createAnalysisForRecursion() for EACH case statement.
+            //     If we did NOT override createAnalysisForRecursion, each case would be visited
+            //     by a plain ControlFlowAnalysis whose visitCase() throws for non-default cases.
+            //
+            // INNER anonymous class (returned by createAnalysisForRecursion):
+            //   - Has its own current/breakFlow/exitFlow (isolated per case, as visitRecursive
+            //     requires), but shares caseFlow with the OUTER class via closure.
+            //   - Overrides visitCase: the only place where switch-specific CFG wiring can
+            //     happen. It CANNOT live in the OUTER class because the base visitStatementList
+            //     always routes each case through createAnalysisForRecursion — it never
+            //     dispatches directly back to the OUTER visitor's visitCase.
             ControlFlowAnalysis<P> analysis = new ControlFlowAnalysis<P>(current, graphType) {
 
                 /**
                  * Flows that exit a {@link J.Case} and don't complete with a {@link J.Break}.
                  */
                 private final Set<ControlFlowNode> caseFlow = new HashSet<>();
+
+                @Override
+                public J.Block visitBlock(J.Block block, P p) {
+                    J.Block result = super.visitBlock(block, p);
+                    // After all cases are visited, any remaining caseFlow entries are BasicBlocks
+                    // from the last case that fell off the end without a break/return. They must
+                    // flow to the post-switch continuation, identical to explicit break nodes.
+                    breakFlow.addAll(caseFlow);
+                    return result;
+                }
 
                 @Override
                 @SelfLoathing(name = "Jonathan Leitschuh")
@@ -369,6 +402,9 @@ public final class ControlFlow {
                                 // The default case is not a conditional node, there can be no `false` on a `default` case.
                                 // It's just like an `else` case.
                                 current = Stream.concat(current.stream(), caseFlow.stream()).collect(toSet());
+                                // caseFlow nodes are now merged into current and will be wired by addCursorToBasicBlock()
+                                // below. Clear caseFlow so the visitBlock override doesn't re-add them to breakFlow.
+                                caseFlow.clear();
                                 addCursorToBasicBlock();
                                 return super.visitCase(_case, p);
                             }
