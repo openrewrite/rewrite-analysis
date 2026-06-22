@@ -259,6 +259,11 @@ public abstract class ControlFlowNode {
                     return caseString.substring(0, caseString.indexOf("->") + 2);
                 }
             }
+            if (condition instanceof J.Try.Catch) {
+                // Matching condition — analogous to J.Case in switch dispatch
+                J.Try.Catch catchClause = (J.Try.Catch) condition;
+                return catchClause.getParameter().toString();
+            }
             return condition.toString();
         }
 

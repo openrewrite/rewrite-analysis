@@ -61,16 +61,19 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
         if (isMethodDeclaration || isStaticOrInitBlock) {
             return ControlFlow.startingAt(getCursor()).findControlFlow().map(controlFlow -> {
                 // maps basic block and condition nodes to the first statement in the node (the node leader)
+                // The finally block may be duplicated (inlined once per abrupt-completion type),
+                // producing multiple BBs with the same leader J node. Keep the first encountered.
                 Map<J, ControlFlowNode.BasicBlock> leadersToBlocks =
                         controlFlow
                                 .getBasicBlocks()
                                 .stream()
-                                .collect(toMap(ControlFlowNode.BasicBlock::getLeader, Function.identity()));
+                                .collect(toMap(ControlFlowNode.BasicBlock::getLeader, Function.identity(), (first, dup) -> first));
+                // Condition nodes inside a finally block are also duplicated. Keep the first.
                 Map<J, ControlFlowNode.ConditionNode> conditionToConditionNodes =
                         controlFlow
                                 .getConditionNodes()
                                 .stream()
-                                .collect(toMap(ControlFlowNode.ConditionNode::getCondition, Function.identity()));
+                                .collect(toMap(ControlFlowNode.ConditionNode::getCondition, Function.identity(), (first, dup) -> first));
                 // Sanity check for unit testing purposes to ensure all control flow nodes are well-formed
                 //noinspection ConstantConditions
                 assert conditionToConditionNodes.values().stream().map(ControlFlowNode.ConditionNode::asGuard).allMatch(Objects::nonNull) : "Condition nodes must all be guards";
@@ -154,6 +157,18 @@ final class ControlFlowVisualizationVisitor<P> extends JavaIsoVisitor<P> {
                 return SearchResult.found(else_, number + labelDescription(else_));
             }
             return else_;
+        }
+
+        @Override
+        public J.Try.Catch visitCatch(J.Try.Catch catch_, P p) {
+            J.Try.Catch c = super.visitCatch(catch_, p);
+            if (nodeToBlock.containsKey(catch_)) {
+                ControlFlowNode b = nodeToBlock.get(catch_);
+                assert b != null;
+                int number = nodeNumbers.computeIfAbsent(b, __ -> ++nodeNumber);
+                return SearchResult.found(c, number + labelDescription(catch_));
+            }
+            return c;
         }
 
         private String labelDescription(J j) {

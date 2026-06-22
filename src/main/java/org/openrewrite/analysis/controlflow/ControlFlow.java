@@ -891,32 +891,98 @@ public final class ControlFlow {
         public J.Try visitTry(J.Try _try, P p) {
             addCursorToBasicBlock();
             visit(_try.getResources(), p);
+
+            // Model each catch clause as a MatchingCondition node (parity with CodeQL's CatchClause
+            // as a MatchingCondition with MatchingSuccessor(true/false)), analogous to switch cases.
+            // Exception edges flow from the try-body entry to catch(0), then catch(i) false-branches
+            // to catch(i+1), and the last catch false-branch flows into the try body.
+            // This is a conservative over-approximation: the exception is modelled as potentially
+            // occurring before any statement in the try body runs.
+            List<J.Try.Catch> catches = _try.getCatches();
+            Set<ControlFlowNode> catchCurrents = new HashSet<>();
+            Set<ControlFlowNode> catchExitFlow = new HashSet<>();
+            Set<ControlFlowNode> catchBreakFlow = new HashSet<>();
+            Set<ControlFlowNode> catchContinueFlow = new HashSet<>();
+
+            for (J.Try.Catch catch_ : catches) {
+                // Add the catch clause cursor to the current basic block so that
+                // addConditionNodeTruthFirst() creates a Guard wrapping the J.Try.Catch —
+                // exactly as visitCase adds the J.Case cursor before creating its ConditionNode.
+                ControlFlowNode.BasicBlock entryBB = currentAsBasicBlock();
+                entryBB.addCursorToBasicBlock(new Cursor(getCursor(), catch_));
+
+                // MatchingSuccessor(true)  → catch body (exception matched)
+                // MatchingSuccessor(false) → next catch or try body (exception not matched)
+                ControlFlowNode.ConditionNode conditionNode = entryBB.addConditionNodeTruthFirst();
+                Set<ControlFlowNode> conditionNodes = singleton(conditionNode);
+
+                // Visit catch body from the condition node (sets the truthy successor).
+                // Use visitRecursive (NOT visitRecursiveTransferringAll) so that catch-body exit
+                // flows are NOT immediately merged into this analysis's exitFlow/breakFlow/
+                // continueFlow.  If they were, and a finally block is present, those BBs would
+                // be routed through the finally AND wired directly to End — causing "Basic block
+                // already has a successor" on the second wiring.  We collect them manually and
+                // route them through finally ourselves in the block below.
+                // Empty catch bodies need a placeholder node so the truthy successor is wired;
+                // use the same fake-J.Empty pattern that switch uses for empty case bodies.
+                ControlFlowAnalysis<P> catchBodyAnalysis;
+                if (catch_.getBody().getStatements().isEmpty()) {
+                    catchBodyAnalysis = visitRecursive(conditionNodes,
+                            new J.Empty(randomId(), Space.EMPTY, Markers.EMPTY), p);
+                } else {
+                    catchBodyAnalysis = visitRecursive(conditionNodes, catch_.getBody(), p);
+                }
+                catchCurrents.addAll(catchBodyAnalysis.current);
+                catchExitFlow.addAll(catchBodyAnalysis.exitFlow);
+                catchBreakFlow.addAll(catchBodyAnalysis.breakFlow);
+                catchContinueFlow.addAll(catchBodyAnalysis.continueFlow);
+
+                // Leave the condition node as 'current' so that the next catch clause (or the
+                // try body) sets the falsy successor when it creates its first basic block.
+                current = conditionNodes;
+            }
+
+            // Visit the try body.  When catches were present, 'current' is the last catch's
+            // ConditionNode; its falsy successor is wired automatically as the try body's entry
+            // BasicBlock is created by the first addCursorToBasicBlock() call inside the body.
             if (_try.getFinally() == null) {
                 visit(_try.getBody(), p);
+                // Merge try-body falls-through with catch-body falls-through
+                current = Stream.concat(current.stream(), catchCurrents.stream()).collect(toSet());
+                exitFlow.addAll(catchExitFlow);
+                breakFlow.addAll(catchBreakFlow);
+                continueFlow.addAll(catchContinueFlow);
             } else {
                 ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
                 tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
-                if (!tryBodyAnalysis.current.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromCurrent =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.current, _try.getFinally(), p);
-                    current = finallyAnalysisFromCurrent.current;
+
+                // Combine try-body and catch-body flows, then route everything through finally.
+                Set<ControlFlowNode> allCurrents = Stream.concat(
+                        tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
+                Set<ControlFlowNode> allExitFlow = Stream.concat(
+                        tryBodyAnalysis.exitFlow.stream(), catchExitFlow.stream()).collect(toSet());
+                Set<ControlFlowNode> allBreakFlow = Stream.concat(
+                        tryBodyAnalysis.breakFlow.stream(), catchBreakFlow.stream()).collect(toSet());
+                Set<ControlFlowNode> allContinueFlow = Stream.concat(
+                        tryBodyAnalysis.continueFlow.stream(), catchContinueFlow.stream()).collect(toSet());
+
+                if (!allCurrents.isEmpty()) {
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allCurrents, _try.getFinally(), p);
+                    current = f.current;
                 } else {
                     current = emptySet();
                 }
-                if (!tryBodyAnalysis.exitFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromExitFlow =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.exitFlow, _try.getFinally(), p);
-                    exitFlow.addAll(finallyAnalysisFromExitFlow.current);
+                if (!allExitFlow.isEmpty()) {
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allExitFlow, _try.getFinally(), p);
+                    exitFlow.addAll(f.current);
                 }
-                if (!tryBodyAnalysis.breakFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromBreakFlow =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.breakFlow, _try.getFinally(), p);
-                    breakFlow.addAll(finallyAnalysisFromBreakFlow.current);
+                if (!allBreakFlow.isEmpty()) {
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allBreakFlow, _try.getFinally(), p);
+                    breakFlow.addAll(f.current);
                 }
-                if (!tryBodyAnalysis.continueFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromContinueFlow =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.continueFlow, _try.getFinally(), p);
-                    continueFlow.addAll(finallyAnalysisFromContinueFlow.current);
+                if (!allContinueFlow.isEmpty()) {
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allContinueFlow, _try.getFinally(), p);
+                    continueFlow.addAll(f.current);
                 }
             }
             return _try;

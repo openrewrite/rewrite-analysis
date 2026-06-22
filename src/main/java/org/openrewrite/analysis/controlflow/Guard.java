@@ -37,27 +37,42 @@ public final class Guard {
     @Getter
     private final J.@Nullable Case theCase;
 
+    @Getter
+    private final J.Try.@Nullable Catch theCatch;
 
-    private Guard(Cursor cursor, @Nullable Expression expression, J.@Nullable Case theCase) {
-        if (expression == null && theCase == null) {
-            throw new IllegalArgumentException("Guard must have either an expression or a case");
+    private Guard(Cursor cursor, @Nullable Expression expression, J.@Nullable Case theCase, J.Try.@Nullable Catch theCatch) {
+        if (expression == null && theCase == null && theCatch == null) {
+            throw new IllegalArgumentException("Guard must have either an expression, a case, or a catch clause");
         }
         this.cursor = cursor;
         this.expression = expression;
         this.theCase = theCase;
+        this.theCatch = theCatch;
     }
 
     public <T> T map(Function<Expression, T> whenExpression, Function<J.Case, T> whenCase) {
+        return map(whenExpression, whenCase, c -> {
+            throw new IllegalStateException("Unexpected catch clause guard — use the three-argument map() overload");
+        });
+    }
+
+    public <T> T map(Function<Expression, T> whenExpression, Function<J.Case, T> whenCase, Function<J.Try.Catch, T> whenCatch) {
         if (expression != null) {
             return whenExpression.apply(expression);
         }
-        return whenCase.apply(theCase);
+        if (theCase != null) {
+            return whenCase.apply(theCase);
+        }
+        return whenCatch.apply(theCatch);
     }
 
     public static Optional<Guard> from(Cursor cursor) {
+        if (cursor.getValue() instanceof J.Try.Catch) {
+            return Optional.of(new Guard(cursor, null, null, (J.Try.Catch) cursor.getValue()));
+        }
         if (cursor.getValue() instanceof J.Case) {
             J.Case theCase = cursor.getValue();
-            return Optional.of(new Guard(cursor, null, theCase));
+            return Optional.of(new Guard(cursor, null, theCase, null));
         }
         if (!(cursor.getValue() instanceof Expression)) {
             return Optional.empty();
@@ -71,7 +86,7 @@ public final class Guard {
         return getTypeSafe(cursor, e)
                 .map(type -> {
             if (isBooleanLike(type)) {
-                return new Guard(cursor, e, null);
+                return new Guard(cursor, e, null, null);
             }
             return null;
         });
