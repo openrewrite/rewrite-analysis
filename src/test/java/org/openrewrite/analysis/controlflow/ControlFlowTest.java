@@ -1343,10 +1343,10 @@ class ControlFlowTest implements RewriteTest {
               import java.io.InputStream;
               class Test {
                   InputStream source() /*~~(BB: 1 CN: 0 EX: 1 | 1L)~~>*/{ return null; }
-                  int test() /*~~(BB: 3 CN: 1 EX: 2 | 1L)~~>*/{
-                      try (InputStream source = source()) /*~~(2L)~~>*/{
+                  int test() /*~~(BB: 2 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      try (InputStream source = source()) {
                           return source.read();
-                      } /*~~(1C)~~>*/catch (RuntimeException ignored) {
+                      } /*~~(1EH)~~>*/catch (RuntimeException ignored) {
 
                       }
                       return 0;
@@ -1582,7 +1582,7 @@ class ControlFlowTest implements RewriteTest {
                    * @return The decoded URL or <code>null</code> if the input was
                    *         <code>null</code>.
                    */
-                  static String test(String url) /*~~(BB: 15 CN: 9 EX: 1 | 1L)~~>*/{
+                  static String test(String url) /*~~(BB: 16 CN: 9 EX: 3 EH: 1 | 1L)~~>*/{
                       String decoded = url;
                       if (/*~~(1C (!=))~~>*/url != null && /*~~(2C (>=))~~>*//*~~(2L)~~>*/url.indexOf('%') >= 0) /*~~(3L)~~>*/{
                           int n = url.length();
@@ -1590,18 +1590,18 @@ class ControlFlowTest implements RewriteTest {
                           ByteBuffer bytes = ByteBuffer.allocate(n);
                           for (int i = 0; /*~~(3C (<))~~>*/i < n;) /*~~(4L)~~>*/{
                               if (/*~~(4C (==))~~>*/url.charAt(i) == '%') /*~~(5L)~~>*/{
-                                  try /*~~(6L)~~>*/{
-                                      do /*~~(8L)~~>*/{
+                                  try {
+                                      do /*~~(7L)~~>*/{
                                           byte octet = (byte) Integer.parseInt(url.substring(i + 1, i + 3), 16);
                                           bytes.put(octet);
                                           i += 3;
-                                      } while (/*~~(5C (<))~~>*/i < n && /*~~(6C (==))~~>*//*~~(7L)~~>*/url.charAt(i) == '%');
-                                      /*~~(9L)~~>*/continue;
-                                  } /*~~(7C)~~>*/catch (RuntimeException e) {
+                                      } while (/*~~(5C (<))~~>*/i < n && /*~~(6C (==))~~>*//*~~(6L)~~>*/url.charAt(i) == '%');
+                                      /*~~(8L)~~>*/continue;
+                                  } /*~~(1EH)~~>*/catch (RuntimeException e) {
                                       // malformed percent-encoded octet, fall through and
                                       // append characters literally
-                                  } finally {
-                                      if (/*~~(8C (>))~~>*/bytes.position() > 0) /*~~(10L)~~>*/{
+                                  } finally /*~~(9L)~~>*/{
+                                      if (/*~~(7C (>))~~>*/bytes.position() > 0) /*~~(10L)~~>*/{
                                           bytes.flip();
                                           buffer.append(utf8Decode(bytes));
                                           bytes.clear();
@@ -2085,23 +2085,23 @@ class ControlFlowTest implements RewriteTest {
               import java.util.jar.Manifest;
 
               class Test {
-                  private String getCommit(final URL jarURL) /*~~(BB: 10 CN: 5 EX: 3 | 1L)~~>*/{
-                      try /*~~(2L)~~>*/{
+                  private String getCommit(final URL jarURL) /*~~(BB: 9 CN: 4 EX: 4 EH: 1 | 1L)~~>*/{
+                      try {
                           final JarInputStream in = new JarInputStream(jarURL.openStream());
                           in.close();
                           Manifest manifest = in.getManifest();
                           if (/*~~(1C (==))~~>*/manifest == null)
-                              /*~~(3L)~~>*/for (;;/*~~(4L)~~>*/) /*~~(5L)~~>*/{
+                              /*~~(2L)~~>*/for (;;/*~~(3L)~~>*/) /*~~(4L)~~>*/{
                                   final JarEntry entry = in.getNextJarEntry();
-                                  if (/*~~(2C (==))~~>*/entry == null) return /*~~(6L)~~>*/null;
-                                  /*~~(7L)~~>*/if (/*~~(3C)~~>*/entry.getName().equals("META-INF/MANIFEST.MF")) /*~~(8L)~~>*/{
+                                  if (/*~~(2C (==))~~>*/entry == null) return /*~~(5L)~~>*/null;
+                                  /*~~(6L)~~>*/if (/*~~(3C)~~>*/entry.getName().equals("META-INF/MANIFEST.MF")) /*~~(7L)~~>*/{
                                       manifest = new Manifest(in);
                                       break;
                                   }
                               }
-                          final /*~~(9L)~~>*/Attributes attributes = manifest.getMainAttributes();
+                          final /*~~(8L)~~>*/Attributes attributes = manifest.getMainAttributes();
                           return attributes.getValue(new Attributes.Name("Implementation-Build"));
-                      } /*~~(4C)~~>*/catch (IOException e) /*~~(10L)~~>*/{
+                      } /*~~(1EH)~~>*/catch (IOException e) /*~~(9L)~~>*/{
                           return null;
                       }
                   }
@@ -2362,38 +2362,38 @@ class ControlFlowTest implements RewriteTest {
               import java.util.jar.JarInputStream;
 
               class Test {
-                  private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 26 CN: 12 EX: 2 | 1L)~~>*/{
-                      try /*~~(2L)~~>*/{
+                  private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 24 CN: 10 EX: 4 EH: 2 | 1L)~~>*/{
+                      try {
                           int maxCount = 3;
                           final JarInputStream in = new JarInputStream(jarURL.openStream());
-                          for (;;) /*~~(3L)~~>*/{
+                          for (;;) /*~~(2L)~~>*/{
                               final JarEntry entry = in.getNextJarEntry();
-                              if (/*~~(1C (==))~~>*/entry == null) /*~~(4L)~~>*/break;
-                              /*~~(5L)~~>*/String path = entry.getName();
-                              if (!/*~~(2C)~~>*/path.endsWith(".class")) /*~~(6L)~~>*/continue;
-                              /*~~(7L)~~>*/if (/*~~(3C (<=))~~>*/--maxCount <= 0) /*~~(8L)~~>*/break;
-                              final /*~~(9L)~~>*/String sourceFile = "Some java source code here";
-                              if (/*~~(4C (==))~~>*/sourceFile == null) /*~~(10L)~~>*/continue;
-                              final /*~~(11L)~~>*/String suffix = path.substring(0, path.lastIndexOf('/') + 1) + sourceFile;
+                              if (/*~~(1C (==))~~>*/entry == null) /*~~(3L)~~>*/break;
+                              /*~~(4L)~~>*/String path = entry.getName();
+                              if (!/*~~(2C)~~>*/path.endsWith(".class")) /*~~(5L)~~>*/continue;
+                              /*~~(6L)~~>*/if (/*~~(3C (<=))~~>*/--maxCount <= 0) /*~~(7L)~~>*/break;
+                              final /*~~(8L)~~>*/String sourceFile = "Some java source code here";
+                              if (/*~~(4C (==))~~>*/sourceFile == null) /*~~(9L)~~>*/continue;
+                              final /*~~(10L)~~>*/String suffix = path.substring(0, path.lastIndexOf('/') + 1) + sourceFile;
                               final String git = System.getProperty("imagej.updater.git.command", "git");
-                              try /*~~(12L)~~>*/{
+                              try {
                                   path = "/user/something/something";
-                                  if (/*~~(5C (<=))~~>*/path.length() <= suffix.length()) /*~~(13L)~~>*/continue;
-                                  /*~~(14L)~~>*/if (/*~~(6C)~~>*/path.endsWith("\\n")) /*~~(15L)~~>*/path = path.substring(0, path.length() - 1);
-                              } /*~~(7C)~~>*/catch (RuntimeException e) /*~~(16L)~~>*/{
+                                  if (/*~~(5C (<=))~~>*/path.length() <= suffix.length()) /*~~(11L)~~>*/continue;
+                                  /*~~(12L)~~>*/if (/*~~(6C)~~>*/path.endsWith("\\n")) /*~~(13L)~~>*/path = path.substring(0, path.length() - 1);
+                              } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(14L)~~>*/{
                                   /* ignore */
                                   continue;
                               }
-                              /*~~(17L)~~>*/if (/*~~(8C (>=))~~>*/path.indexOf('\\n') >= 0) /*~~(18L)~~>*/continue; // ls-files found multiple files
-                              /*~~(19L)~~>*/path = path.substring(0, path.length() - suffix.length());
-                              if (/*~~(9C)~~>*/"".equals(path)) /*~~(20L)~~>*/path = ".";
-                              /*~~(21L)~~>*/else if (path.endsWith("/src/main/java/")) path = path.substring(0, path.length() - "/src/main/java/".length());
-                              /*~~(22L)~~>*/in.close();
+                              /*~~(15L)~~>*/if (/*~~(7C (>=))~~>*/path.indexOf('\\n') >= 0) /*~~(16L)~~>*/continue; // ls-files found multiple files
+                              /*~~(17L)~~>*/path = path.substring(0, path.length() - suffix.length());
+                              if (/*~~(8C)~~>*/"".equals(path)) /*~~(18L)~~>*/path = ".";
+                              /*~~(19L)~~>*/else if (path.endsWith("/src/main/java/")) path = path.substring(0, path.length() - "/src/main/java/".length());
+                              /*~~(20L)~~>*/in.close();
                               return path;
                           }
-                          /*~~(23L)~~>*/in.close();
-                      } /*~~(10C)~~>*/catch (IOException e) /*~~(24L)~~>*/{ /* ignore */ e.printStackTrace(); }
-                      return /*~~(25L)~~>*/null;
+                          /*~~(21L)~~>*/in.close();
+                      } /*~~(2EH)~~>*/catch (IOException e) /*~~(22L)~~>*/{ /* ignore */ e.printStackTrace(); }
+                      return /*~~(23L)~~>*/null;
                   }
               }
               """

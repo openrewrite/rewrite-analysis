@@ -892,75 +892,105 @@ public final class ControlFlow {
             addCursorToBasicBlock();
             visit(_try.getResources(), p);
 
-            // Model each catch clause as a MatchingCondition node (parity with CodeQL's CatchClause
-            // as a MatchingCondition with MatchingSuccessor(true/false)), analogous to switch cases.
-            // Exception edges flow from the try-body entry to catch(0), then catch(i) false-branches
-            // to catch(i+1), and the last catch false-branch flows into the try body.
-            // This is a conservative over-approximation: the exception is modelled as potentially
-            // occurring before any statement in the try body runs.
             List<J.Try.Catch> catches = _try.getCatches();
+
+            if (catches.isEmpty()) {
+                // No catches — existing try-finally logic (unchanged)
+                if (_try.getFinally() == null) {
+                    visit(_try.getBody(), p);
+                } else {
+                    ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
+                    tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
+                    if (!tryBodyAnalysis.current.isEmpty()) {
+                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.current, _try.getFinally(), p);
+                        current = f.current;
+                    } else {
+                        current = emptySet();
+                    }
+                    if (!tryBodyAnalysis.exitFlow.isEmpty()) {
+                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.exitFlow, _try.getFinally(), p);
+                        exitFlow.addAll(f.current);
+                    }
+                    if (!tryBodyAnalysis.breakFlow.isEmpty()) {
+                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.breakFlow, _try.getFinally(), p);
+                        breakFlow.addAll(f.current);
+                    }
+                    if (!tryBodyAnalysis.continueFlow.isEmpty()) {
+                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.continueFlow, _try.getFinally(), p);
+                        continueFlow.addAll(f.current);
+                    }
+                }
+                return _try;
+            }
+
+            // --- Has catch clauses ---
+            // addCursorToBasicBlock() guarantees 'current' is a single BasicBlock here.
+            // Save the try-entry BB: after visiting the try body it will get exceptionEntry wired to
+            // the first ExceptionHandlerNode, creating a SECONDARY edge that does NOT split the block.
+            ControlFlowNode.BasicBlock tryEntryBB = currentAsBasicBlock();
+
+            // Build ExceptionHandlerNode chain and visit each catch body independently.
+            List<ControlFlowNode.ExceptionHandlerNode> handlers = new ArrayList<>(catches.size());
             Set<ControlFlowNode> catchCurrents = new HashSet<>();
             Set<ControlFlowNode> catchExitFlow = new HashSet<>();
             Set<ControlFlowNode> catchBreakFlow = new HashSet<>();
             Set<ControlFlowNode> catchContinueFlow = new HashSet<>();
 
             for (J.Try.Catch catch_ : catches) {
-                // Add the catch clause cursor to the current basic block so that
-                // addConditionNodeTruthFirst() creates a Guard wrapping the J.Try.Catch —
-                // exactly as visitCase adds the J.Case cursor before creating its ConditionNode.
-                ControlFlowNode.BasicBlock entryBB = currentAsBasicBlock();
-                entryBB.addCursorToBasicBlock(new Cursor(getCursor(), catch_));
+                ControlFlowNode.ExceptionHandlerNode handler = ControlFlowNode.ExceptionHandlerNode.create(catch_);
+                handlers.add(handler);
 
-                // MatchingSuccessor(true)  → catch body (exception matched)
-                // MatchingSuccessor(false) → next catch or try body (exception not matched)
-                ControlFlowNode.ConditionNode conditionNode = entryBB.addConditionNodeTruthFirst();
-                Set<ControlFlowNode> conditionNodes = singleton(conditionNode);
+                // Create the catch body entry BB and visit the body from it.
+                ControlFlowNode.BasicBlock catchEntryBB = ControlFlowNode.BasicBlock.create();
+                handler.addSuccessor(catchEntryBB); // matched → catch body
 
-                // Visit catch body from the condition node (sets the truthy successor).
-                // Use visitRecursive (NOT visitRecursiveTransferringAll) so that catch-body exit
-                // flows are NOT immediately merged into this analysis's exitFlow/breakFlow/
-                // continueFlow.  If they were, and a finally block is present, those BBs would
-                // be routed through the finally AND wired directly to End — causing "Basic block
-                // already has a successor" on the second wiring.  We collect them manually and
-                // route them through finally ourselves in the block below.
-                // Empty catch bodies need a placeholder node so the truthy successor is wired;
-                // use the same fake-J.Empty pattern that switch uses for empty case bodies.
-                ControlFlowAnalysis<P> catchBodyAnalysis;
+                ControlFlowAnalysis<P> catchBodyAnalysis = new ControlFlowAnalysis<>(singleton(catchEntryBB), graphType);
                 if (catch_.getBody().getStatements().isEmpty()) {
-                    catchBodyAnalysis = visitRecursive(conditionNodes,
-                            new J.Empty(randomId(), Space.EMPTY, Markers.EMPTY), p);
+                    // Empty catch body: visit a fake J.Empty so catchEntryBB gets a leader cursor.
+                    catchBodyAnalysis.visit(new J.Empty(randomId(), Space.EMPTY, Markers.EMPTY), p, getCursor());
                 } else {
-                    catchBodyAnalysis = visitRecursive(conditionNodes, catch_.getBody(), p);
+                    catchBodyAnalysis.visit(catch_.getBody(), p, getCursor());
                 }
                 catchCurrents.addAll(catchBodyAnalysis.current);
                 catchExitFlow.addAll(catchBodyAnalysis.exitFlow);
                 catchBreakFlow.addAll(catchBodyAnalysis.breakFlow);
                 catchContinueFlow.addAll(catchBodyAnalysis.continueFlow);
-
-                // Leave the condition node as 'current' so that the next catch clause (or the
-                // try body) sets the falsy successor when it creates its first basic block.
-                current = conditionNodes;
             }
 
-            // Visit the try body.  When catches were present, 'current' is the last catch's
-            // ConditionNode; its falsy successor is wired automatically as the try body's entry
-            // BasicBlock is created by the first addCursorToBasicBlock() call inside the body.
+            // Chain handlers: EH[i].unmatchedSuccessor = EH[i+1]
+            for (int i = 0; i < handlers.size() - 1; i++) {
+                handlers.get(i).addSuccessor(handlers.get(i + 1));
+            }
+            ControlFlowNode.ExceptionHandlerNode firstHandler = handlers.get(0);
+            ControlFlowNode.ExceptionHandlerNode lastHandler = handlers.get(handlers.size() - 1);
+
+            // Visit try body from current = {tryEntryBB}.
+            // The body's content is appended to tryEntryBB — no extra BB at the try entry!
+            ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
+            tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
+
+            // Wire exception edge: tryEntryBB → firstHandler (secondary edge, does not affect successor)
+            tryEntryBB.setExceptionEntry(firstHandler);
+
             if (_try.getFinally() == null) {
-                visit(_try.getBody(), p);
-                // Merge try-body falls-through with catch-body falls-through
-                current = Stream.concat(current.stream(), catchCurrents.stream()).collect(toSet());
+                current = Stream.concat(tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
+                exitFlow.addAll(tryBodyAnalysis.exitFlow);
                 exitFlow.addAll(catchExitFlow);
+                // Last handler's unmatched path = exception propagates out of method.
+                // Adding lastHandler to exitFlow causes visitBlock (method entry) to call
+                // lastHandler.addSuccessor(end), wiring unmatchedSuccessor → End.
+                exitFlow.add(lastHandler);
+                breakFlow.addAll(tryBodyAnalysis.breakFlow);
                 breakFlow.addAll(catchBreakFlow);
+                continueFlow.addAll(tryBodyAnalysis.continueFlow);
                 continueFlow.addAll(catchContinueFlow);
             } else {
-                ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
-                tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
-
-                // Combine try-body and catch-body flows, then route everything through finally.
+                // Route all flows through finally.
                 Set<ControlFlowNode> allCurrents = Stream.concat(
                         tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
                 Set<ControlFlowNode> allExitFlow = Stream.concat(
                         tryBodyAnalysis.exitFlow.stream(), catchExitFlow.stream()).collect(toSet());
+                allExitFlow.add(lastHandler);
                 Set<ControlFlowNode> allBreakFlow = Stream.concat(
                         tryBodyAnalysis.breakFlow.stream(), catchBreakFlow.stream()).collect(toSet());
                 Set<ControlFlowNode> allContinueFlow = Stream.concat(

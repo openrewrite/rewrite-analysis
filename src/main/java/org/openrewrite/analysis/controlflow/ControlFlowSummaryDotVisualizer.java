@@ -93,8 +93,30 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
                 } else {
                     sb.append(" [label=\"Unreachable\", color=\"grey\" fontcolor=\"grey\" style=dashed];");
                 }
+            } else if (node instanceof ControlFlowNode.ExceptionHandlerNode) {
+                ControlFlowNode.ExceptionHandlerNode eh = (ControlFlowNode.ExceptionHandlerNode) node;
+                if (eh.getMatchedSuccessor() != null) {
+                    sb.append("\n    ").append(abstractToVisualNodeMapping.get(node))
+                            .append(" -> ").append(abstractToVisualNodeMapping.get(eh.getMatchedSuccessor()))
+                            .append(" [label=\"Caught\", color=\"green3\" fontcolor=\"green3\"];");
+                }
+                if (eh.getUnmatchedSuccessor() != null) {
+                    sb.append("\n    ").append(abstractToVisualNodeMapping.get(node))
+                            .append(" -> ").append(abstractToVisualNodeMapping.get(eh.getUnmatchedSuccessor()))
+                            .append(" [label=\"Propagates\", color=\"red\" fontcolor=\"red\"];");
+                }
             } else {
                 for (ControlFlowNode successor : node.getSuccessorsForTraversal()) {
+                    if (node instanceof ControlFlowNode.BasicBlock) {
+                        ControlFlowNode.BasicBlock bb = (ControlFlowNode.BasicBlock) node;
+                        if (successor == bb.getExceptionEntry()) {
+                            // Exception edge — dashed, labeled
+                            sb.append("\n    ").append(abstractToVisualNodeMapping.get(node))
+                                    .append(" -> ").append(abstractToVisualNodeMapping.get(successor))
+                                    .append(" [label=\"exception\", style=dashed, color=\"orange\" fontcolor=\"orange\"];");
+                            continue;
+                        }
+                    }
                     sb.append("\n    ").append(abstractToVisualNodeMapping.get(node))
                             .append(" -> ").append(abstractToVisualNodeMapping.get(successor)).append(";");
                 }
@@ -171,6 +193,9 @@ final class ControlFlowSummaryDotVisualizer implements ControlFlowDotFileGenerat
         }
         if (node instanceof ControlFlowNode.ConditionNode) {
             return "diamond";
+        }
+        if (node instanceof ControlFlowNode.ExceptionHandlerNode) {
+            return "hexagon";
         }
         return "box";
     }
