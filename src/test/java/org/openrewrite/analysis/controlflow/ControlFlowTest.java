@@ -1323,10 +1323,9 @@ class ControlFlowTest implements RewriteTest {
     @SuppressWarnings("TryFinallyCanBeTryWithResources")
     @Test
     void controlFlowForBreakInTryBodyNoCatchWithFinally() {
-        // Exercises the no-catch-has-finally breakFlow branch (line 914 in ControlFlow.java).
-        // The break path through the finally and the normal path through the finally are
-        // each inlined separately; the break copy goes to End while the normal copy
-        // loops back via the for-update.
+        // Exercises the no-catch-has-finally path where the try body contains a break.
+        // With unified finally visitation, all predecessors (normal path and break path) feed
+        // the single finally BB; after it falls through, control reaches End via the loop exit.
         rewriteRun(
           //language=java
           java(
@@ -1346,12 +1345,12 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  void test() /*~~(BB: 5 CN: 2 EX: 2 | 1L)~~>*/{
+                  void test() /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
                       for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
                           try {
                               if (/*~~(2C (==))~~>*/i == 5) /*~~(4L)~~>*/break;
                               /*~~(5L)~~>*/System.out.println(i);
-                          } finally {
+                          } finally /*~~(6L)~~>*/{
                               System.out.println("finally");
                           }
                       }
@@ -1365,9 +1364,9 @@ class ControlFlowTest implements RewriteTest {
     @SuppressWarnings("TryFinallyCanBeTryWithResources")
     @Test
     void controlFlowForContinueInTryBodyNoCatchWithFinally() {
-        // Exercises the no-catch-has-finally continueFlow branch (line 918 in ControlFlow.java).
-        // The continue path through the finally loops back to the condition;
-        // the normal path through the finally proceeds via the for-update.
+        // Exercises the no-catch-has-finally path where the try body contains a continue.
+        // With unified finally visitation, all predecessors (normal path and continue path) feed
+        // the single finally BB; after it falls through, control returns to the loop update.
         rewriteRun(
           //language=java
           java(
@@ -1387,12 +1386,12 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  void test() /*~~(BB: 5 CN: 2 EX: 1 | 1L)~~>*/{
+                  void test() /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
                       for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
                           try {
                               if (/*~~(2C (==))~~>*/i == 5) /*~~(4L)~~>*/continue;
                               /*~~(5L)~~>*/System.out.println(i);
-                          } finally {
+                          } finally /*~~(6L)~~>*/{
                               System.out.println("finally");
                           }
                       }
@@ -1405,9 +1404,9 @@ class ControlFlowTest implements RewriteTest {
 
     @Test
     void controlFlowForAllPathsReturnInTryCatchFinally() {
-        // Exercises the allCurrents-empty branch (line 1013 in ControlFlow.java):
-        // both try body and catch body exit via return, so lastHandler is merged into
-        // allExitFlow and the finally block is visited exactly once for all paths.
+        // Exercises the case where both try body and catch body exit via return, so allCurrents
+        // is empty. With unified finally visitation, lastHandler plus all exit-flow predecessors
+        // feed the single finally BB, which then falls through to End.
         rewriteRun(
           //language=java
           java(
@@ -1443,9 +1442,9 @@ class ControlFlowTest implements RewriteTest {
 
     @Test
     void controlFlowForReturnInCatchBodyWithFinally() {
-        // Exercises the allExitFlow-non-empty branch (line 1019 in ControlFlow.java) while
-        // allCurrents is also non-empty: the try body falls off normally (allCurrents) while
-        // the catch body exits via return (allExitFlow = catchExitFlow).
+        // Exercises the case where the try body falls off normally while the catch body exits via
+        // return. With unified finally visitation all predecessors (including the catch return) feed
+        // the single finally BB; its normal exit continues to the post-try code (return 0).
         rewriteRun(
           //language=java
           java(
@@ -1465,7 +1464,7 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  int test() /*~~(BB: 4 CN: 0 EX: 2 EH: 1 | 1L)~~>*/{
+                  int test() /*~~(BB: 4 CN: 0 EX: 1 EH: 1 | 1L)~~>*/{
                       /*~~(2L)~~>*/try {
                           System.out.println("try");
                       } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
@@ -1826,7 +1825,7 @@ class ControlFlowTest implements RewriteTest {
             """
               import java.io.*;
               class Test {
-                  void test() /*~~(BB: 15 CN: 5 EX: 4 EH: 2 | 1L)~~>*/{
+                  void test() /*~~(BB: 10 CN: 3 EX: 2 EH: 2 | 1L)~~>*/{
                       for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
                           /*~~(3L)~~>*/try (InputStream in = new FileInputStream("f.txt")) {
                               if (/*~~(2C (==))~~>*/in.read() == 0) /*~~(4L)~~>*/{
@@ -2151,7 +2150,7 @@ class ControlFlowTest implements RewriteTest {
                    * @return The decoded URL or <code>null</code> if the input was
                    *         <code>null</code>.
                    */
-                  static String test(String url) /*~~(BB: 16 CN: 8 EX: 1 EH: 1 | 1L)~~>*/{
+                  static String test(String url) /*~~(BB: 15 CN: 7 EX: 1 EH: 1 | 1L)~~>*/{
                       String decoded = url;
                       if (/*~~(1C (!=))~~>*/url != null && /*~~(2C (>=))~~>*//*~~(2L)~~>*/url.indexOf('%') >= 0) /*~~(3L)~~>*/{
                           int n = url.length();

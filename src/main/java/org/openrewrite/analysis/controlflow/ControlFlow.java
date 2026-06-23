@@ -901,23 +901,19 @@ public final class ControlFlow {
                 } else {
                     ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
                     tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
-                    if (!tryBodyAnalysis.current.isEmpty()) {
-                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.current, _try.getFinally(), p);
+                    // Visit the finally block exactly once with all predecessors merged.
+                    // Any explicit break/continue/return inside the finally overrides the incoming
+                    // flow. If the finally falls through normally, its exit becomes the new current.
+                    Set<ControlFlowNode> allPredecessors = new HashSet<>();
+                    allPredecessors.addAll(tryBodyAnalysis.current);
+                    allPredecessors.addAll(tryBodyAnalysis.exitFlow);
+                    allPredecessors.addAll(tryBodyAnalysis.breakFlow);
+                    allPredecessors.addAll(tryBodyAnalysis.continueFlow);
+                    if (!allPredecessors.isEmpty()) {
+                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allPredecessors, _try.getFinally(), p);
                         current = f.current;
                     } else {
                         current = emptySet();
-                    }
-                    if (!tryBodyAnalysis.exitFlow.isEmpty()) {
-                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.exitFlow, _try.getFinally(), p);
-                        exitFlow.addAll(f.current);
-                    }
-                    if (!tryBodyAnalysis.breakFlow.isEmpty()) {
-                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.breakFlow, _try.getFinally(), p);
-                        breakFlow.addAll(f.current);
-                    }
-                    if (!tryBodyAnalysis.continueFlow.isEmpty()) {
-                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(tryBodyAnalysis.continueFlow, _try.getFinally(), p);
-                        continueFlow.addAll(f.current);
                     }
                 }
                 return _try;
@@ -1009,32 +1005,21 @@ public final class ControlFlow {
                 Set<ControlFlowNode> allContinueFlow = Stream.concat(
                         tryBodyAnalysis.continueFlow.stream(), catchContinueFlow.stream()).collect(toSet());
 
-                if (!allCurrents.isEmpty()) {
-                    // Merge lastHandler into the normal-exit predecessors so the finally block is
-                    // visited exactly once for both normal-fall-through and exception-propagation
-                    // paths. Without this, the exception-propagation path would visit the finally
-                    // block again as a separate copy under allExitFlow, producing a duplicate BB.
-                    Set<ControlFlowNode> finallyCurrentPredecessors = new HashSet<>(allCurrents);
-                    finallyCurrentPredecessors.add(lastHandler);
-                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(finallyCurrentPredecessors, _try.getFinally(), p);
+                // Visit the finally block exactly once with all predecessors merged.
+                // lastHandler covers the exception-propagation path. Any explicit break/continue/
+                // return inside the finally overrides the incoming flow; if finally falls through
+                // normally its exit becomes the new current.
+                Set<ControlFlowNode> allFinallyPredecessors = new HashSet<>();
+                allFinallyPredecessors.addAll(allCurrents);
+                allFinallyPredecessors.addAll(allExitFlow);
+                allFinallyPredecessors.addAll(allBreakFlow);
+                allFinallyPredecessors.addAll(allContinueFlow);
+                allFinallyPredecessors.add(lastHandler);
+                if (!allFinallyPredecessors.isEmpty()) {
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allFinallyPredecessors, _try.getFinally(), p);
                     current = f.current;
                 } else {
-                    // No normal exits (every try/catch path has an explicit return/throw).
-                    // Add lastHandler to allExitFlow so a single finally copy handles all paths.
-                    allExitFlow.add(lastHandler);
                     current = emptySet();
-                }
-                if (!allExitFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allExitFlow, _try.getFinally(), p);
-                    exitFlow.addAll(f.current);
-                }
-                if (!allBreakFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allBreakFlow, _try.getFinally(), p);
-                    breakFlow.addAll(f.current);
-                }
-                if (!allContinueFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allContinueFlow, _try.getFinally(), p);
-                    continueFlow.addAll(f.current);
                 }
             }
             return _try;
