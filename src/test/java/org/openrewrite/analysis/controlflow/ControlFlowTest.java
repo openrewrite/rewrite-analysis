@@ -2752,8 +2752,8 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    @Test
     @SuppressWarnings("EnhancedSwitchMigration")
+    @Test
     void switchCaseNoDefault() {
         rewriteRun(
           //language=java
@@ -2841,8 +2841,8 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    @Test
     @SuppressWarnings("EnhancedSwitchMigration")
+    @Test
     void switchCaseSingleCaseNoBreak() {
         rewriteRun(
           //language=java
@@ -2920,8 +2920,8 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    @Test
     @SuppressWarnings("EnhancedSwitchMigration")
+    @Test
     void switchCaseMixedFallthrough() {
         rewriteRun(
           //language=java
