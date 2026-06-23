@@ -1344,7 +1344,7 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   InputStream source() /*~~(BB: 1 CN: 0 EX: 1 | 1L)~~>*/{ return null; }
                   int test() /*~~(BB: 3 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
-                      try (InputStream source = source()) /*~~(2L)~~>*/{
+                      /*~~(2L)~~>*/try (InputStream source = source()) {
                           return source.read();
                       } /*~~(1EH)~~>*/catch (RuntimeException ignored) {
 
@@ -1381,7 +1381,7 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   void test(boolean flag) /*~~(BB: 4 CN: 0 EX: 2 EH: 1 | 1L)~~>*/{
                       int n = 1;
-                      try /*~~(2L)~~>*/{
+                      /*~~(2L)~~>*/try {
                           System.out.println(n);
                       } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
                           System.out.println(e.getMessage());
@@ -1627,7 +1627,7 @@ class ControlFlowTest implements RewriteTest {
                           ByteBuffer bytes = ByteBuffer.allocate(n);
                           for (int i = 0; /*~~(3C (<))~~>*/i < n;) /*~~(4L)~~>*/{
                               if (/*~~(4C (==))~~>*/url.charAt(i) == '%') /*~~(5L)~~>*/{
-                                  try /*~~(6L)~~>*/{
+                                  /*~~(6L)~~>*/try {
                                       do /*~~(8L)~~>*/{
                                           byte octet = (byte) Integer.parseInt(url.substring(i + 1, i + 3), 16);
                                           bytes.put(octet);
@@ -2123,7 +2123,7 @@ class ControlFlowTest implements RewriteTest {
 
               class Test {
                   private String getCommit(final URL jarURL) /*~~(BB: 10 CN: 4 EX: 4 EH: 1 | 1L)~~>*/{
-                      try /*~~(2L)~~>*/{
+                      /*~~(2L)~~>*/try {
                           final JarInputStream in = new JarInputStream(jarURL.openStream());
                           in.close();
                           Manifest manifest = in.getManifest();
@@ -2400,7 +2400,7 @@ class ControlFlowTest implements RewriteTest {
 
               class Test {
                   private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 26 CN: 10 EX: 4 EH: 2 | 1L)~~>*/{
-                      try /*~~(2L)~~>*/{
+                      /*~~(2L)~~>*/try {
                           int maxCount = 3;
                           final JarInputStream in = new JarInputStream(jarURL.openStream());
                           for (;;) /*~~(3L)~~>*/{
@@ -2413,7 +2413,7 @@ class ControlFlowTest implements RewriteTest {
                               if (/*~~(4C (==))~~>*/sourceFile == null) /*~~(10L)~~>*/continue;
                               final /*~~(11L)~~>*/String suffix = path.substring(0, path.lastIndexOf('/') + 1) + sourceFile;
                               final String git = System.getProperty("imagej.updater.git.command", "git");
-                              try /*~~(12L)~~>*/{
+                              /*~~(12L)~~>*/try {
                                   path = "/user/something/something";
                                   if (/*~~(5C (<=))~~>*/path.length() <= suffix.length()) /*~~(13L)~~>*/continue;
                                   /*~~(14L)~~>*/if (/*~~(6C)~~>*/path.endsWith("\\n")) /*~~(15L)~~>*/path = path.substring(0, path.length() - 1);

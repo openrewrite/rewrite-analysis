@@ -324,10 +324,9 @@ public abstract class ControlFlowNode {
 
         @Override
         String toVisualizerString() {
-            String parameter = catchClause.getParameter()
-                    .withPrefix(Space.EMPTY)
-                    .printTrimmed(new JavaPrinter<>());
-            return "catch " + parameter;
+            // Use print() (not printTrimmed) to preserve the prefix, which includes
+            // any whitespace and inline comments between 'catch' and '('.
+            return "catch" + catchClause.getParameter().print(new JavaPrinter<>());
         }
 
         @Override

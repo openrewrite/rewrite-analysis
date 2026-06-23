@@ -889,12 +889,12 @@ public final class ControlFlow {
 
         @Override
         public J.Try visitTry(J.Try _try, P p) {
-            addCursorToBasicBlock();
-            visit(_try.getResources(), p);
-
             List<J.Try.Catch> catches = _try.getCatches();
 
             if (catches.isEmpty()) {
+                // No catches: J.Try cursor and resources belong in the current BB.
+                addCursorToBasicBlock();
+                visit(_try.getResources(), p);
                 // No catches — existing try-finally logic (unchanged)
                 if (_try.getFinally() == null) {
                     visit(_try.getBody(), p);
@@ -924,9 +924,8 @@ public final class ControlFlow {
             }
 
             // --- Has catch clauses ---
-            // addCursorToBasicBlock() guarantees 'current' is a single BasicBlock here.
-            // 'tryEntryBB' holds pre-try code (and the 'try' keyword itself) but must NOT be
-            // guarded by the catch handler — only code inside the try { } body should be.
+            // 'tryEntryBB' holds pre-try code only. The 'try' keyword, resources, and try body
+            // all belong in tryBodyBB so that pre-try code is not guarded by the handler.
             ControlFlowNode.BasicBlock tryEntryBB = currentAsBasicBlock();
 
             // Build ExceptionHandlerNode chain and visit each catch body independently.
@@ -964,12 +963,14 @@ public final class ControlFlow {
             ControlFlowNode.ExceptionHandlerNode firstHandler = handlers.get(0);
             ControlFlowNode.ExceptionHandlerNode lastHandler = handlers.get(handlers.size() - 1);
 
-            // Start a fresh BB for the try body so that pre-try code in tryEntryBB is not
-            // guarded by the catch handler. The edge tryEntryBB → tryBodyBB is a normal
-            // straight-line successor (no condition), preserving the BasicBlock property.
+            // Start a fresh BB for the try-guarded region. The 'try' keyword, resources,
+            // and try body all live here. tryEntryBB → tryBodyBB is a straight-line edge.
             ControlFlowNode.BasicBlock tryBodyBB = ControlFlowNode.BasicBlock.create();
             tryEntryBB.addSuccessor(tryBodyBB);
             current = singleton(tryBodyBB);
+            // Add the J.Try cursor to tryBodyBB (getCursor() is still the J.Try node here).
+            addCursorToBasicBlock();
+            visit(_try.getResources(), p);
 
             ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
             tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
