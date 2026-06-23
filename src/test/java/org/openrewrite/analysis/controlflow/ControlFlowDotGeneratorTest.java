@@ -411,6 +411,89 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
             """);
     }
 
+    // --- Coverage: setExceptionEntryForTryBody paths ---
+
+    @Test
+    void tryBodyWithIfNoElse() {
+        generateDot("try-body-if-no-else",
+          //language=java
+          """
+            class Test {
+                void test(boolean flag) {
+                    try {
+                        if (flag) {
+                            System.out.println("true");
+                        }
+                    } catch (RuntimeException e) {
+                        System.out.println("caught");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void tryBodyWithWhileLoop() {
+        generateDot("try-body-while-loop",
+          //language=java
+          """
+            class Test {
+                void test(int n) {
+                    try {
+                        while (n > 0) {
+                            System.out.println(n--);
+                        }
+                    } catch (RuntimeException e) {
+                        System.out.println("caught");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void tryBodyWithBlockLambda() {
+        generateDot("try-body-block-lambda",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    try {
+                        Runnable r = () -> {
+                            System.out.println("lambda");
+                        };
+                        r.run();
+                    } catch (RuntimeException e) {
+                        System.out.println("caught");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void tryBodyWithNestedTryCatch() {
+        generateDot("try-body-nested-try-catch",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    try {
+                        System.out.println("outer before");
+                        try {
+                            System.out.println("inner");
+                        } catch (NullPointerException e) {
+                            System.out.println("inner catch");
+                        }
+                        System.out.println("outer after");
+                    } catch (RuntimeException e) {
+                        System.out.println("outer catch");
+                    }
+                }
+            }
+            """);
+    }
+
     // -------------------------------------------------------------------------
     // Infrastructure
     // -------------------------------------------------------------------------

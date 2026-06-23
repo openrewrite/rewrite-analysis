@@ -1852,6 +1852,172 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
+    void controlFlowForTryBodyWithIfNoElse() {
+        // Exercises the null-falsySuccessor guard in setExceptionEntryForTryBody:
+        // when the try body ends with an if-without-else, the ConditionNode's falsy
+        // successor is null at traversal time (filled in later by the catch wiring).
+        // Without the null guard, the traversal would call verifyState() and throw.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(boolean flag) {
+                      try {
+                          if (flag) {
+                              System.out.println("true");
+                          }
+                      } catch (RuntimeException e) {
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(boolean flag) /*~~(BB: 4 CN: 1 EX: 4 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          if (/*~~(1C)~~>*/flag) /*~~(3L)~~>*/{
+                              System.out.println("true");
+                          }
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithWhileLoop() {
+        // Exercises the cycle-prevention visited-set in setExceptionEntryForTryBody:
+        // the while loop creates a back-edge (loop body → condition), and the visited
+        // set ensures each node is processed exactly once rather than looping forever.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(int n) {
+                      try {
+                          while (n > 0) {
+                              System.out.println(n--);
+                          }
+                      } catch (RuntimeException e) {
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(int n) /*~~(BB: 4 CN: 1 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          while (/*~~(1C (>))~~>*/n > 0) /*~~(3L)~~>*/{
+                              System.out.println(n--);
+                          }
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithBlockLambda() {
+        // Exercises depth-tracking in setExceptionEntryForTryBody:
+        // a block-body lambda creates a separate sub-graph entered via a Start node
+        // (depth→1) and exited via its Lambda End (depth→0). BBs inside the lambda
+        // must NOT receive the try's exception entry (they have their own scope); the
+        // BB after the lambda (r.run()) MUST receive it.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      try {
+                          Runnable r = () -> {
+                              System.out.println("lambda");
+                          };
+                          r.run();
+                      } catch (RuntimeException e) {
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          Runnable /*~~(3L)~~>*/r = () -> /*~~(4L)~~>*/{
+                              System.out.println("lambda");
+                          };
+                          r.run();
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithNestedTryCatch() {
+        // Exercises the "innermost handler wins" semantics in setExceptionEntryForTryBody:
+        // BBs inside the inner try body already carry the inner EH (set first), so the
+        // outer traversal silently skips them. BBs in the outer try body outside the inner
+        // try get the outer EH.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      try {
+                          System.out.println("outer before");
+                          try {
+                              System.out.println("inner");
+                          } catch (NullPointerException e) {
+                              System.out.println("inner catch");
+                          }
+                          System.out.println("outer after");
+                      } catch (RuntimeException e) {
+                          System.out.println("outer catch");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 6 CN: 0 EX: 4 EH: 2 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          System.out.println("outer before");
+                          /*~~(3L)~~>*/try {
+                              System.out.println("inner");
+                          } /*~~(1EH)~~>*/catch (NullPointerException e) /*~~(4L)~~>*/{
+                              System.out.println("inner catch");
+                          }
+                          /*~~(5L)~~>*/System.out.println("outer after");
+                      } /*~~(2EH)~~>*/catch (RuntimeException e) /*~~(6L)~~>*/{
+                          System.out.println("outer catch");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void controlFlowForTryWithResourcesWithCatchAndAdditionalReturn() {
         rewriteRun(
           //language=java
