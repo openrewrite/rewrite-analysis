@@ -1389,6 +1389,309 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
+    void controlFlowForContinueInCatchBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              continue;
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 1 EX: 2 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          /*~~(4L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                              continue;
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakInCatchBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              break;
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 1 EX: 3 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          /*~~(4L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                              break;
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForContinueInFinallyBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              System.out.println("caught: " + e);
+                          } finally {
+                              continue;
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 1 EX: 1 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                              System.out.println("caught: " + e);
+                          } finally /*~~(5L)~~>*/{
+                              continue;
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakInFinallyBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              System.out.println("caught: " + e);
+                          } finally {
+                              break;
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 1 EX: 2 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                              System.out.println("caught: " + e);
+                          } finally /*~~(5L)~~>*/{
+                              break;
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakAndContinueInCatchBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(boolean flag) {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              if (flag) {
+                                  continue;
+                              } else {
+                                  break;
+                              }
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(boolean flag) /*~~(BB: 7 CN: 2 EX: 3 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          /*~~(4L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                              if (/*~~(2C)~~>*/flag) /*~~(6L)~~>*/{
+                                  continue;
+                              } /*~~(7L)~~>*/else {
+                                  break;
+                              }
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakAndContinueInFinallyBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              System.out.println("caught: " + e);
+                          } finally {
+                              if (i % 2 == 0) {
+                                  continue;
+                              } else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 7 CN: 2 EX: 2 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                              System.out.println("caught: " + e);
+                          } finally /*~~(5L)~~>*/{
+                              if (/*~~(2C (==))~~>*/i % 2 == 0) /*~~(6L)~~>*/{
+                                  continue;
+                              } /*~~(7L)~~>*/else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryWithResourcesInsanity() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.*;
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try (InputStream in = new FileInputStream("f.txt")) {
+                              if (in.read() == 0) {
+                                  continue;
+                              }
+                              System.out.println(in.read());
+                          } catch (FileNotFoundException e) {
+                              break;
+                          } catch (IOException e) {
+                              continue;
+                          } finally {
+                              if (i % 2 == 0) {
+                                  continue;
+                              } else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              import java.io.*;
+              class Test {
+                  void test() /*~~(BB: 15 CN: 5 EX: 4 EH: 2 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try (InputStream in = new FileInputStream("f.txt")) {
+                              if (/*~~(2C (==))~~>*/in.read() == 0) /*~~(4L)~~>*/{
+                                  continue;
+                              }
+                              /*~~(5L)~~>*/System.out.println(in.read());
+                          } /*~~(1EH)~~>*/catch (FileNotFoundException e) /*~~(6L)~~>*/{
+                              break;
+                          } /*~~(2EH)~~>*/catch (IOException e) /*~~(7L)~~>*/{
+                              continue;
+                          } finally /*~~(8L)~~>*/{
+                              if (/*~~(3C (==))~~>*/i % 2 == 0) /*~~(9L)~~>*/{
+                                  continue;
+                              } /*~~(10L)~~>*/else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void controlFlowForTryWithResourcesWithCatchAndAdditionalReturn() {
         rewriteRun(
           //language=java

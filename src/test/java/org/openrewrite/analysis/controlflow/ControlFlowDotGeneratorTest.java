@@ -166,6 +166,168 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
             """);
     }
 
+    @Test
+    void catchContinue() {
+        generateDot("catch-continue",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            System.out.println(i);
+                        } catch (RuntimeException e) {
+                            continue;
+                        }
+                        System.out.println("after try");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void catchBreak() {
+        generateDot("catch-break",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            System.out.println(i);
+                        } catch (RuntimeException e) {
+                            break;
+                        }
+                        System.out.println("after try");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void finallyContinue() {
+        generateDot("finally-continue",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            System.out.println(i);
+                        } catch (RuntimeException e) {
+                            System.out.println("caught: " + e);
+                        } finally {
+                            continue;
+                        }
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void finallyBreak() {
+        generateDot("finally-break",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            System.out.println(i);
+                        } catch (RuntimeException e) {
+                            System.out.println("caught: " + e);
+                        } finally {
+                            break;
+                        }
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void catchBreakAndContinue() {
+        generateDot("catch-break-and-continue",
+          //language=java
+          """
+            class Test {
+                void test(boolean flag) {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            System.out.println(i);
+                        } catch (RuntimeException e) {
+                            if (flag) {
+                                continue;
+                            } else {
+                                break;
+                            }
+                        }
+                        System.out.println("after try");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void finallyBreakAndContinue() {
+        generateDot("finally-break-and-continue",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            System.out.println(i);
+                        } catch (RuntimeException e) {
+                            System.out.println("caught: " + e);
+                        } finally {
+                            if (i % 2 == 0) {
+                                continue;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void tryWithResourcesInsanity() {
+        generateDot("try-with-resources-insanity",
+          //language=java
+          """
+            import java.io.*;
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try (InputStream in = new FileInputStream("f.txt")) {
+                            if (in.read() == 0) {
+                                continue;
+                            }
+                            System.out.println(in.read());
+                        } catch (FileNotFoundException e) {
+                            break;
+                        } catch (IOException e) {
+                            continue;
+                        } finally {
+                            if (i % 2 == 0) {
+                                continue;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            """);
+    }
+
     // -------------------------------------------------------------------------
     // Infrastructure
     // -------------------------------------------------------------------------
