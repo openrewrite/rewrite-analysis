@@ -1570,14 +1570,14 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  void test() /*~~(BB: 5 CN: 1 EX: 2 EH: 1 | 1L)~~>*/{
+                  void test() /*~~(BB: 6 CN: 1 EX: 2 EH: 1 | 1L)~~>*/{
                       for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
                           /*~~(4L)~~>*/try {
                               System.out.println(i);
                           } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
                               continue;
                           }
-                          System.out.println("after try");
+                          /*~~(6L)~~>*/System.out.println("after try");
                       }
                   }
               }
@@ -1607,14 +1607,14 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  void test() /*~~(BB: 5 CN: 1 EX: 3 EH: 1 | 1L)~~>*/{
+                  void test() /*~~(BB: 6 CN: 1 EX: 3 EH: 1 | 1L)~~>*/{
                       for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
                           /*~~(4L)~~>*/try {
                               System.out.println(i);
                           } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
                               break;
                           }
-                          System.out.println("after try");
+                          /*~~(6L)~~>*/System.out.println("after try");
                       }
                   }
               }
@@ -1726,7 +1726,7 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  void test(boolean flag) /*~~(BB: 7 CN: 2 EX: 3 EH: 1 | 1L)~~>*/{
+                  void test(boolean flag) /*~~(BB: 8 CN: 2 EX: 3 EH: 1 | 1L)~~>*/{
                       for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
                           /*~~(4L)~~>*/try {
                               System.out.println(i);
@@ -1737,7 +1737,7 @@ class ControlFlowTest implements RewriteTest {
                                   break;
                               }
                           }
-                          System.out.println("after try");
+                          /*~~(8L)~~>*/System.out.println("after try");
                       }
                   }
               }

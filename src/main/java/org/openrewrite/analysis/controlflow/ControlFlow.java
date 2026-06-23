@@ -990,6 +990,14 @@ public final class ControlFlow {
                 breakFlow.addAll(catchBreakFlow);
                 continueFlow.addAll(tryBodyAnalysis.continueFlow);
                 continueFlow.addAll(catchContinueFlow);
+                // When every catch body exits via break/continue/return (catchCurrents is empty),
+                // 'current' is still the tryBodyBB that has exceptionEntry set. Force a new BB
+                // so that subsequent statements are not incorrectly covered by the try's
+                // exception entry — post-try code is outside the try block and must not route
+                // exceptions to the catch handler.
+                if (catchCurrents.isEmpty() && !current.isEmpty()) {
+                    current = singleton(newEmptyBasicBlockFromCurrent());
+                }
             } else {
                 // Route all flows through finally.
                 Set<ControlFlowNode> allCurrents = Stream.concat(
