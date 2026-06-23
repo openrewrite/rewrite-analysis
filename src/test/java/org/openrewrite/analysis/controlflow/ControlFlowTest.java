@@ -1320,6 +1320,167 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    @Test
+    void controlFlowForBreakInTryBodyNoCatchWithFinally() {
+        // Exercises the no-catch-has-finally breakFlow branch (line 914 in ControlFlow.java).
+        // The break path through the finally and the normal path through the finally are
+        // each inlined separately; the break copy goes to End while the normal copy
+        // loops back via the for-update.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              if (i == 5) break;
+                              System.out.println(i);
+                          } finally {
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 2 EX: 2 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          try {
+                              if (/*~~(2C (==))~~>*/i == 5) /*~~(4L)~~>*/break;
+                              /*~~(5L)~~>*/System.out.println(i);
+                          } finally {
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    @Test
+    void controlFlowForContinueInTryBodyNoCatchWithFinally() {
+        // Exercises the no-catch-has-finally continueFlow branch (line 918 in ControlFlow.java).
+        // The continue path through the finally loops back to the condition;
+        // the normal path through the finally proceeds via the for-update.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              if (i == 5) continue;
+                              System.out.println(i);
+                          } finally {
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 2 EX: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          try {
+                              if (/*~~(2C (==))~~>*/i == 5) /*~~(4L)~~>*/continue;
+                              /*~~(5L)~~>*/System.out.println(i);
+                          } finally {
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForAllPathsReturnInTryCatchFinally() {
+        // Exercises the allCurrents-empty branch (line 1013 in ControlFlow.java):
+        // both try body and catch body exit via return, so lastHandler is merged into
+        // allExitFlow and the finally block is visited exactly once for all paths.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  int test() {
+                      try {
+                          return 1;
+                      } catch (RuntimeException e) {
+                          return -1;
+                      } finally {
+                          System.out.println("cleanup");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  int test() /*~~(BB: 4 CN: 0 EX: 1 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          return 1;
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
+                          return -1;
+                      } finally /*~~(4L)~~>*/{
+                          System.out.println("cleanup");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForReturnInCatchBodyWithFinally() {
+        // Exercises the allExitFlow-non-empty branch (line 1019 in ControlFlow.java) while
+        // allCurrents is also non-empty: the try body falls off normally (allCurrents) while
+        // the catch body exits via return (allExitFlow = catchExitFlow).
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  int test() {
+                      try {
+                          System.out.println("try");
+                      } catch (RuntimeException e) {
+                          return -1;
+                      } finally {
+                          System.out.println("cleanup");
+                      }
+                      return 0;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  int test() /*~~(BB: 4 CN: 0 EX: 2 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          System.out.println("try");
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
+                          return -1;
+                      } finally /*~~(4L)~~>*/{
+                          System.out.println("cleanup");
+                      }
+                      return 0;
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Test
     void controlFlowForTryWithSingleResourceAndCatch() {
         rewriteRun(

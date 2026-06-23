@@ -166,6 +166,89 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
             """);
     }
 
+    // --- Coverage: branches inside the no-catch-has-finally path (lines 914 & 918) ---
+
+    @Test
+    void breakInTryBodyNoCatchWithFinally() {
+        generateDot("break-in-try-no-catch-finally",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            if (i == 5) break;
+                            System.out.println(i);
+                        } finally {
+                            System.out.println("finally");
+                        }
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void continueInTryBodyNoCatchWithFinally() {
+        generateDot("continue-in-try-no-catch-finally",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            if (i == 5) continue;
+                            System.out.println(i);
+                        } finally {
+                            System.out.println("finally");
+                        }
+                    }
+                }
+            }
+            """);
+    }
+
+    // --- Coverage: allCurrents empty (line 1013 else) and allExitFlow (line 1019) ---
+
+    @Test
+    void allPathsReturnInTryCatchFinally() {
+        generateDot("all-paths-return-try-catch-finally",
+          //language=java
+          """
+            class Test {
+                int test() {
+                    try {
+                        return 1;
+                    } catch (RuntimeException e) {
+                        return -1;
+                    } finally {
+                        System.out.println("cleanup");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void returnInCatchBodyWithFinally() {
+        generateDot("return-in-catch-with-finally",
+          //language=java
+          """
+            class Test {
+                int test() {
+                    try {
+                        System.out.println("try");
+                    } catch (RuntimeException e) {
+                        return -1;
+                    } finally {
+                        System.out.println("cleanup");
+                    }
+                    return 0;
+                }
+            }
+            """);
+    }
+
     @Test
     void catchContinue() {
         generateDot("catch-continue",
