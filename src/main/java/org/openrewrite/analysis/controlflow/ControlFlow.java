@@ -972,7 +972,7 @@ public final class ControlFlow {
             tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
 
             // Wire exception edge from the try-body entry BB (not the pre-try BB).
-            tryBodyBB.setExceptionEntry(firstHandler);
+            setExceptionEntryForTryBody(tryBodyBB, firstHandler);
 
             if (_try.getFinally() == null) {
                 current = Stream.concat(tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
@@ -1105,6 +1105,81 @@ public final class ControlFlow {
             breakFlow.add(currentAsBasicBlock());
             current = emptySet();
             return breakStatement;
+        }
+
+        /**
+         * Sets the exception entry on every {@link ControlFlowNode.BasicBlock} reachable from
+         * {@code tryBodyEntry} via normal (successor/condition) edges — i.e., every BB in the
+         * guarded region of the try body.
+         *
+         * <p>Traversal rules:
+         * <ul>
+         *   <li>Depth increases when crossing a {@link ControlFlowNode.Start} node (entering a
+         *       lambda or nested-method sub-graph); decreases when leaving via its
+         *       {@link ControlFlowNode.End}. BBs at depth &gt; 0 are not marked — they belong to
+         *       an inner scope with its own exception handling.</li>
+         *   <li>{@link ControlFlowNode.ExceptionHandlerNode} successors are never followed, so
+         *       handler chains and catch bodies are excluded.</li>
+         *   <li>{@link ControlFlowNode.BasicBlock#setExceptionEntry} is idempotent: if an inner
+         *       try-catch has already wired a BB to its own (innermost) handler, the outer call
+         *       here is silently ignored — innermost handler wins.</li>
+         * </ul>
+         */
+        private static void setExceptionEntryForTryBody(
+                ControlFlowNode.BasicBlock tryBodyEntry,
+                ControlFlowNode.ExceptionHandlerNode firstHandler) {
+            Set<ControlFlowNode> visited = new HashSet<>();
+            // Parallel stacks: nodeStack[i] was reached at lambdaDepth[i].
+            Deque<ControlFlowNode> nodeStack = new ArrayDeque<>();
+            Deque<Integer> depthStack = new ArrayDeque<>();
+            nodeStack.push(tryBodyEntry);
+            depthStack.push(0);
+            while (!nodeStack.isEmpty()) {
+                ControlFlowNode node = nodeStack.pop();
+                int depth = depthStack.pop();
+                if (!visited.add(node)) {
+                    continue;
+                }
+                if (depth == 0 && node instanceof ControlFlowNode.BasicBlock) {
+                    ((ControlFlowNode.BasicBlock) node).setExceptionEntry(firstHandler);
+                }
+                // Compute the depth for nodes reached via this node's outgoing edges.
+                // Start → entering a lambda/nested-method body (+1).
+                // End  → leaving a lambda/nested-method body (lambda End has a successor
+                //        pointing back to the outer graph, so depth returns to outer level).
+                int successorDepth = depth;
+                if (node instanceof ControlFlowNode.Start) {
+                    successorDepth = depth + 1;
+                } else if (node instanceof ControlFlowNode.End) {
+                    successorDepth = depth - 1;
+                }
+                // Collect outgoing edges without calling getSuccessors() / verifyState():
+                // ConditionNodes may have a null falsySuccessor at try-body analysis time
+                // (the outer code fills it in after visitTry returns), and verifyState()
+                // would throw. BasicBlocks use getSuccessorsForTraversal() which is already
+                // null-safe. Other nodes (Start, End) use getSuccessorsForTraversal() too.
+                if (node instanceof ControlFlowNode.ConditionNode) {
+                    ControlFlowNode.ConditionNode cn = (ControlFlowNode.ConditionNode) node;
+                    if (cn.getTruthySuccessor() != null
+                            && !(cn.getTruthySuccessor() instanceof ControlFlowNode.ExceptionHandlerNode)) {
+                        nodeStack.push(cn.getTruthySuccessor());
+                        depthStack.push(successorDepth);
+                    }
+                    if (cn.getFalsySuccessor() != null
+                            && !(cn.getFalsySuccessor() instanceof ControlFlowNode.ExceptionHandlerNode)) {
+                        nodeStack.push(cn.getFalsySuccessor());
+                        depthStack.push(successorDepth);
+                    }
+                } else {
+                    for (ControlFlowNode successor : node.getSuccessorsForTraversal()) {
+                        if (successor instanceof ControlFlowNode.ExceptionHandlerNode) {
+                            continue; // never follow into handler chains
+                        }
+                        nodeStack.push(successor);
+                        depthStack.push(successorDepth);
+                    }
+                }
+            }
         }
 
         private static ControlFlowNode.BasicBlock addBasicBlock(Collection<ControlFlowNode> nodes) {
