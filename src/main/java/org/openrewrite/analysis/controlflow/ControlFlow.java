@@ -925,8 +925,8 @@ public final class ControlFlow {
 
             // --- Has catch clauses ---
             // addCursorToBasicBlock() guarantees 'current' is a single BasicBlock here.
-            // Save the try-entry BB: after visiting the try body it will get exceptionEntry wired to
-            // the first ExceptionHandlerNode, creating a SECONDARY edge that does NOT split the block.
+            // 'tryEntryBB' holds pre-try code (and the 'try' keyword itself) but must NOT be
+            // guarded by the catch handler — only code inside the try { } body should be.
             ControlFlowNode.BasicBlock tryEntryBB = currentAsBasicBlock();
 
             // Build ExceptionHandlerNode chain and visit each catch body independently.
@@ -964,13 +964,18 @@ public final class ControlFlow {
             ControlFlowNode.ExceptionHandlerNode firstHandler = handlers.get(0);
             ControlFlowNode.ExceptionHandlerNode lastHandler = handlers.get(handlers.size() - 1);
 
-            // Visit try body from current = {tryEntryBB}.
-            // The body's content is appended to tryEntryBB — no extra BB at the try entry!
+            // Start a fresh BB for the try body so that pre-try code in tryEntryBB is not
+            // guarded by the catch handler. The edge tryEntryBB → tryBodyBB is a normal
+            // straight-line successor (no condition), preserving the BasicBlock property.
+            ControlFlowNode.BasicBlock tryBodyBB = ControlFlowNode.BasicBlock.create();
+            tryEntryBB.addSuccessor(tryBodyBB);
+            current = singleton(tryBodyBB);
+
             ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
             tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
 
-            // Wire exception edge: tryEntryBB → firstHandler (secondary edge, does not affect successor)
-            tryEntryBB.setExceptionEntry(firstHandler);
+            // Wire exception edge from the try-body entry BB (not the pre-try BB).
+            tryBodyBB.setExceptionEntry(firstHandler);
 
             if (_try.getFinally() == null) {
                 current = Stream.concat(tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
