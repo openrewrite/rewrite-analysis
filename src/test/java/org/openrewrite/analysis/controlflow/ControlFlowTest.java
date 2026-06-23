@@ -1619,7 +1619,7 @@ class ControlFlowTest implements RewriteTest {
                    * @return The decoded URL or <code>null</code> if the input was
                    *         <code>null</code>.
                    */
-                  static String test(String url) /*~~(BB: 17 CN: 9 EX: 3 EH: 1 | 1L)~~>*/{
+                  static String test(String url) /*~~(BB: 16 CN: 8 EX: 1 EH: 1 | 1L)~~>*/{
                       String decoded = url;
                       if (/*~~(1C (!=))~~>*/url != null && /*~~(2C (>=))~~>*//*~~(2L)~~>*/url.indexOf('%') >= 0) /*~~(3L)~~>*/{
                           int n = url.length();

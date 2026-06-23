@@ -996,16 +996,24 @@ public final class ControlFlow {
                         tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
                 Set<ControlFlowNode> allExitFlow = Stream.concat(
                         tryBodyAnalysis.exitFlow.stream(), catchExitFlow.stream()).collect(toSet());
-                allExitFlow.add(lastHandler);
                 Set<ControlFlowNode> allBreakFlow = Stream.concat(
                         tryBodyAnalysis.breakFlow.stream(), catchBreakFlow.stream()).collect(toSet());
                 Set<ControlFlowNode> allContinueFlow = Stream.concat(
                         tryBodyAnalysis.continueFlow.stream(), catchContinueFlow.stream()).collect(toSet());
 
                 if (!allCurrents.isEmpty()) {
-                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allCurrents, _try.getFinally(), p);
+                    // Merge lastHandler into the normal-exit predecessors so the finally block is
+                    // visited exactly once for both normal-fall-through and exception-propagation
+                    // paths. Without this, the exception-propagation path would visit the finally
+                    // block again as a separate copy under allExitFlow, producing a duplicate BB.
+                    Set<ControlFlowNode> finallyCurrentPredecessors = new HashSet<>(allCurrents);
+                    finallyCurrentPredecessors.add(lastHandler);
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(finallyCurrentPredecessors, _try.getFinally(), p);
                     current = f.current;
                 } else {
+                    // No normal exits (every try/catch path has an explicit return/throw).
+                    // Add lastHandler to allExitFlow so a single finally copy handles all paths.
+                    allExitFlow.add(lastHandler);
                     current = emptySet();
                 }
                 if (!allExitFlow.isEmpty()) {
