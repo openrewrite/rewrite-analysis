@@ -23,8 +23,10 @@ import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.internal.StringUtils;
+import org.openrewrite.java.JavaPrinter;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.Space;
 import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.*;
@@ -322,7 +324,10 @@ public abstract class ControlFlowNode {
 
         @Override
         String toVisualizerString() {
-            return catchClause.getParameter().toString();
+            String parameter = catchClause.getParameter()
+                    .withPrefix(Space.EMPTY)
+                    .printTrimmed(new JavaPrinter<>());
+            return "catch " + parameter;
         }
 
         @Override
