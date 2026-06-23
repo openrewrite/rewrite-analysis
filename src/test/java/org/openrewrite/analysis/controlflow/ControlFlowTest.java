@@ -1321,6 +1321,74 @@ class ControlFlowTest implements RewriteTest {
     }
 
     @Test
+    void controlFlowForTryWithSingleResourceAndCatch() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.*;
+              class Test {
+                  void test() {
+                      try (InputStream in = new FileInputStream("file.txt")) {
+                          System.out.println(in.read());
+                      } catch (IOException e) {
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """,
+            """
+              import java.io.*;
+              class Test {
+                  void test() /*~~(BB: 3 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try (InputStream in = new FileInputStream("file.txt")) {
+                          System.out.println(in.read());
+                      } /*~~(1EH)~~>*/catch (IOException e) /*~~(3L)~~>*/{
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryWithMultipleResourcesAndCatch() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.*;
+              class Test {
+                  void test() {
+                      try (InputStream in = new FileInputStream("file.txt");
+                           OutputStream out = new FileOutputStream("out.txt")) {
+                          out.write(in.read());
+                      } catch (IOException e) {
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """,
+            """
+              import java.io.*;
+              class Test {
+                  void test() /*~~(BB: 3 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try (InputStream in = new FileInputStream("file.txt");
+                           OutputStream out = new FileOutputStream("out.txt")) {
+                          out.write(in.read());
+                      } /*~~(1EH)~~>*/catch (IOException e) /*~~(3L)~~>*/{
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void controlFlowForTryWithResourcesWithCatchAndAdditionalReturn() {
         rewriteRun(
           //language=java
