@@ -129,6 +129,43 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
             """);
     }
 
+    @Test
+    void tryWithSingleResource() {
+        generateDot("try-with-single-resource",
+          //language=java
+          """
+            import java.io.*;
+            class Test {
+                void test() {
+                    try (InputStream in = new FileInputStream("file.txt")) {
+                        System.out.println(in.read());
+                    } catch (IOException e) {
+                        System.err.println("error: " + e.getMessage());
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void tryWithMultipleResources() {
+        generateDot("try-with-multiple-resources",
+          //language=java
+          """
+            import java.io.*;
+            class Test {
+                void test() {
+                    try (InputStream in = new FileInputStream("file.txt");
+                         OutputStream out = new FileOutputStream("out.txt")) {
+                        out.write(in.read());
+                    } catch (IOException e) {
+                        System.err.println("error: " + e.getMessage());
+                    }
+                }
+            }
+            """);
+    }
+
     // -------------------------------------------------------------------------
     // Infrastructure
     // -------------------------------------------------------------------------
