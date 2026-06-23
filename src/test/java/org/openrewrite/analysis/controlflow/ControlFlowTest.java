@@ -1320,10 +1320,703 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    /**
-     * FIXME: This is wrong, but we don't have control flow through try-catch modeled currently.
-     * This test instanceof Just to make sure that we don't blow up when we hit this case.
-     */
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    @Test
+    void controlFlowForBreakInTryBodyNoCatchWithFinally() {
+        // Exercises the no-catch-has-finally path where the try body contains a break.
+        // With unified finally visitation, all predecessors (normal path and break path) feed
+        // the single finally BB; after it falls through, control reaches End via the loop exit.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              if (i == 5) break;
+                              System.out.println(i);
+                          } finally {
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          try {
+                              if (/*~~(2C (==))~~>*/i == 5) /*~~(4L)~~>*/break;
+                              /*~~(5L)~~>*/System.out.println(i);
+                          } finally /*~~(6L)~~>*/{
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    @Test
+    void controlFlowForContinueInTryBodyNoCatchWithFinally() {
+        // Exercises the no-catch-has-finally path where the try body contains a continue.
+        // With unified finally visitation, all predecessors (normal path and continue path) feed
+        // the single finally BB; after it falls through, control returns to the loop update.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              if (i == 5) continue;
+                              System.out.println(i);
+                          } finally {
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          try {
+                              if (/*~~(2C (==))~~>*/i == 5) /*~~(4L)~~>*/continue;
+                              /*~~(5L)~~>*/System.out.println(i);
+                          } finally /*~~(6L)~~>*/{
+                              System.out.println("finally");
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForAllPathsReturnInTryCatchFinally() {
+        // Exercises the case where both try body and catch body exit via return, so allCurrents
+        // is empty. With unified finally visitation, lastHandler plus all exit-flow predecessors
+        // feed the single finally BB, which then falls through to End.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  int test() {
+                      try {
+                          return 1;
+                      } catch (RuntimeException e) {
+                          return -1;
+                      } finally {
+                          System.out.println("cleanup");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  int test() /*~~(BB: 4 CN: 0 EX: 1 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          return 1;
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
+                          return -1;
+                      } finally /*~~(4L)~~>*/{
+                          System.out.println("cleanup");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForReturnInCatchBodyWithFinally() {
+        // Exercises the case where the try body falls off normally while the catch body exits via
+        // return. With unified finally visitation all predecessors (including the catch return) feed
+        // the single finally BB; its normal exit continues to the post-try code (return 0).
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  int test() {
+                      try {
+                          System.out.println("try");
+                      } catch (RuntimeException e) {
+                          return -1;
+                      } finally {
+                          System.out.println("cleanup");
+                      }
+                      return 0;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  int test() /*~~(BB: 4 CN: 0 EX: 1 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          System.out.println("try");
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
+                          return -1;
+                      } finally /*~~(4L)~~>*/{
+                          System.out.println("cleanup");
+                      }
+                      return 0;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryWithSingleResourceAndCatch() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.*;
+              class Test {
+                  void test() {
+                      try (InputStream in = new FileInputStream("file.txt")) {
+                          System.out.println(in.read());
+                      } catch (IOException e) {
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """,
+            """
+              import java.io.*;
+              class Test {
+                  void test() /*~~(BB: 3 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try (InputStream in = new FileInputStream("file.txt")) {
+                          System.out.println(in.read());
+                      } /*~~(1EH)~~>*/catch (IOException e) /*~~(3L)~~>*/{
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryWithMultipleResourcesAndCatch() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.*;
+              class Test {
+                  void test() {
+                      try (InputStream in = new FileInputStream("file.txt");
+                           OutputStream out = new FileOutputStream("out.txt")) {
+                          out.write(in.read());
+                      } catch (IOException e) {
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """,
+            """
+              import java.io.*;
+              class Test {
+                  void test() /*~~(BB: 3 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try (InputStream in = new FileInputStream("file.txt");
+                           OutputStream out = new FileOutputStream("out.txt")) {
+                          out.write(in.read());
+                      } /*~~(1EH)~~>*/catch (IOException e) /*~~(3L)~~>*/{
+                          System.err.println("error: " + e.getMessage());
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForContinueInCatchBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              continue;
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 6 CN: 1 EX: 2 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          /*~~(4L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                              continue;
+                          }
+                          /*~~(6L)~~>*/System.out.println("after try");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakInCatchBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              break;
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 6 CN: 1 EX: 3 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          /*~~(4L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                              break;
+                          }
+                          /*~~(6L)~~>*/System.out.println("after try");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForContinueInFinallyBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              System.out.println("caught: " + e);
+                          } finally {
+                              continue;
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 1 EX: 1 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                              System.out.println("caught: " + e);
+                          } finally /*~~(5L)~~>*/{
+                              continue;
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakInFinallyBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              System.out.println("caught: " + e);
+                          } finally {
+                              break;
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 1 EX: 2 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                              System.out.println("caught: " + e);
+                          } finally /*~~(5L)~~>*/{
+                              break;
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakAndContinueInCatchBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(boolean flag) {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              if (flag) {
+                                  continue;
+                              } else {
+                                  break;
+                              }
+                          }
+                          System.out.println("after try");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(boolean flag) /*~~(BB: 8 CN: 2 EX: 3 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; /*~~(2L)~~>*/i++) /*~~(3L)~~>*/{
+                          /*~~(4L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                              if (/*~~(2C)~~>*/flag) /*~~(6L)~~>*/{
+                                  continue;
+                              } /*~~(7L)~~>*/else {
+                                  break;
+                              }
+                          }
+                          /*~~(8L)~~>*/System.out.println("after try");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForBreakAndContinueInFinallyBlock() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try {
+                              System.out.println(i);
+                          } catch (RuntimeException e) {
+                              System.out.println("caught: " + e);
+                          } finally {
+                              if (i % 2 == 0) {
+                                  continue;
+                              } else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 7 CN: 2 EX: 2 EH: 1 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try {
+                              System.out.println(i);
+                          } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                              System.out.println("caught: " + e);
+                          } finally /*~~(5L)~~>*/{
+                              if (/*~~(2C (==))~~>*/i % 2 == 0) /*~~(6L)~~>*/{
+                                  continue;
+                              } /*~~(7L)~~>*/else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryWithResourcesInsanity() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              import java.io.*;
+              class Test {
+                  void test() {
+                      for (int i = 0; i < 10; i++) {
+                          try (InputStream in = new FileInputStream("f.txt")) {
+                              if (in.read() == 0) {
+                                  continue;
+                              }
+                              System.out.println(in.read());
+                          } catch (FileNotFoundException e) {
+                              break;
+                          } catch (IOException e) {
+                              continue;
+                          } finally {
+                              if (i % 2 == 0) {
+                                  continue;
+                              } else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """,
+            """
+              import java.io.*;
+              class Test {
+                  void test() /*~~(BB: 10 CN: 3 EX: 2 EH: 2 | 1L)~~>*/{
+                      for (int i = 0; /*~~(1C (<))~~>*/i < 10; i++) /*~~(2L)~~>*/{
+                          /*~~(3L)~~>*/try (InputStream in = new FileInputStream("f.txt")) {
+                              if (/*~~(2C (==))~~>*/in.read() == 0) /*~~(4L)~~>*/{
+                                  continue;
+                              }
+                              /*~~(5L)~~>*/System.out.println(in.read());
+                          } /*~~(1EH)~~>*/catch (FileNotFoundException e) /*~~(6L)~~>*/{
+                              break;
+                          } /*~~(2EH)~~>*/catch (IOException e) /*~~(7L)~~>*/{
+                              continue;
+                          } finally /*~~(8L)~~>*/{
+                              if (/*~~(3C (==))~~>*/i % 2 == 0) /*~~(9L)~~>*/{
+                                  continue;
+                              } /*~~(10L)~~>*/else {
+                                  break;
+                              }
+                          }
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithIfNoElse() {
+        // Exercises the null-falsySuccessor guard in setExceptionEntryForTryBody:
+        // when the try body ends with an if-without-else, the ConditionNode's falsy
+        // successor is null at traversal time (filled in later by the catch wiring).
+        // Without the null guard, the traversal would call verifyState() and throw.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(boolean flag) {
+                      try {
+                          if (flag) {
+                              System.out.println("true");
+                          }
+                      } catch (RuntimeException e) {
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(boolean flag) /*~~(BB: 4 CN: 1 EX: 4 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          if (/*~~(1C)~~>*/flag) /*~~(3L)~~>*/{
+                              System.out.println("true");
+                          }
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithWhileLoop() {
+        // Exercises the cycle-prevention visited-set in setExceptionEntryForTryBody:
+        // the while loop creates a back-edge (loop body → condition), and the visited
+        // set ensures each node is processed exactly once rather than looping forever.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(int n) {
+                      try {
+                          while (n > 0) {
+                              System.out.println(n--);
+                          }
+                      } catch (RuntimeException e) {
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(int n) /*~~(BB: 4 CN: 1 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          while (/*~~(1C (>))~~>*/n > 0) /*~~(3L)~~>*/{
+                              System.out.println(n--);
+                          }
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(4L)~~>*/{
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithBlockLambda() {
+        // Exercises depth-tracking in setExceptionEntryForTryBody:
+        // a block-body lambda creates a separate sub-graph entered via a Start node
+        // (depth→1) and exited via its Lambda End (depth→0). BBs inside the lambda
+        // must NOT receive the try's exception entry (they have their own scope); the
+        // BB after the lambda (r.run()) MUST receive it.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      try {
+                          Runnable r = () -> {
+                              System.out.println("lambda");
+                          };
+                          r.run();
+                      } catch (RuntimeException e) {
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 5 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          Runnable /*~~(3L)~~>*/r = () -> /*~~(4L)~~>*/{
+                              System.out.println("lambda");
+                          };
+                          r.run();
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
+                          System.out.println("caught");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryBodyWithNestedTryCatch() {
+        // Exercises the "innermost handler wins" semantics in setExceptionEntryForTryBody:
+        // BBs inside the inner try body already carry the inner EH (set first), so the
+        // outer traversal silently skips them. BBs in the outer try body outside the inner
+        // try get the outer EH.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test() {
+                      try {
+                          System.out.println("outer before");
+                          try {
+                              System.out.println("inner");
+                          } catch (NullPointerException e) {
+                              System.out.println("inner catch");
+                          }
+                          System.out.println("outer after");
+                      } catch (RuntimeException e) {
+                          System.out.println("outer catch");
+                      }
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test() /*~~(BB: 6 CN: 0 EX: 4 EH: 2 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
+                          System.out.println("outer before");
+                          /*~~(3L)~~>*/try {
+                              System.out.println("inner");
+                          } /*~~(1EH)~~>*/catch (NullPointerException e) /*~~(4L)~~>*/{
+                              System.out.println("inner catch");
+                          }
+                          /*~~(5L)~~>*/System.out.println("outer after");
+                      } /*~~(2EH)~~>*/catch (RuntimeException e) /*~~(6L)~~>*/{
+                          System.out.println("outer catch");
+                      }
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @Test
     void controlFlowForTryWithResourcesWithCatchAndAdditionalReturn() {
         rewriteRun(
@@ -1347,13 +2040,50 @@ class ControlFlowTest implements RewriteTest {
               import java.io.InputStream;
               class Test {
                   InputStream source() /*~~(BB: 1 CN: 0 EX: 1 | 1L)~~>*/{ return null; }
-                  int test() /*~~(BB: 1 CN: 0 EX: 1 | 1L)~~>*/{
-                      try (InputStream source = source()) {
+                  int test() /*~~(BB: 3 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try (InputStream source = source()) {
                           return source.read();
-                      } catch (RuntimeException ignored) {
+                      } /*~~(1EH)~~>*/catch (RuntimeException ignored) {
 
                       }
                       return 0;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void controlFlowForTryCatchSeparatesPreTryCode() {
+        // Pre-try code (int n = 1) must be in a separate BasicBlock with no exceptionEntry.
+        // Only code inside the try { } body should route exceptions to the catch handler.
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  void test(boolean flag) {
+                      int n = 1;
+                      try {
+                          System.out.println(n);
+                      } catch (RuntimeException e) {
+                          System.out.println(e.getMessage());
+                      }
+                      System.out.println("done");
+                  }
+              }
+              """,
+            """
+              class Test {
+                  void test(boolean flag) /*~~(BB: 4 CN: 0 EX: 2 EH: 1 | 1L)~~>*/{
+                      int n = 1;
+                      /*~~(2L)~~>*/try {
+                          System.out.println(n);
+                      } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(3L)~~>*/{
+                          System.out.println(e.getMessage());
+                      }
+                      /*~~(4L)~~>*/System.out.println("done");
                   }
               }
               """
@@ -1586,7 +2316,7 @@ class ControlFlowTest implements RewriteTest {
                    * @return The decoded URL or <code>null</code> if the input was
                    *         <code>null</code>.
                    */
-                  static String test(String url) /*~~(BB: 12 CN: 7 EX: 1 | 1L)~~>*/{
+                  static String test(String url) /*~~(BB: 15 CN: 7 EX: 1 EH: 1 | 1L)~~>*/{
                       String decoded = url;
                       if (/*~~(1C (!=))~~>*/url != null && /*~~(2C (>=))~~>*//*~~(2L)~~>*/url.indexOf('%') >= 0) /*~~(3L)~~>*/{
                           int n = url.length();
@@ -1594,29 +2324,29 @@ class ControlFlowTest implements RewriteTest {
                           ByteBuffer bytes = ByteBuffer.allocate(n);
                           for (int i = 0; /*~~(3C (<))~~>*/i < n;) /*~~(4L)~~>*/{
                               if (/*~~(4C (==))~~>*/url.charAt(i) == '%') /*~~(5L)~~>*/{
-                                  try {
-                                      do /*~~(7L)~~>*/{
+                                  /*~~(6L)~~>*/try {
+                                      do /*~~(8L)~~>*/{
                                           byte octet = (byte) Integer.parseInt(url.substring(i + 1, i + 3), 16);
                                           bytes.put(octet);
                                           i += 3;
-                                      } while (/*~~(5C (<))~~>*/i < n && /*~~(6C (==))~~>*//*~~(6L)~~>*/url.charAt(i) == '%');
-                                      /*~~(8L)~~>*/continue;
-                                  } catch (RuntimeException e) {
+                                      } while (/*~~(5C (<))~~>*/i < n && /*~~(6C (==))~~>*//*~~(7L)~~>*/url.charAt(i) == '%');
+                                      /*~~(9L)~~>*/continue;
+                                  } /*~~(1EH)~~>*/catch (RuntimeException e) {
                                       // malformed percent-encoded octet, fall through and
                                       // append characters literally
-                                  } finally {
-                                      if (/*~~(7C (>))~~>*/bytes.position() > 0) /*~~(9L)~~>*/{
+                                  } finally /*~~(10L)~~>*/{
+                                      if (/*~~(7C (>))~~>*/bytes.position() > 0) /*~~(11L)~~>*/{
                                           bytes.flip();
                                           buffer.append(utf8Decode(bytes));
                                           bytes.clear();
                                       }
                                   }
                               }
-                              /*~~(10L)~~>*/buffer.append(url.charAt(i++));
+                              /*~~(12L)~~>*/buffer.append(url.charAt(i++));
                           }
-                          /*~~(11L)~~>*/decoded = buffer.toString();
+                          /*~~(13L)~~>*/decoded = buffer.toString();
                       }
-                      return /*~~(12L)~~>*/decoded;
+                      return /*~~(14L)~~>*/decoded;
                   }
 
                   private static String utf8Decode(ByteBuffer buff) /*~~(BB: 1 CN: 0 EX: 1 | 1L)~~>*/{
@@ -2089,23 +2819,23 @@ class ControlFlowTest implements RewriteTest {
               import java.util.jar.Manifest;
 
               class Test {
-                  private String getCommit(final URL jarURL) /*~~(BB: 8 CN: 4 EX: 2 | 1L)~~>*/{
-                      try {
+                  private String getCommit(final URL jarURL) /*~~(BB: 10 CN: 4 EX: 4 EH: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
                           final JarInputStream in = new JarInputStream(jarURL.openStream());
                           in.close();
                           Manifest manifest = in.getManifest();
                           if (/*~~(1C (==))~~>*/manifest == null)
-                              /*~~(2L)~~>*/for (;;/*~~(3L)~~>*/) /*~~(4L)~~>*/{
+                              /*~~(3L)~~>*/for (;;/*~~(4L)~~>*/) /*~~(5L)~~>*/{
                                   final JarEntry entry = in.getNextJarEntry();
-                                  if (/*~~(2C (==))~~>*/entry == null) return /*~~(5L)~~>*/null;
-                                  /*~~(6L)~~>*/if (/*~~(3C)~~>*/entry.getName().equals("META-INF/MANIFEST.MF")) /*~~(7L)~~>*/{
+                                  if (/*~~(2C (==))~~>*/entry == null) return /*~~(6L)~~>*/null;
+                                  /*~~(7L)~~>*/if (/*~~(3C)~~>*/entry.getName().equals("META-INF/MANIFEST.MF")) /*~~(8L)~~>*/{
                                       manifest = new Manifest(in);
                                       break;
                                   }
                               }
-                          final /*~~(8L)~~>*/Attributes attributes = manifest.getMainAttributes();
+                          final /*~~(9L)~~>*/Attributes attributes = manifest.getMainAttributes();
                           return attributes.getValue(new Attributes.Name("Implementation-Build"));
-                      } catch (IOException e) {
+                      } /*~~(1EH)~~>*/catch (IOException e) /*~~(10L)~~>*/{
                           return null;
                       }
                   }
@@ -2366,38 +3096,38 @@ class ControlFlowTest implements RewriteTest {
               import java.util.jar.JarInputStream;
 
               class Test {
-                  private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 21 CN: 10 EX: 2 | 1L)~~>*/{
-                      try {
+                  private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 26 CN: 10 EX: 4 EH: 2 | 1L)~~>*/{
+                      /*~~(2L)~~>*/try {
                           int maxCount = 3;
                           final JarInputStream in = new JarInputStream(jarURL.openStream());
-                          for (;;) /*~~(2L)~~>*/{
+                          for (;;) /*~~(3L)~~>*/{
                               final JarEntry entry = in.getNextJarEntry();
-                              if (/*~~(1C (==))~~>*/entry == null) /*~~(3L)~~>*/break;
-                              /*~~(4L)~~>*/String path = entry.getName();
-                              if (!/*~~(2C)~~>*/path.endsWith(".class")) /*~~(5L)~~>*/continue;
-                              /*~~(6L)~~>*/if (/*~~(3C (<=))~~>*/--maxCount <= 0) /*~~(7L)~~>*/break;
-                              final /*~~(8L)~~>*/String sourceFile = "Some java source code here";
-                              if (/*~~(4C (==))~~>*/sourceFile == null) /*~~(9L)~~>*/continue;
-                              final /*~~(10L)~~>*/String suffix = path.substring(0, path.lastIndexOf('/') + 1) + sourceFile;
+                              if (/*~~(1C (==))~~>*/entry == null) /*~~(4L)~~>*/break;
+                              /*~~(5L)~~>*/String path = entry.getName();
+                              if (!/*~~(2C)~~>*/path.endsWith(".class")) /*~~(6L)~~>*/continue;
+                              /*~~(7L)~~>*/if (/*~~(3C (<=))~~>*/--maxCount <= 0) /*~~(8L)~~>*/break;
+                              final /*~~(9L)~~>*/String sourceFile = "Some java source code here";
+                              if (/*~~(4C (==))~~>*/sourceFile == null) /*~~(10L)~~>*/continue;
+                              final /*~~(11L)~~>*/String suffix = path.substring(0, path.lastIndexOf('/') + 1) + sourceFile;
                               final String git = System.getProperty("imagej.updater.git.command", "git");
-                              try {
+                              /*~~(12L)~~>*/try {
                                   path = "/user/something/something";
-                                  if (/*~~(5C (<=))~~>*/path.length() <= suffix.length()) /*~~(11L)~~>*/continue;
-                                  /*~~(12L)~~>*/if (/*~~(6C)~~>*/path.endsWith("\\n")) /*~~(13L)~~>*/path = path.substring(0, path.length() - 1);
-                              } catch (RuntimeException e) {
+                                  if (/*~~(5C (<=))~~>*/path.length() <= suffix.length()) /*~~(13L)~~>*/continue;
+                                  /*~~(14L)~~>*/if (/*~~(6C)~~>*/path.endsWith("\\n")) /*~~(15L)~~>*/path = path.substring(0, path.length() - 1);
+                              } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(16L)~~>*/{
                                   /* ignore */
                                   continue;
                               }
-                              /*~~(14L)~~>*/if (/*~~(7C (>=))~~>*/path.indexOf('\\n') >= 0) /*~~(15L)~~>*/continue; // ls-files found multiple files
-                              /*~~(16L)~~>*/path = path.substring(0, path.length() - suffix.length());
-                              if (/*~~(8C)~~>*/"".equals(path)) /*~~(17L)~~>*/path = ".";
-                              /*~~(18L)~~>*/else if (path.endsWith("/src/main/java/")) path = path.substring(0, path.length() - "/src/main/java/".length());
-                              /*~~(19L)~~>*/in.close();
+                              /*~~(17L)~~>*/if (/*~~(7C (>=))~~>*/path.indexOf('\\n') >= 0) /*~~(18L)~~>*/continue; // ls-files found multiple files
+                              /*~~(19L)~~>*/path = path.substring(0, path.length() - suffix.length());
+                              if (/*~~(8C)~~>*/"".equals(path)) /*~~(20L)~~>*/path = ".";
+                              /*~~(21L)~~>*/else if (path.endsWith("/src/main/java/")) path = path.substring(0, path.length() - "/src/main/java/".length());
+                              /*~~(22L)~~>*/in.close();
                               return path;
                           }
-                          /*~~(20L)~~>*/in.close();
-                      } catch (IOException e) { /* ignore */ e.printStackTrace(); }
-                      return null;
+                          /*~~(23L)~~>*/in.close();
+                      } /*~~(2EH)~~>*/catch (IOException e) /*~~(24L)~~>*/{ /* ignore */ e.printStackTrace(); }
+                      return /*~~(25L)~~>*/null;
                   }
               }
               """

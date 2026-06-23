@@ -889,34 +889,137 @@ public final class ControlFlow {
 
         @Override
         public J.Try visitTry(J.Try _try, P p) {
+            List<J.Try.Catch> catches = _try.getCatches();
+
+            if (catches.isEmpty()) {
+                // No catches: J.Try cursor and resources belong in the current BB.
+                addCursorToBasicBlock();
+                visit(_try.getResources(), p);
+                // No catches — existing try-finally logic (unchanged)
+                if (_try.getFinally() == null) {
+                    visit(_try.getBody(), p);
+                } else {
+                    ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
+                    tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
+                    // Visit the finally block exactly once with all predecessors merged.
+                    // Any explicit break/continue/return inside the finally overrides the incoming
+                    // flow. If the finally falls through normally, its exit becomes the new current.
+                    Set<ControlFlowNode> allPredecessors = new HashSet<>();
+                    allPredecessors.addAll(tryBodyAnalysis.current);
+                    allPredecessors.addAll(tryBodyAnalysis.exitFlow);
+                    allPredecessors.addAll(tryBodyAnalysis.breakFlow);
+                    allPredecessors.addAll(tryBodyAnalysis.continueFlow);
+                    if (!allPredecessors.isEmpty()) {
+                        ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allPredecessors, _try.getFinally(), p);
+                        current = f.current;
+                    } else {
+                        current = emptySet();
+                    }
+                }
+                return _try;
+            }
+
+            // --- Has catch clauses ---
+            // 'tryEntryBB' holds pre-try code only. The 'try' keyword, resources, and try body
+            // all belong in tryBodyBB so that pre-try code is not guarded by the handler.
+            ControlFlowNode.BasicBlock tryEntryBB = currentAsBasicBlock();
+
+            // Build ExceptionHandlerNode chain and visit each catch body independently.
+            List<ControlFlowNode.ExceptionHandlerNode> handlers = new ArrayList<>(catches.size());
+            Set<ControlFlowNode> catchCurrents = new HashSet<>();
+            Set<ControlFlowNode> catchExitFlow = new HashSet<>();
+            Set<ControlFlowNode> catchBreakFlow = new HashSet<>();
+            Set<ControlFlowNode> catchContinueFlow = new HashSet<>();
+
+            for (J.Try.Catch catch_ : catches) {
+                ControlFlowNode.ExceptionHandlerNode handler = ControlFlowNode.ExceptionHandlerNode.create(catch_);
+                handlers.add(handler);
+
+                // Create the catch body entry BB and visit the body from it.
+                ControlFlowNode.BasicBlock catchEntryBB = ControlFlowNode.BasicBlock.create();
+                handler.addSuccessor(catchEntryBB); // matched → catch body
+
+                ControlFlowAnalysis<P> catchBodyAnalysis = new ControlFlowAnalysis<>(singleton(catchEntryBB), graphType);
+                if (catch_.getBody().getStatements().isEmpty()) {
+                    // Empty catch body: visit a fake J.Empty so catchEntryBB gets a leader cursor.
+                    catchBodyAnalysis.visit(new J.Empty(randomId(), Space.EMPTY, Markers.EMPTY), p, getCursor());
+                } else {
+                    catchBodyAnalysis.visit(catch_.getBody(), p, getCursor());
+                }
+                catchCurrents.addAll(catchBodyAnalysis.current);
+                catchExitFlow.addAll(catchBodyAnalysis.exitFlow);
+                catchBreakFlow.addAll(catchBodyAnalysis.breakFlow);
+                catchContinueFlow.addAll(catchBodyAnalysis.continueFlow);
+            }
+
+            // Chain handlers: EH[i].unmatchedSuccessor = EH[i+1]
+            for (int i = 0; i < handlers.size() - 1; i++) {
+                handlers.get(i).addSuccessor(handlers.get(i + 1));
+            }
+            ControlFlowNode.ExceptionHandlerNode firstHandler = handlers.get(0);
+            ControlFlowNode.ExceptionHandlerNode lastHandler = handlers.get(handlers.size() - 1);
+
+            // Start a fresh BB for the try-guarded region. The 'try' keyword, resources,
+            // and try body all live here. tryEntryBB → tryBodyBB is a straight-line edge.
+            ControlFlowNode.BasicBlock tryBodyBB = ControlFlowNode.BasicBlock.create();
+            tryEntryBB.addSuccessor(tryBodyBB);
+            current = singleton(tryBodyBB);
+            // Add the J.Try cursor to tryBodyBB (getCursor() is still the J.Try node here).
             addCursorToBasicBlock();
             visit(_try.getResources(), p);
+
+            ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
+            tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
+
+            // Wire exception edge from the try-body entry BB (not the pre-try BB).
+            setExceptionEntryForTryBody(tryBodyBB, firstHandler);
+
             if (_try.getFinally() == null) {
-                visit(_try.getBody(), p);
+                current = Stream.concat(tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
+                exitFlow.addAll(tryBodyAnalysis.exitFlow);
+                exitFlow.addAll(catchExitFlow);
+                // Last handler's unmatched path = exception propagates out of method.
+                // Adding lastHandler to exitFlow causes visitBlock (method entry) to call
+                // lastHandler.addSuccessor(end), wiring unmatchedSuccessor → End.
+                exitFlow.add(lastHandler);
+                breakFlow.addAll(tryBodyAnalysis.breakFlow);
+                breakFlow.addAll(catchBreakFlow);
+                continueFlow.addAll(tryBodyAnalysis.continueFlow);
+                continueFlow.addAll(catchContinueFlow);
+                // When every catch body exits via break/continue/return (catchCurrents is empty),
+                // 'current' is still the tryBodyBB that has exceptionEntry set. Force a new BB
+                // so that subsequent statements are not incorrectly covered by the try's
+                // exception entry — post-try code is outside the try block and must not route
+                // exceptions to the catch handler.
+                if (catchCurrents.isEmpty() && !current.isEmpty()) {
+                    current = singleton(newEmptyBasicBlockFromCurrent());
+                }
             } else {
-                ControlFlowAnalysis<P> tryBodyAnalysis = new ControlFlowAnalysis<>(current, graphType);
-                tryBodyAnalysis.visit(_try.getBody(), p, getCursor());
-                if (!tryBodyAnalysis.current.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromCurrent =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.current, _try.getFinally(), p);
-                    current = finallyAnalysisFromCurrent.current;
+                // Route all flows through finally.
+                Set<ControlFlowNode> allCurrents = Stream.concat(
+                        tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
+                Set<ControlFlowNode> allExitFlow = Stream.concat(
+                        tryBodyAnalysis.exitFlow.stream(), catchExitFlow.stream()).collect(toSet());
+                Set<ControlFlowNode> allBreakFlow = Stream.concat(
+                        tryBodyAnalysis.breakFlow.stream(), catchBreakFlow.stream()).collect(toSet());
+                Set<ControlFlowNode> allContinueFlow = Stream.concat(
+                        tryBodyAnalysis.continueFlow.stream(), catchContinueFlow.stream()).collect(toSet());
+
+                // Visit the finally block exactly once with all predecessors merged.
+                // lastHandler covers the exception-propagation path. Any explicit break/continue/
+                // return inside the finally overrides the incoming flow; if finally falls through
+                // normally its exit becomes the new current.
+                Set<ControlFlowNode> allFinallyPredecessors = new HashSet<>();
+                allFinallyPredecessors.addAll(allCurrents);
+                allFinallyPredecessors.addAll(allExitFlow);
+                allFinallyPredecessors.addAll(allBreakFlow);
+                allFinallyPredecessors.addAll(allContinueFlow);
+                allFinallyPredecessors.add(lastHandler);
+                if (!allFinallyPredecessors.isEmpty()) {
+                    ControlFlowAnalysis<P> f = visitRecursiveTransferringAll(allFinallyPredecessors, _try.getFinally(), p);
+                    current = f.current;
                 } else {
                     current = emptySet();
-                }
-                if (!tryBodyAnalysis.exitFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromExitFlow =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.exitFlow, _try.getFinally(), p);
-                    exitFlow.addAll(finallyAnalysisFromExitFlow.current);
-                }
-                if (!tryBodyAnalysis.breakFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromBreakFlow =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.breakFlow, _try.getFinally(), p);
-                    breakFlow.addAll(finallyAnalysisFromBreakFlow.current);
-                }
-                if (!tryBodyAnalysis.continueFlow.isEmpty()) {
-                    ControlFlowAnalysis<P> finallyAnalysisFromContinueFlow =
-                            visitRecursiveTransferringAll(tryBodyAnalysis.continueFlow, _try.getFinally(), p);
-                    continueFlow.addAll(finallyAnalysisFromContinueFlow.current);
                 }
             }
             return _try;
@@ -1002,6 +1105,81 @@ public final class ControlFlow {
             breakFlow.add(currentAsBasicBlock());
             current = emptySet();
             return breakStatement;
+        }
+
+        /**
+         * Sets the exception entry on every {@link ControlFlowNode.BasicBlock} reachable from
+         * {@code tryBodyEntry} via normal (successor/condition) edges — i.e., every BB in the
+         * guarded region of the try body.
+         *
+         * <p>Traversal rules:
+         * <ul>
+         *   <li>Depth increases when crossing a {@link ControlFlowNode.Start} node (entering a
+         *       lambda or nested-method sub-graph); decreases when leaving via its
+         *       {@link ControlFlowNode.End}. BBs at depth &gt; 0 are not marked — they belong to
+         *       an inner scope with its own exception handling.</li>
+         *   <li>{@link ControlFlowNode.ExceptionHandlerNode} successors are never followed, so
+         *       handler chains and catch bodies are excluded.</li>
+         *   <li>{@link ControlFlowNode.BasicBlock#setExceptionEntry} is idempotent: if an inner
+         *       try-catch has already wired a BB to its own (innermost) handler, the outer call
+         *       here is silently ignored — innermost handler wins.</li>
+         * </ul>
+         */
+        private static void setExceptionEntryForTryBody(
+                ControlFlowNode.BasicBlock tryBodyEntry,
+                ControlFlowNode.ExceptionHandlerNode firstHandler) {
+            Set<ControlFlowNode> visited = new HashSet<>();
+            // Parallel stacks: nodeStack[i] was reached at lambdaDepth[i].
+            Deque<ControlFlowNode> nodeStack = new ArrayDeque<>();
+            Deque<Integer> depthStack = new ArrayDeque<>();
+            nodeStack.push(tryBodyEntry);
+            depthStack.push(0);
+            while (!nodeStack.isEmpty()) {
+                ControlFlowNode node = nodeStack.pop();
+                int depth = depthStack.pop();
+                if (!visited.add(node)) {
+                    continue;
+                }
+                if (depth == 0 && node instanceof ControlFlowNode.BasicBlock) {
+                    ((ControlFlowNode.BasicBlock) node).setExceptionEntry(firstHandler);
+                }
+                // Compute the depth for nodes reached via this node's outgoing edges.
+                // Start → entering a lambda/nested-method body (+1).
+                // End  → leaving a lambda/nested-method body (lambda End has a successor
+                //        pointing back to the outer graph, so depth returns to outer level).
+                int successorDepth = depth;
+                if (node instanceof ControlFlowNode.Start) {
+                    successorDepth = depth + 1;
+                } else if (node instanceof ControlFlowNode.End) {
+                    successorDepth = depth - 1;
+                }
+                // Collect outgoing edges without calling getSuccessors() / verifyState():
+                // ConditionNodes may have a null falsySuccessor at try-body analysis time
+                // (the outer code fills it in after visitTry returns), and verifyState()
+                // would throw. BasicBlocks use getSuccessorsForTraversal() which is already
+                // null-safe. Other nodes (Start, End) use getSuccessorsForTraversal() too.
+                if (node instanceof ControlFlowNode.ConditionNode) {
+                    ControlFlowNode.ConditionNode cn = (ControlFlowNode.ConditionNode) node;
+                    if (cn.getTruthySuccessor() != null
+                            && !(cn.getTruthySuccessor() instanceof ControlFlowNode.ExceptionHandlerNode)) {
+                        nodeStack.push(cn.getTruthySuccessor());
+                        depthStack.push(successorDepth);
+                    }
+                    if (cn.getFalsySuccessor() != null
+                            && !(cn.getFalsySuccessor() instanceof ControlFlowNode.ExceptionHandlerNode)) {
+                        nodeStack.push(cn.getFalsySuccessor());
+                        depthStack.push(successorDepth);
+                    }
+                } else {
+                    for (ControlFlowNode successor : node.getSuccessorsForTraversal()) {
+                        if (successor instanceof ControlFlowNode.ExceptionHandlerNode) {
+                            continue; // never follow into handler chains
+                        }
+                        nodeStack.push(successor);
+                        depthStack.push(successorDepth);
+                    }
+                }
+            }
         }
 
         private static ControlFlowNode.BasicBlock addBasicBlock(Collection<ControlFlowNode> nodes) {

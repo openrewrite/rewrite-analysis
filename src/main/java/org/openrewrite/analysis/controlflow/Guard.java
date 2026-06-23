@@ -37,7 +37,6 @@ public final class Guard {
     @Getter
     private final J.@Nullable Case theCase;
 
-
     private Guard(Cursor cursor, @Nullable Expression expression, J.@Nullable Case theCase) {
         if (expression == null && theCase == null) {
             throw new IllegalArgumentException("Guard must have either an expression or a case");
