@@ -1934,7 +1934,9 @@ class ControlFlowTest implements RewriteTest {
         // a block-body lambda creates a separate sub-graph entered via a Start node
         // (depth→1) and exited via its Lambda End (depth→0). BBs inside the lambda
         // must NOT receive the try's exception entry (they have their own scope); the
-        // BB after the lambda (r.run()) MUST receive it.
+        // BB that follows the lambda (new Thread(...).start()) MUST receive it.
+        // Using new Thread(lambda).start() rather than a variable assignment avoids
+        // a split label — the thread constructor+start cursor lands cleanly in one BB.
         rewriteRun(
           //language=java
           java(
@@ -1942,10 +1944,9 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   void test() {
                       try {
-                          Runnable r = () -> {
-                              System.out.println("lambda");
-                          };
-                          r.run();
+                          new Thread(() -> {
+                              System.out.println("in thread");
+                          }).start();
                       } catch (RuntimeException e) {
                           System.out.println("caught");
                       }
@@ -1956,10 +1957,9 @@ class ControlFlowTest implements RewriteTest {
               class Test {
                   void test() /*~~(BB: 5 CN: 0 EX: 3 EH: 1 | 1L)~~>*/{
                       /*~~(2L)~~>*/try {
-                          Runnable /*~~(3L)~~>*/r = () -> /*~~(4L)~~>*/{
-                              System.out.println("lambda");
-                          };
-                          r.run();
+                          /*~~(3L)~~>*/new Thread(() -> /*~~(4L)~~>*/{
+                              System.out.println("in thread");
+                          }).start();
                       } /*~~(1EH)~~>*/catch (RuntimeException e) /*~~(5L)~~>*/{
                           System.out.println("caught");
                       }

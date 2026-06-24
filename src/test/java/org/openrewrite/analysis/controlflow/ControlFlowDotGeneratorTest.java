@@ -459,10 +459,9 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
             class Test {
                 void test() {
                     try {
-                        Runnable r = () -> {
-                            System.out.println("lambda");
-                        };
-                        r.run();
+                        new Thread(() -> {
+                            System.out.println("in thread");
+                        }).start();
                     } catch (RuntimeException e) {
                         System.out.println("caught");
                     }

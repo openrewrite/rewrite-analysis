@@ -1128,6 +1128,19 @@ public final class ControlFlow {
         private static void setExceptionEntryForTryBody(
                 ControlFlowNode.BasicBlock tryBodyEntry,
                 ControlFlowNode.ExceptionHandlerNode firstHandler) {
+            // Build the outer handler chain (firstHandler + its transitive Propagates chain).
+            // We must NOT follow these nodes — they are the catch clauses of the try being
+            // processed, and their catch-body BBs should not carry this try's exception entry.
+            // Inner ExceptionHandlerNodes (from nested try-catch inside the try body) are NOT
+            // in this set and ARE traversed so that their catch-body BBs correctly receive the
+            // outer exception entry (a throw inside an inner catch body propagates outward).
+            Set<ControlFlowNode> outerHandlerChain = new HashSet<>();
+            ControlFlowNode eh = firstHandler;
+            while (eh instanceof ControlFlowNode.ExceptionHandlerNode) {
+                outerHandlerChain.add(eh);
+                eh = ((ControlFlowNode.ExceptionHandlerNode) eh).getUnmatchedSuccessor();
+            }
+
             Set<ControlFlowNode> visited = new HashSet<>();
             // Parallel stacks: nodeStack[i] was reached at lambdaDepth[i].
             Deque<ControlFlowNode> nodeStack = new ArrayDeque<>();
@@ -1156,27 +1169,26 @@ public final class ControlFlow {
                 // Collect outgoing edges without calling getSuccessors() / verifyState():
                 // ConditionNodes may have a null falsySuccessor at try-body analysis time
                 // (the outer code fills it in after visitTry returns), and verifyState()
-                // would throw. BasicBlocks use getSuccessorsForTraversal() which is already
-                // null-safe. Other nodes (Start, End) use getSuccessorsForTraversal() too.
+                // would throw. All other nodes use getSuccessorsForTraversal() which is
+                // already null-safe. In both cases, skip nodes in the outer handler chain.
                 if (node instanceof ControlFlowNode.ConditionNode) {
                     ControlFlowNode.ConditionNode cn = (ControlFlowNode.ConditionNode) node;
                     if (cn.getTruthySuccessor() != null
-                            && !(cn.getTruthySuccessor() instanceof ControlFlowNode.ExceptionHandlerNode)) {
+                            && !outerHandlerChain.contains(cn.getTruthySuccessor())) {
                         nodeStack.push(cn.getTruthySuccessor());
                         depthStack.push(successorDepth);
                     }
                     if (cn.getFalsySuccessor() != null
-                            && !(cn.getFalsySuccessor() instanceof ControlFlowNode.ExceptionHandlerNode)) {
+                            && !outerHandlerChain.contains(cn.getFalsySuccessor())) {
                         nodeStack.push(cn.getFalsySuccessor());
                         depthStack.push(successorDepth);
                     }
                 } else {
                     for (ControlFlowNode successor : node.getSuccessorsForTraversal()) {
-                        if (successor instanceof ControlFlowNode.ExceptionHandlerNode) {
-                            continue; // never follow into handler chains
+                        if (!outerHandlerChain.contains(successor)) {
+                            nodeStack.push(successor);
+                            depthStack.push(successorDepth);
                         }
-                        nodeStack.push(successor);
-                        depthStack.push(successorDepth);
                     }
                 }
             }
