@@ -24,19 +24,15 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-/**
- * Higher-order ("lambda call") sinks: a sink whose access path is {@code Argument[i].ReturnValue}
- * marks the value <em>returned by the lambda passed as argument {@code i}</em> as the sink. The
- * canonical example is Couchbase's {@code PasswordAuthenticator.Builder.password(Supplier)}, whose
- * supplier's return value is a {@code credentials-password} sink.
- */
+/// Higher-order ("lambda call") sinks: a sink whose access path is `Argument[i].ReturnValue`
+/// marks the value _returned by the lambda passed as argument `i`_ as the sink. The
+/// canonical example is Couchbase's `PasswordAuthenticator.Builder.password(Supplier)`, whose
+/// supplier's return value is a `credentials-password` sink.
 @SuppressWarnings("FunctionName")
 class HigherOrderSinkTest implements RewriteTest {
 
-    /**
-     * A minimal stub of the Couchbase type carrying the real {@code Argument[0].ReturnValue} sink
-     * models, so the test exercises the shipped {@code sinks.csv} data without a Couchbase dependency.
-     */
+    /// A minimal stub of the Couchbase type carrying the real `Argument[0].ReturnValue` sink
+    /// models, so the test exercises the shipped `sinks.csv` data without a Couchbase dependency.
     //language=java
     private static final String PASSWORD_AUTHENTICATOR = """
       package com.couchbase.client.core.env;

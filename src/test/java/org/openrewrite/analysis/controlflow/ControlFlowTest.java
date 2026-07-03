@@ -1257,9 +1257,7 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    /**
-     * TODO: It may be beneficial in the future to represent this as a single basic block with no conditional nodes
-     */
+    /// TODO: It may be beneficial in the future to represent this as a single basic block with no conditional nodes
     @Test
     void literalTrue() {
         rewriteRun(
@@ -1320,10 +1318,8 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
-    /**
-     * FIXME: This is wrong, but we don't have control flow through try-catch modeled currently.
-     * This test instanceof Just to make sure that we don't blow up when we hit this case.
-     */
+    /// FIXME: This is wrong, but we don't have control flow through try-catch modeled currently.
+    /// This test instanceof Just to make sure that we don't blow up when we hit this case.
     @Test
     void controlFlowForTryWithResourcesWithCatchAndAdditionalReturn() {
         rewriteRun(

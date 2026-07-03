@@ -24,10 +24,8 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-/**
- * Higher-order ("lambda call") data flow: flow into a lambda argument's parameter and out of its
- * return value, driven by the CodeQL-derived callback models in {@code model.csv}.
- */
+/// Higher-order ("lambda call") data flow: flow into a lambda argument's parameter and out of its
+/// return value, driven by the CodeQL-derived callback models in `model.csv`.
 @SuppressWarnings("FunctionName")
 class HigherOrderFlowTest implements RewriteTest {
     @Override
