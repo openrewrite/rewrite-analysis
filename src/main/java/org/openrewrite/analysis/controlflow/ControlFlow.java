@@ -356,7 +356,6 @@ public final class ControlFlow {
         }
 
         @Override
-        @SelfLoathing(name = "Jonathan Leitschuh")
         public J.SwitchExpression visitSwitchExpression(J.SwitchExpression _switch, P p) {
             // A switch expression has the same case/label structure as a switch
             // statement; the only difference is that its cases produce a value via
@@ -367,7 +366,6 @@ public final class ControlFlow {
             return _switch;
         }
 
-        @SelfLoathing(name = "Jonathan Leitschuh")
         private void visitSwitchLike(J selector, J.Block cases, P p) {
             addCursorToBasicBlock();
             visit(selector, p);
