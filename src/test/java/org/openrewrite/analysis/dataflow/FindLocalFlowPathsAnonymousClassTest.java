@@ -25,10 +25,8 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-/**
- * Tests for dataflow tracking through anonymous classes.
- * See <a href="https://github.com/openrewrite/rewrite-analysis/issues/93">Issue #93</a>
- */
+/// Tests for dataflow tracking through anonymous classes.
+/// See <a href="https://github.com/openrewrite/rewrite-analysis/issues/93">Issue #93</a>
 @SuppressWarnings({
   "Convert2Lambda",
   "Anonymous2MethodRef",

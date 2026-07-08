@@ -23,10 +23,8 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.kotlin.Assertions.kotlin;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-/**
- * Regression tests covering Kotlin sources where ControlFlow analysis used to
- * crash with {@code ControlFlowIllegalStateException: No current node!}.
- */
+/// Regression tests covering Kotlin sources where ControlFlow analysis used to
+/// crash with `ControlFlowIllegalStateException: No current node!`.
 class FindLocalFlowPathsKotlinTest implements RewriteTest {
 
     @Override

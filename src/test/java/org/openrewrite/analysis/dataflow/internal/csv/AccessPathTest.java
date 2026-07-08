@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.openrewrite.analysis.dataflow.internal.csv.AccessPath.CallbackKind;
 import org.openrewrite.analysis.dataflow.internal.csv.AccessPath.Root;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AccessPathTest {

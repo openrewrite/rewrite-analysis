@@ -196,10 +196,10 @@ class LambdaExprTest implements RewriteTest {
                       Method method = lambda.asMethod();
                       assertThat(method.getName()).as("SAM name").isEqualTo("combine");
                       assertThat(method.getParameters()).hasSize(2);
-                      assertThat(method.getParameters().get(0).getName()).isEqualTo("a");
-                      assertThat(method.getParameters().get(0).getPosition()).isZero();
+                      assertThat(method.getParameters().getFirst().getName()).isEqualTo("a");
+                      assertThat(method.getParameters().getFirst().getPosition()).isZero();
                       assertThat(method.getParameters().get(1).getName()).isEqualTo("b");
-                      assertThat(method.getParameters().get(1).getPosition()).isEqualTo(1);
+                      assertThat(method.getParameters().get(1).getPosition()).isOne();
                       return SearchResult.found(tree);
                   }).orSuccess(tree);
               }

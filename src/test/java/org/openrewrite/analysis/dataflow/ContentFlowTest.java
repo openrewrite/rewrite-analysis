@@ -24,12 +24,10 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.test.RewriteTest.toRecipe;
 
-/**
- * Taint flow through container contents. CodeQL models container reads/writes with a content
- * component ({@code Element}, {@code MapValue}, …); this content-insensitive engine collapses that
- * component onto the container, so storing a tainted value into a container taints the whole
- * container and reading any value back out is tainted.
- */
+/// Taint flow through container contents. CodeQL models container reads/writes with a content
+/// component (`Element`, `MapValue`, …); this content-insensitive engine collapses that
+/// component onto the container, so storing a tainted value into a container taints the whole
+/// container and reading any value back out is tainted.
 @SuppressWarnings({"FunctionName", "UnusedAssignment"})
 class ContentFlowTest implements RewriteTest {
     @Override
