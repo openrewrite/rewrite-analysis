@@ -471,6 +471,26 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
     }
 
     @Test
+    void tryBodyWithBlockLambdaVariableDecl() {
+        generateDot("try-body-block-lambda-var-decl",
+          //language=java
+          """
+            class Test {
+                void test() {
+                    try {
+                        Runnable r = () -> {
+                            System.out.println("in thread");
+                        };
+                        r.run();
+                    } catch (RuntimeException e) {
+                        System.out.println("caught");
+                    }
+                }
+            }
+            """);
+    }
+
+    @Test
     void tryBodyWithNestedTryCatch() {
         generateDot("try-body-nested-try-catch",
           //language=java
@@ -488,6 +508,51 @@ class ControlFlowDotGeneratorTest implements RewriteTest {
                     } catch (RuntimeException e) {
                         System.out.println("outer catch");
                     }
+                }
+            }
+            """);
+    }
+
+    @Test
+    void nestedTryCatchInLoopRealistic() {
+        generateDot("nested-try-catch-in-loop-realistic",
+          //language=java
+          """
+            import java.io.File;
+            import java.io.IOException;
+            import java.net.URL;
+            import java.util.jar.JarEntry;
+            import java.util.jar.JarInputStream;
+
+            class Test {
+                private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) {
+                    try {
+                        int maxCount = 3;
+                        final JarInputStream in = new JarInputStream(jarURL.openStream());
+                        for (;;) {
+                            final JarEntry entry = in.getNextJarEntry();
+                            if (entry == null) break;
+                            String path = entry.getName();
+                            if (!path.endsWith(".class")) continue;
+                            if (--maxCount <= 0) break;
+                            final String sourceFile = "Some java source code here";
+                            if (sourceFile == null) continue;
+                            final String suffix = path.substring(0, path.lastIndexOf('/') + 1) + sourceFile;
+                            try {
+                                path = "/user/something/something";
+                                if (path.length() <= suffix.length()) continue;
+                                if (path.endsWith("\\n")) path = path.substring(0, path.length() - 1);
+                            } catch (RuntimeException e) {
+                                continue;
+                            }
+                            in.close();
+                            return path;
+                        }
+                        in.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
                 }
             }
             """);

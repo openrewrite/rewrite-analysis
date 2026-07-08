@@ -1998,7 +1998,7 @@ class ControlFlowTest implements RewriteTest {
               """,
             """
               class Test {
-                  void test() /*~~(BB: 6 CN: 0 EX: 4 EH: 2 | 1L)~~>*/{
+                  void test() /*~~(BB: 6 CN: 0 EX: 3 EH: 2 | 1L)~~>*/{
                       /*~~(2L)~~>*/try {
                           System.out.println("outer before");
                           /*~~(3L)~~>*/try {
@@ -3096,7 +3096,7 @@ class ControlFlowTest implements RewriteTest {
               import java.util.jar.JarInputStream;
 
               class Test {
-                  private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 26 CN: 10 EX: 4 EH: 2 | 1L)~~>*/{
+                  private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) /*~~(BB: 26 CN: 10 EX: 3 EH: 2 | 1L)~~>*/{
                       /*~~(2L)~~>*/try {
                           int maxCount = 3;
                           final JarInputStream in = new JarInputStream(jarURL.openStream());

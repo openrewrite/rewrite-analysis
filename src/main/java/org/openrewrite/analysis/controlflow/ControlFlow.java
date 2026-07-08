@@ -974,9 +974,25 @@ public final class ControlFlow {
             // Wire exception edge from the try-body entry BB (not the pre-try BB).
             setExceptionEntryForTryBody(tryBodyBB, firstHandler);
 
+            // A nested try inside THIS try's body may itself have catch clauses whose
+            // unmatched/uncaught path lands in tryBodyAnalysis.exitFlow as a bare
+            // ExceptionHandlerNode (see the `exitFlow.add(lastHandler)` below). Since that
+            // nested try is lexically within this try's guarded body, its uncaught exception
+            // must be checked against THIS try's own catch clauses before propagating any
+            // further — wire it directly to firstHandler instead of letting it fall into the
+            // generic exitFlow bucket, which would route it straight past this try's catches.
+            Set<ControlFlowNode> tryBodyExitFlow = new HashSet<>();
+            for (ControlFlowNode node : tryBodyAnalysis.exitFlow) {
+                if (node instanceof ControlFlowNode.ExceptionHandlerNode) {
+                    node.addSuccessor(firstHandler);
+                } else {
+                    tryBodyExitFlow.add(node);
+                }
+            }
+
             if (_try.getFinally() == null) {
                 current = Stream.concat(tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
-                exitFlow.addAll(tryBodyAnalysis.exitFlow);
+                exitFlow.addAll(tryBodyExitFlow);
                 exitFlow.addAll(catchExitFlow);
                 // Last handler's unmatched path = exception propagates out of method.
                 // Adding lastHandler to exitFlow causes visitBlock (method entry) to call
@@ -999,7 +1015,7 @@ public final class ControlFlow {
                 Set<ControlFlowNode> allCurrents = Stream.concat(
                         tryBodyAnalysis.current.stream(), catchCurrents.stream()).collect(toSet());
                 Set<ControlFlowNode> allExitFlow = Stream.concat(
-                        tryBodyAnalysis.exitFlow.stream(), catchExitFlow.stream()).collect(toSet());
+                        tryBodyExitFlow.stream(), catchExitFlow.stream()).collect(toSet());
                 Set<ControlFlowNode> allBreakFlow = Stream.concat(
                         tryBodyAnalysis.breakFlow.stream(), catchBreakFlow.stream()).collect(toSet());
                 Set<ControlFlowNode> allContinueFlow = Stream.concat(
