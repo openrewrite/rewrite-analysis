@@ -2963,4 +2963,78 @@ class ControlFlowTest implements RewriteTest {
           )
         );
     }
+
+    @Issue("https://github.com/moderneinc/customer-requests/issues/2735")
+    @Test
+    void switchExpressionWithYield() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+            class Test {
+                String test(int x) {
+                    String result = switch (x) {
+                        case 1:
+                            yield "one";
+                        case 2:
+                            yield "two";
+                        default:
+                            yield "other";
+                    };
+                    return result;
+                }
+            }
+            """,
+            """
+            class Test {
+                String test(int x) /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
+                    String /*~~(2L)~~>*/result = switch (x) {
+                        /*~~(1C)~~>*/case 1:
+                            yield /*~~(3L)~~>*/"one";
+                        /*~~(4L | 2C)~~>*/case 2:
+                            yield /*~~(5L)~~>*/"two";
+                        /*~~(6L)~~>*/default:
+                            yield "other";
+                    };
+                    return result;
+                }
+            }
+            """
+          )
+        );
+    }
+
+    @Issue("https://github.com/moderneinc/customer-requests/issues/2735")
+    @Test
+    void switchExpressionWithArrow() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+            class Test {
+                String test(int x) {
+                    String result = switch (x) {
+                        case 1 -> "one";
+                        case 2 -> "two";
+                        default -> "other";
+                    };
+                    return result;
+                }
+            }
+            """,
+            """
+            class Test {
+                String test(int x) /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
+                    String /*~~(2L)~~>*/result = switch (x) {
+                        /*~~(1C)~~>*/case 1 -> /*~~(3L)~~>*/"one";
+                        /*~~(4L | 2C)~~>*/case 2 -> /*~~(5L)~~>*/"two";
+                        /*~~(6L)~~>*/default -> "other";
+                    };
+                    return result;
+                }
+            }
+            """
+          )
+        );
+    }
 }
