@@ -30,7 +30,7 @@ public abstract class JavaTypeGoat<T, S extends PT<S> & C> {
     };
 
     public abstract static class InheritedJavaTypeGoat<T, U extends PT<U> & C> extends JavaTypeGoat<T, U> {
-        public InheritedJavaTypeGoat() {
+        protected InheritedJavaTypeGoat() {
             super();
         }
     }

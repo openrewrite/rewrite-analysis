@@ -133,7 +133,7 @@ public class SinkFlowSummary {
                 List<List<Cursor>> pathsToSinks
         ) {
             Cursor cursor = flowGraph.getNode().getCursor();
-            if (cursor.getValue() instanceof Expression && !reachable.contains(cursor.<Expression>getValue())) {
+            if (cursor.getValue() instanceof Expression && !reachable.contains(cursor.getValue())) {
                 return;
             }
 

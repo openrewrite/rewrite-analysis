@@ -121,7 +121,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
                     assert methodCall != null;
                     JavaType.Method methodType = methodCall.getMethodType();
                     if (methodType != null) {
-                        int argumentIndex = methodCall.getArguments().indexOf(n.getCursor().<Expression>getValue());
+                        int argumentIndex = methodCall.getArguments().indexOf(n.getCursor().getValue());
                         JavaType.Method declaredMethodType = MethodTypeUtils.getDeclarationMethod(methodType);
                         List<Set<FlowGraph>> flowGraphs = argumentFlowGraphs
                                 .computeIfAbsent(declaredMethodType, __ -> flowGraphList(methodCall.getArguments().size()));
@@ -251,7 +251,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
         if (MATCHES_ALL.advanced().isAnyArgument(flowGraph.getNode().getCursor())) {
             MethodCall methodCall = flowGraph.getNode().getCursor().getParentTreeCursor().firstEnclosing(MethodCall.class);
             assert methodCall != null;
-            assert methodCall.getArguments().contains(flowGraph.getNode().getCursor().<Expression>getValue());
+            assert methodCall.getArguments().contains(flowGraph.getNode().getCursor().getValue());
             stack.push(methodCall);
             pushedMethodCall = true;
         }
@@ -377,7 +377,7 @@ class GlobalDataFlowAccumulator implements GlobalDataFlow.Accumulator {
 
         @Override
         public boolean isFlowParticipant() {
-            return getPrunedParticipating().contains(node.getCursor().<J>getValue());
+            return getPrunedParticipating().contains(node.getCursor().getValue());
         }
     }
 

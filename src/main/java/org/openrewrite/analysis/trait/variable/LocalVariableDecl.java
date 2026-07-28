@@ -119,7 +119,7 @@ class LocalVariableDeclBase extends Top.Base implements LocalVariableDecl {
             if (t instanceof J.MethodDeclaration) {
                 J.MethodDeclaration m = (J.MethodDeclaration) t;
                 assert previous != null : "previous should not be null";
-                if (m.getParameters().contains(previous.<Statement>getValue())) {
+                if (m.getParameters().contains(previous.getValue())) {
                     break;
                 }
             } else if (t instanceof J.Lambda) {

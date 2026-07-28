@@ -34,7 +34,7 @@ class VariableTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(toRecipe(() -> new JavaIsoVisitor<>() {
-            private int variableIndex = 0;
+            private int variableIndex;
 
             @Override
             public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, ExecutionContext executionContext) {
