@@ -36,6 +36,15 @@ dependencies {
     testRuntimeOnly("com.google.guava:guava:32.1.1-jre")
 }
 
+// Forward cfg.dot.output.dir to the test JVM so ControlFlowDotGeneratorTest can write files.
+// Usage: ./gradlew test --tests "*.ControlFlowDotGeneratorTest" -Pcfg.dot.output.dir=build/cfg-dot
+tasks.withType<Test> {
+    val dotOutputDir = project.findProperty("cfg.dot.output.dir") as String?
+    if (dotOutputDir != null) {
+        systemProperty("cfg.dot.output.dir", dotOutputDir)
+    }
+}
+
 tasks.withType<Javadoc> {
     // generated ANTLR sources violate doclint
     (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")

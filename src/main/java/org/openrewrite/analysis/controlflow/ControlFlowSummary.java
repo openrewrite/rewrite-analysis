@@ -76,6 +76,18 @@ public final class ControlFlowSummary {
                 .collect(toSet());
     }
 
+    public Set<ControlFlowNode.ExceptionHandlerNode> getExceptionHandlerNodes() {
+        return getAllNodes()
+                .stream()
+                .filter(ControlFlowNode.ExceptionHandlerNode.class::isInstance)
+                .map(ControlFlowNode.ExceptionHandlerNode.class::cast)
+                .collect(toSet());
+    }
+
+    int getExceptionHandlerCount() {
+        return getExceptionHandlerNodes().size();
+    }
+
     public Set<Expression> computeReachableExpressions(BarrierGuardPredicate predicate) {
         return computeExecutableCodePoints(predicate)
                 .stream()
@@ -150,6 +162,23 @@ public final class ControlFlowSummary {
                     ).additionalContext("DOT representation of the malformed graph:\n" + dot);
             for (int i = 0; i < blocksWithNoSuccessor.size(); i++) {
                 builder.addNode("BasicBlock without successor " + (i + 1), blocksWithNoSuccessor.get(i));
+            }
+            throw new ControlFlowIllegalStateException(builder);
+        }
+        List<ControlFlowNode.ExceptionHandlerNode> handlersWithNoMatchedSuccessor = getAllNodes()
+                .stream()
+                .filter(ControlFlowNode.ExceptionHandlerNode.class::isInstance)
+                .map(ControlFlowNode.ExceptionHandlerNode.class::cast)
+                .filter(eh -> eh.getMatchedSuccessor() == null)
+                .collect(toList());
+        if (!handlersWithNoMatchedSuccessor.isEmpty()) {
+            String dot = ControlFlowDotFileGenerator.create().visualizeAsDotfile("broken_graph", false, this);
+            ControlFlowIllegalStateException.Message.MessageBuilder builder =
+                    ControlFlowIllegalStateException.exceptionMessageBuilder(
+                            "Control flow graph has " + handlersWithNoMatchedSuccessor.size() + " exception handler node(s) with no matched successor"
+                    ).additionalContext("DOT representation of the malformed graph:\n" + dot);
+            for (int i = 0; i < handlersWithNoMatchedSuccessor.size(); i++) {
+                builder.addNode("ExceptionHandlerNode without matched successor " + (i + 1), handlersWithNoMatchedSuccessor.get(i));
             }
             throw new ControlFlowIllegalStateException(builder);
         }
