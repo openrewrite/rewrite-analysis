@@ -351,8 +351,24 @@ public final class ControlFlow {
         @Override
         @SelfLoathing(name = "Jonathan Leitschuh")
         public J.Switch visitSwitch(J.Switch _switch, P p) {
+            visitSwitchLike(_switch.getSelector(), _switch.getCases(), p);
+            return _switch;
+        }
+
+        @Override
+        public J.SwitchExpression visitSwitchExpression(J.SwitchExpression _switch, P p) {
+            // A switch expression has the same case/label structure as a switch
+            // statement; the only difference is that its cases produce a value via
+            // `yield` (or an arrow body) rather than falling through / breaking.
+            // Control-flow-wise a `yield` behaves like a `break` (see visitYield),
+            // so the exact same analysis applies.
+            visitSwitchLike(_switch.getSelector(), _switch.getCases(), p);
+            return _switch;
+        }
+
+        private void visitSwitchLike(J selector, J.Block cases, P p) {
             addCursorToBasicBlock();
-            visit(_switch.getSelector(), p);
+            visit(selector, p);
             // The switch analysis requires a doubly-nested anonymous-class structure.
             //
             // OUTER anonymous class (this 'analysis' object):
@@ -423,7 +439,12 @@ public final class ControlFlow {
                                 }
                             } else if (_case.getType() == J.Case.Type.Rule) {
                                 visit(_case.getBody(), p);
-                                breakFlow.add(currentAsBasicBlock());
+                                if (!current.isEmpty()) {
+                                    // An arrow body that ends in `yield`/`return`/`throw`
+                                    // (e.g. `case X -> { yield 1; }`) has already emptied
+                                    // current and recorded its own exit flow.
+                                    breakFlow.add(currentAsBasicBlock());
+                                }
                                 current = emptySet();
                             }
                             caseFlow.addAll(current);
@@ -433,11 +454,10 @@ public final class ControlFlow {
                     };
                 }
             };
-            analysis.visit(_switch.getCases(), p, getCursor());
+            analysis.visit(cases, p, getCursor());
             transferContinueFlow(analysis);
             transferExit(analysis);
             current = Stream.concat(analysis.current.stream(), analysis.breakFlow.stream()).collect(toSet());
-            return _switch;
         }
 
         @Override
@@ -1002,6 +1022,18 @@ public final class ControlFlow {
             breakFlow.add(currentAsBasicBlock());
             current = emptySet();
             return breakStatement;
+        }
+
+        @Override
+        public J.Yield visitYield(J.Yield yield, P p) {
+            // `yield` exits the enclosing switch expression carrying a value.
+            // For control-flow purposes it behaves exactly like a `break`: the
+            // value expression is evaluated, then flow leaves the switch.
+            visit(yield.getValue(), p);
+            addCursorToBasicBlock();
+            breakFlow.add(currentAsBasicBlock());
+            current = emptySet();
+            return yield;
         }
 
         private static ControlFlowNode.BasicBlock addBasicBlock(Collection<ControlFlowNode> nodes) {
