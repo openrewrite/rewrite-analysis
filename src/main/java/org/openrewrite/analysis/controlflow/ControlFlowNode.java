@@ -23,8 +23,10 @@ import org.jspecify.annotations.Nullable;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.internal.StringUtils;
+import org.openrewrite.java.JavaPrinter;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.Space;
 import org.openrewrite.java.tree.TypeUtils;
 
 import java.util.*;
@@ -276,6 +278,65 @@ public abstract class ControlFlowNode {
     }
 
     /**
+     * Models a single {@code catch} clause as a matching-dispatch node, analogous to CodeQL's
+     * {@code MatchingCondition} on a {@code CatchClause}.
+     * <ul>
+     *   <li>{@link #matchedSuccessor} — exception type matched → enter catch body</li>
+     *   <li>{@link #unmatchedSuccessor} — not matched → next handler or propagate out of method</li>
+     * </ul>
+     * Reached via the {@link BasicBlock#exceptionEntry} field of try-body basic blocks.
+     */
+    @RequiredArgsConstructor(access = AccessLevel.PACKAGE, staticName = "create")
+    static final class ExceptionHandlerNode extends ControlFlowNode {
+        @Getter
+        private final J.Try.Catch catchClause;
+
+        @Getter
+        @Nullable private ControlFlowNode matchedSuccessor;
+
+        @Getter
+        @Nullable private ControlFlowNode unmatchedSuccessor;
+
+        @Override
+        protected void _addSuccessorInternal(ControlFlowNode successor) {
+            if (matchedSuccessor == null) {
+                matchedSuccessor = successor;
+            } else if (unmatchedSuccessor == null) {
+                unmatchedSuccessor = successor;
+            } else {
+                throw new ControlFlowIllegalStateException(
+                        exceptionMessageBuilder("ExceptionHandlerNode already has both successors").thisNode(this));
+            }
+        }
+
+        @Override
+        Set<ControlFlowNode> getSuccessors() {
+            Set<ControlFlowNode> result = new HashSet<>(2);
+            if (matchedSuccessor != null) result.add(matchedSuccessor);
+            if (unmatchedSuccessor != null) result.add(unmatchedSuccessor);
+            return result;
+        }
+
+        @Override
+        String internalToDescriptiveString() {
+            return "ExceptionHandlerNode{catch=" + catchClause.getParameter() + "}";
+        }
+
+        @Override
+        String toVisualizerString() {
+            // Use print() (not printTrimmed) to preserve the prefix, which includes
+            // any whitespace and inline comments between 'catch' and '('.
+            return "catch" + catchClause.getParameter().print(new JavaPrinter<>());
+        }
+
+        @Override
+        public String toString() {
+            return "ExceptionHandlerNode{catch=" + catchClause.getParameter()
+                   + ", matched=" + matchedSuccessor + ", unmatched=" + unmatchedSuccessor + '}';
+        }
+    }
+
+    /**
      * A basic block is a straight-line code sequence with no branches in except to the entry and
      * no branches out except at the exit.
      *
@@ -288,6 +349,14 @@ public abstract class ControlFlowNode {
 
         private final List<Cursor> node = new ArrayList<>();
         private boolean nextConditionDefault = true;
+
+        /**
+         * The first {@link ExceptionHandlerNode} in the handler chain for any {@code try} block that
+         * this basic block belongs to. {@code null} if this block is not inside a try-with-catch.
+         * This is a SECONDARY outgoing edge — it does not replace {@link #successor} (normal flow).
+         */
+        @Getter
+        @Nullable private ExceptionHandlerNode exceptionEntry;
 
         public J getLeader() {
             if (node.isEmpty()) {
@@ -394,6 +463,12 @@ public abstract class ControlFlowNode {
             if (successor == null) {
                 throw new ControlFlowIllegalStateException(exceptionMessageBuilder("Basic block has no successor").thisNode(this));
             }
+            if (exceptionEntry != null) {
+                Set<ControlFlowNode> result = new HashSet<>(2);
+                result.add(successor);
+                result.add(exceptionEntry);
+                return result;
+            }
             return singleton(successor);
         }
 
@@ -407,9 +482,23 @@ public abstract class ControlFlowNode {
             return successor != null;
         }
 
+        void setExceptionEntry(ExceptionHandlerNode handler) {
+            Objects.requireNonNull(handler, "handler must not be null");
+            if (exceptionEntry != null) {
+                // idempotent if same handler; for a different handler (nested try-catch),
+                // the innermost handler (already set) takes precedence — silently skip.
+                return;
+            }
+            exceptionEntry = handler;
+            handler.predecessors.add(this);
+        }
+
         @Override
         Set<ControlFlowNode> getSuccessorsForTraversal() {
-            return successor != null ? singleton(successor) : emptySet();
+            Set<ControlFlowNode> result = new HashSet<>(2);
+            if (successor != null) result.add(successor);
+            if (exceptionEntry != null) result.add(exceptionEntry);
+            return result;
         }
 
         @Override

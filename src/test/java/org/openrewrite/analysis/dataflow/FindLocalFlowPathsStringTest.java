@@ -1216,7 +1216,7 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
                       try {
                           System.out.println(/*~~>*/n);
                       } catch (Exception e) {
-                          System.out.println(n);
+                          System.out.println(/*~~>*/n);
                       }
                       String o = /*~~>*/n;
                       System.out.println(/*~~>*/o);
