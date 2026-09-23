@@ -351,15 +351,28 @@ public final class ControlFlow {
         @Override
         @SelfLoathing(name = "Jonathan Leitschuh")
         public J.Switch visitSwitch(J.Switch _switch, P p) {
+            analyzeSwitchCases(_switch.getSelector(), _switch.getCases(), p);
+            return _switch;
+        }
+
+        @Override
+        @SelfLoathing(name = "Jonathan Leitschuh")
+        public J.SwitchExpression visitSwitchExpression(J.SwitchExpression _switch, P p) {
+            analyzeSwitchCases(_switch.getSelector(), _switch.getCases(), p);
+            return _switch;
+        }
+
+        @SelfLoathing(name = "Jonathan Leitschuh")
+        private void analyzeSwitchCases(J.ControlParentheses<Expression> selector, J.Block cases, P p) {
             addCursorToBasicBlock();
-            visit(_switch.getSelector(), p);
+            visit(selector, p);
             // The switch analysis requires a doubly-nested anonymous-class structure.
             //
             // OUTER anonymous class (this 'analysis' object):
             //   - Holds 'caseFlow': the set of BasicBlocks that fall off the end of a case
             //     without a break/return. This set is shared across all case analyses via closure.
             //   - Overrides visitBlock: called exactly ONCE for the J.Block that contains all
-            //     cases (_switch.getCases()). After super.visitBlock() returns (all cases have
+            //     cases. After super.visitBlock() returns (all cases have
             //     been visited), any remaining caseFlow entries are wired to the post-switch
             //     continuation by merging them into breakFlow.
             //   - Overrides createAnalysisForRecursion: the base-class visitStatementList()
@@ -423,8 +436,10 @@ public final class ControlFlow {
                                 }
                             } else if (_case.getType() == J.Case.Type.Rule) {
                                 visit(_case.getBody(), p);
-                                breakFlow.add(currentAsBasicBlock());
-                                current = emptySet();
+                                if (!current.isEmpty()) {
+                                    breakFlow.add(currentAsBasicBlock());
+                                    current = emptySet();
+                                }
                             }
                             caseFlow.addAll(current);
                             current = singleton(conditionNode);
@@ -433,11 +448,10 @@ public final class ControlFlow {
                     };
                 }
             };
-            analysis.visit(_switch.getCases(), p, getCursor());
+            analysis.visit(cases, p, getCursor());
             transferContinueFlow(analysis);
             transferExit(analysis);
             current = Stream.concat(analysis.current.stream(), analysis.breakFlow.stream()).collect(toSet());
-            return _switch;
         }
 
         @Override
@@ -1002,6 +1016,18 @@ public final class ControlFlow {
             breakFlow.add(currentAsBasicBlock());
             current = emptySet();
             return breakStatement;
+        }
+
+        @Override
+        public J.Yield visitYield(J.Yield yield, P p) {
+            visit(yield.getValue(), p); // First the yielded value is evaluated
+            if (current.isEmpty()) {
+                return yield;
+            }
+            addCursorToBasicBlock(); // Then the yield, which leaves the enclosing switch expression like a break
+            breakFlow.add(currentAsBasicBlock());
+            current = emptySet();
+            return yield;
         }
 
         private static ControlFlowNode.BasicBlock addBasicBlock(Collection<ControlFlowNode> nodes) {

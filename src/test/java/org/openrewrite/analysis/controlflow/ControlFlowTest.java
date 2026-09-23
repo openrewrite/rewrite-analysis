@@ -2748,6 +2748,107 @@ class ControlFlowTest implements RewriteTest {
         );
     }
 
+    @Test
+    void switchExpressionArrowAsInitializer() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  String test(int x) {
+                      String result = switch (x) {
+                          case 1 -> "one";
+                          case 2 -> "two";
+                          default -> "other";
+                      };
+                      return result;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  String test(int x) /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
+                      String /*~~(2L)~~>*/result = switch (x) {
+                          /*~~(1C)~~>*/case 1 -> /*~~(3L)~~>*/"one";
+                          /*~~(4L | 2C)~~>*/case 2 -> /*~~(5L)~~>*/"two";
+                          /*~~(6L)~~>*/default -> "other";
+                      };
+                      return result;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void switchExpressionColonYield() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  String test(int x) {
+                      String result = switch (x) {
+                          case 1:
+                              yield "one";
+                          case 2:
+                              yield "two";
+                          default:
+                              yield "other";
+                      };
+                      return result;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  String test(int x) /*~~(BB: 6 CN: 2 EX: 1 | 1L)~~>*/{
+                      String /*~~(2L)~~>*/result = switch (x) {
+                          /*~~(1C)~~>*/case 1:
+                              yield /*~~(3L)~~>*/"one";
+                          /*~~(4L | 2C)~~>*/case 2:
+                              yield /*~~(5L)~~>*/"two";
+                          /*~~(6L)~~>*/default:
+                              yield "other";
+                      };
+                      return result;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
+    void switchExpressionAsReturn() {
+        rewriteRun(
+          //language=java
+          java(
+            """
+              class Test {
+                  String test(int x) {
+                      return switch (x) {
+                          case 1 -> "one";
+                          default -> "other";
+                      };
+                  }
+              }
+              """,
+            """
+              class Test {
+                  String test(int x) /*~~(BB: 4 CN: 1 EX: 1 | 1L)~~>*/{
+                      /*~~(2L)~~>*/return switch (x) {
+                          /*~~(1C)~~>*/case 1 -> /*~~(3L)~~>*/"one";
+                          /*~~(4L)~~>*/default -> "other";
+                      };
+                  }
+              }
+              """
+          )
+        );
+    }
+
     @SuppressWarnings("EnhancedSwitchMigration")
     @Test
     void switchCaseNoDefault() {

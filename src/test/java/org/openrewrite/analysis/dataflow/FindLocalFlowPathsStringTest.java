@@ -1321,6 +1321,40 @@ class FindLocalFlowPathsStringTest implements RewriteTest {
     }
 
     @Test
+    void switchExpressionInEnclosingMethod() {
+        rewriteRun(
+          java(
+            """
+              class Test {
+                  String test(int x) {
+                      String n = "42";
+                      System.out.println(n);
+                      String label = switch (x) {
+                          case 1 -> "one";
+                          default -> "other";
+                      };
+                      return label;
+                  }
+              }
+              """,
+            """
+              class Test {
+                  String test(int x) {
+                      String n = /*~~>*/"42";
+                      System.out.println(/*~~>*/n);
+                      String label = switch (x) {
+                          case 1 -> "one";
+                          default -> "other";
+                      };
+                      return label;
+                  }
+              }
+              """
+          )
+        );
+    }
+
+    @Test
     void forEachLoop() {
         rewriteRun(
           java(
