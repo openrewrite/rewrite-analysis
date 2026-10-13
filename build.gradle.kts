@@ -21,12 +21,11 @@ dependencies {
     implementation("org.openrewrite:rewrite-yaml")
     implementation("org.openrewrite:rewrite-xml")
 
-    implementation("io.github.classgraph:classgraph:latest.release")
-
     testImplementation("org.openrewrite:rewrite-test:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-java-tck:${rewriteVersion}")
     testImplementation("org.openrewrite:rewrite-kotlin:${rewriteVersion}")
     testImplementation("com.tngtech.archunit:archunit-junit5:latest.release")
+    testImplementation("io.github.classgraph:classgraph:4.+")
 
     testImplementation("org.assertj:assertj-core:latest.release")
 
