@@ -15,27 +15,41 @@
  */
 package org.openrewrite.analysis.dataflow.internal.csv;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
-
 import java.io.*;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.net.URL;
+import java.util.*;
 import java.util.function.Function;
 
 public class CsvLoader {
     public static <R extends Mergeable<R>, E> R loadFromFile(String csvFileName, R emptyModel, Function<Iterable<E>, R> merger, Function<String[], E> csvMapper) {
-        AtomicReference<R> model = new AtomicReference<>(emptyModel);
-        try (ScanResult scanResult = new ClassGraph().acceptPaths("data-flow").scan()) {
-            scanResult.getResourcesWithLeafName(csvFileName)
-                    .forEachInputStreamIgnoringIOException((res, input) -> model.set(model.get().merge(loadCsv(input, res.getURI(), merger, csvMapper))));
+        R model = emptyModel;
+        for (URL resource : findResources("data-flow/" + csvFileName)) {
+            try (InputStream input = resource.openStream()) {
+                model = model.merge(loadCsv(input, resource, merger, csvMapper));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to read data-flow values from " + resource, e);
+            }
         }
-        return model.get();
+        return model;
     }
 
-    private static <R extends Mergeable<R>, E> R loadCsv(InputStream input, URI source, Function<Iterable<E>, R> merger, Function<String[], E> csvMapper) {
+    private static Collection<URL> findResources(String path) {
+        Map<String, URL> resources = new LinkedHashMap<>();
+        for (ClassLoader classLoader : Arrays.asList(CsvLoader.class.getClassLoader(), Thread.currentThread().getContextClassLoader())) {
+            if (classLoader != null) {
+                try {
+                    for (URL url : Collections.list(classLoader.getResources(path))) {
+                        resources.putIfAbsent(url.toExternalForm(), url);
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException("Failed to find data-flow resources " + path, e);
+                }
+            }
+        }
+        return resources.values();
+    }
+
+    private static <R extends Mergeable<R>, E> R loadCsv(InputStream input, URL source, Function<Iterable<E>, R> merger, Function<String[], E> csvMapper) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input));
         try {
             List<E> models = new ArrayList<>();
