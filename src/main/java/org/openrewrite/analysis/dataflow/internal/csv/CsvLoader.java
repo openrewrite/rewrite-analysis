@@ -20,6 +20,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.function.Function;
 
+import static java.util.Collections.list;
+
 public class CsvLoader {
     public static <R extends Mergeable<R>, E> R loadFromFile(String csvFileName, R emptyModel, Function<Iterable<E>, R> merger, Function<String[], E> csvMapper) {
         R model = emptyModel;
@@ -38,7 +40,7 @@ public class CsvLoader {
         for (ClassLoader classLoader : Arrays.asList(CsvLoader.class.getClassLoader(), Thread.currentThread().getContextClassLoader())) {
             if (classLoader != null) {
                 try {
-                    for (URL url : Collections.list(classLoader.getResources(path))) {
+                    for (URL url : list(classLoader.getResources(path))) {
                         resources.putIfAbsent(url.toExternalForm(), url);
                     }
                 } catch (IOException e) {

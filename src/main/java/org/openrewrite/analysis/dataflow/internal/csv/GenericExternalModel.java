@@ -22,12 +22,7 @@ import org.openrewrite.analysis.BasicInvocationMatcher;
 import org.openrewrite.analysis.InvocationMatcher;
 import org.openrewrite.java.tree.JavaType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public interface GenericExternalModel extends BasicInvocationMatcher {
