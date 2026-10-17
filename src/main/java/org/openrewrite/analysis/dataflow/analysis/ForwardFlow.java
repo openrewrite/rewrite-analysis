@@ -376,15 +376,17 @@ public class ForwardFlow extends JavaVisitor<Integer> {
             if (body != null) {
                 // Push a new scope for the anonymous class body
                 flowsByIdentifier.push(flowsByIdentifier.peek().copy());
+                Cursor newClassCursor = getCursor();
                 try {
-                    // Create a proper cursor chain: current -> newClass -> body
-                    Cursor newClassCursor = new Cursor(getCursor(), newClass);
+                    // Create a proper cursor chain: newClass -> body
                     Cursor bodyCursor = new Cursor(newClassCursor, body);
                     // Visit the body statements with the correct cursor chain
                     for (Statement statement : body.getStatements()) {
                         visit(statement, integer, bodyCursor);
                     }
                 } finally {
+                    // visit(statement, integer, bodyCursor) leaves the cursor on the body
+                    setCursor(newClassCursor);
                     flowsByIdentifier.pop();
                 }
             }

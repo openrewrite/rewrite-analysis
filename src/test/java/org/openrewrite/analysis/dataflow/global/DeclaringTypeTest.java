@@ -45,7 +45,7 @@ class DeclaringTypeTest implements RewriteTest {
             }
 
             private <M extends MethodCall> M visitMethodCall(M methodCall) {
-                assert methodCall.getMethodType() != null : "Types are missing for MethodCall " + methodCall.print(getCursor());
+                assert methodCall.getMethodType() != null : "Types are missing for MethodCall " + methodCall.print(getCursor().getParentOrThrow());
                 JavaType.Method declaring = MethodTypeUtils.getDeclarationMethod(methodCall.getMethodType());
                 if (methodCall.getMethodType().equals(declaring)) {
                     return methodCall;
