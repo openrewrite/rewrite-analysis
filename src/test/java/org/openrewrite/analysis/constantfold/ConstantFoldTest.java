@@ -41,7 +41,7 @@ class ConstantFoldTest implements RewriteTest {
             if (ALL_MATCHER.advanced().isFirstArgument(getCursor())) {
                 var constantValue = ConstantFold.findConstantJ(getCursor());
                 if (constantValue.isSome() && constantValue.map(j -> j.getMarkers().findFirst(SearchResult.class).isEmpty()).orSome(false)) {
-                    return SearchResult.found(expression, constantValue.some().print(getCursor()).trim());
+                    return SearchResult.found(expression, constantValue.some().print(getCursor().getParentOrThrow()).trim());
                 }
             }
             return super.visitExpression(expression, p);

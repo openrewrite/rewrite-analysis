@@ -90,7 +90,7 @@ public class FindMethods extends Recipe {
                         if (javaSourceFile != null) {
                             methodCalls.insertRow(ctx, new MethodCalls.Row(
                                     javaSourceFile.getSourcePath().toString(),
-                                    method.printTrimmed(getCursor()),
+                                    method.printTrimmed(getCursor().getParentOrThrow()),
                                     method.getMethodType().getDeclaringType().getFullyQualifiedName(),
                                     method.getSimpleName(),
                                     method.getArguments().stream()
@@ -116,7 +116,7 @@ public class FindMethods extends Recipe {
                         if (javaSourceFile != null) {
                             methodCalls.insertRow(ctx, new MethodCalls.Row(
                                     javaSourceFile.getSourcePath().toString(),
-                                    memberRef.printTrimmed(getCursor()),
+                                    memberRef.printTrimmed(getCursor().getParentOrThrow()),
                                     memberRef.getMethodType().getDeclaringType().getFullyQualifiedName(),
                                     memberRef.getMethodType().getName(),
                                     memberRef.getArguments().stream()
@@ -142,7 +142,7 @@ public class FindMethods extends Recipe {
                         if (javaSourceFile != null) {
                             methodCalls.insertRow(ctx, new MethodCalls.Row(
                                     javaSourceFile.getSourcePath().toString(),
-                                    newClass.printTrimmed(getCursor()),
+                                    newClass.printTrimmed(getCursor().getParentOrThrow()),
                                     newClass.getType().toString(),
                                     "<constructor>",
                                     newClass.getArguments().stream()
